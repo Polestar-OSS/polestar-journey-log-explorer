@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Paper, Text, Group, Button, Stack } from '@mantine/core';
+import { Paper, Text, Group, Button, Stack, Image, useMantineColorScheme } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 import { IconUpload, IconFile, IconX } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -7,6 +7,7 @@ import { parseCSV, parseXLSX } from '../utils/dataParser';
 
 function FileUploader({ onDataLoaded }) {
   const [loading, setLoading] = useState(false);
+  const { colorScheme } = useMantineColorScheme();
 
   const handleFileDrop = async (files) => {
     if (files.length === 0) return;
@@ -52,6 +53,15 @@ function FileUploader({ onDataLoaded }) {
   return (
     <Stack gap="xl" mt="xl">
       <div style={{ textAlign: 'center' }}>
+        <Image
+          src={colorScheme === 'dark' ? '/polestar-journey-log-explorer/logo-white.png' : '/polestar-journey-log-explorer/logo-black.png'}
+          alt="Polestar OSS Logo"
+          h={120}
+          w="auto"
+          fit="contain"
+          style={{ margin: '0 auto' }}
+          mb="xl"
+        />
         <Text size="xl" fw={700} mb="sm">
           Upload Your Journey Log
         </Text>

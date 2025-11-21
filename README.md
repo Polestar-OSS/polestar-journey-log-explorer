@@ -1,137 +1,132 @@
 # Polestar Journey Log Explorer
 
+![Polestar Journey Log Explorer](./assets/black_transparent.png)
+
 [![Deploy to GitHub Pages](https://github.com/kinncj/polestar-journey-log-explorer/workflows/Deploy/badge.svg)](https://github.com/kinncj/polestar-journey-log-explorer/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-An interactive dashboard for analyzing Polestar journey log data. Built with React, Vite, and Mantine UI.
+An interactive web-based dashboard for analyzing your Polestar journey log data. Upload your CSV/Excel files and explore comprehensive statistics, visualizations, and insights about your electric vehicle trips—all processed locally in your browser with complete privacy.
 
-## Features
+## ✨ Features
 
-- 📊 **Interactive Charts** - Visualize distance, consumption, and efficiency trends
-- 🗺️ **Map View** - See your trips plotted on an interactive map with routes
-- 📈 **Statistics** - Comprehensive statistics about your driving patterns
-- 📁 **File Upload** - Support for CSV and XLSX files (client-side only, no backend)
-- 🎨 **Modern UI** - Clean, responsive interface with dark mode support
-- 🔍 **Data Table** - Search, sort, and filter your trip data
+### 📊 Data Analysis & Visualization
+- **Interactive Charts** - Distance, consumption, and efficiency trends over time
+- **Statistics Dashboard** - 11+ key metrics including carbon savings and cost estimates
+- **Map View** - Routes plotted on interactive maps with trip linking
+- **Data Table** - Search, sort, filter, and export your trip data
 
-## Getting Started
+### 🎨 User Experience
+- **Dark/Light Theme** - Toggle between themes for comfortable viewing
+- **Responsive Design** - Works seamlessly on desktop, tablet, and mobile
+- **Date Range Filtering** - Filter trips by date, distance, efficiency, SOC, and more
+- **Trip Annotations** - Add custom notes and tags to organize your trips
 
-### Prerequisites
+### 🔋 EV-Specific Features
+- **Carbon Savings Calculator** - See your environmental impact vs ICE vehicles
+- **Cost Calculator** - Estimate charging costs with global electricity rates
+- **Efficiency Analysis** - Track consumption patterns and optimize driving
+- **SOC Tracking** - Monitor battery state of charge across trips
 
-- Node.js 18+ and npm
+### 🔒 Privacy First
+- **100% Client-Side** - All data processing happens in your browser
+- **No Backend** - Your data never leaves your device
+- **No Tracking** - No analytics or third-party services
 
-### Installation
+## 🚀 Quick Start
+
+### Try It Online
+
+Visit the live demo: **[https://kinncj.github.io/polestar-journey-log-explorer/](https://kinncj.github.io/polestar-journey-log-explorer/)**
+
+1. Download your journey log from your Polestar app
+2. Visit the website and upload your CSV/XLSX file
+3. Explore your data with interactive charts and maps
+
+### Local Development
 
 ```bash
-cd app
+# Clone the repository
+git clone https://github.com/kinncj/polestar-journey-log-explorer.git
+cd polestar-journey-log-explorer/app
+
+# Install dependencies
 npm install
-```
 
-### Development
-
-```bash
+# Start development server
 npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### Building for Production
+## 📖 Documentation
 
-```bash
-npm run build
-```
+Detailed documentation is available in the [`docs/`](./docs/) directory:
 
-The built files will be in the `dist/` directory.
+- **[User Guide](./docs/USER_GUIDE.md)** - Complete feature walkthrough
+- **[Quick Start](./docs/QUICKSTART.md)** - Get up and running quickly
+- **[Development Guide](./docs/DEVELOPMENT.md)** - Technical setup and architecture
+- **[Contributing](./docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[Architecture](./docs/ARCHITECTURE.md)** - System design and technical details
 
-## Deployment to GitHub Pages
+## 🎯 Use Cases
 
-### Initial Setup
+- **Track Your Carbon Footprint** - Quantify your environmental impact
+- **Optimize Charging Costs** - Understand and reduce electricity expenses
+- **Analyze Driving Patterns** - Improve efficiency and range
+- **Plan Road Trips** - Review past routes and consumption
+- **Monitor Battery Health** - Track SOC patterns over time
+- **Export Reports** - Download filtered data for external analysis
 
-1. Ensure your repository is public or you have GitHub Pages enabled
-2. Update the `base` path in `vite.config.js` to match your repository name
-3. Install dependencies:
-
-```bash
-cd app
-npm install
-```
-
-### Deploy
-
-```bash
-npm run deploy
-```
-
-This will build the application and push it to the `gh-pages` branch.
-
-### GitHub Actions (Recommended)
-
-A GitHub Actions workflow is included in `.github/workflows/deploy.yml` that automatically deploys to GitHub Pages on every push to the main branch.
-
-## Usage
-
-1. **Upload Your Data**: Click or drag-and-drop your journey log CSV or XLSX file
-2. **View Statistics**: See comprehensive statistics about your trips
-3. **Explore Charts**: Analyze trends in distance, consumption, and efficiency
-4. **View Map**: See your trips plotted geographically with color-coded efficiency
-5. **Browse Data**: Search and filter through your trips in the data table
-
-## Data Format
-
-The application expects journey log files with the following columns:
-
-- Start Date, End Date
-- Start Address, End Address
-- Distance in KM, Consumption in Kwh
-- Start/End Latitude, Start/End Longitude
-- Start/End Odometer
-- SOC Source, SOC Destination
-- Trip Type, Category, Comments
-
-## Technology Stack
+## 🛠️ Tech Stack
 
 - **React 18** - UI framework
 - **Vite** - Build tool and dev server
 - **Mantine UI** - Component library
-- **Recharts** - Charts and data visualization
 - **Leaflet** - Interactive maps
+- **Recharts** - Data visualization
 - **PapaParse** - CSV parsing
-- **XLSX** - Excel file parsing
+- **DayJS** - Date handling
 
-## Project Structure
+## 📦 Data Format
 
-```
-app/
-├── src/
-│   ├── components/       # React components
-│   │   ├── Dashboard.jsx
-│   │   ├── FileUploader.jsx
-│   │   ├── StatsCards.jsx
-│   │   ├── ChartsView.jsx
-│   │   ├── MapView.jsx
-│   │   └── TableView.jsx
-│   ├── utils/           # Utility functions
-│   │   └── dataParser.js
-│   ├── App.jsx          # Main app component
-│   └── main.jsx         # Entry point
-├── index.html
-├── vite.config.js
-├── package.json
-└── postcss.config.cjs
-```
+The application supports CSV and XLSX files with these columns:
+- Start/End Date & Time
+- Start/End Address
+- Distance (km)
+- Consumption (kWh)
+- Efficiency (kWh/100km)
+- SOC (State of Charge)
+- Odometer readings
 
-## Contributing
+See the [User Guide](./docs/USER_GUIDE.md) for detailed data format specifications.
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 🤝 Contributing
 
-## License
+Contributions are welcome! Please read our [Contributing Guide](./docs/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-MIT License - see LICENSE file for details
+## 📄 License
 
-## Author
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
-**Kinn Coelho Juliao**
+Copyright (c) 2025 Kinn Coelho Juliao <kinncj@gmail.com>
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Built for analyzing Polestar vehicle journey data
-- Inspired by the need for better EV trip analysis tools
+- Polestar for creating amazing electric vehicles
+- The open-source community for the excellent libraries used in this project
+- All contributors who help improve this tool
+
+## ⚠️ Disclaimer
+
+**This is a community-driven project and is not affiliated with, endorsed by, or in any way officially connected with Polestar, the Polestar brand, Geely, or any of their subsidiaries or affiliates.**
+
+This tool is created by the community for analyzing journey log data exported from Polestar vehicles. All trademarks, logos, and brand names are the property of their respective owners.
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/kinncj/polestar-journey-log-explorer/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kinncj/polestar-journey-log-explorer/discussions)
+
+---
+
+Made with ⚡ for Polestar drivers
