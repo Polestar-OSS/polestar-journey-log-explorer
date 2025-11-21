@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "dsznajder.es7-react-js-snippets",
+    "bradlc.vscode-tailwindcss",
+    "wix.vscode-import-cost",
+    "christian-kohler.path-intellisense",
+    "naumovs.color-highlight",
+    "bierner.markdown-mermaid",
+    "bierner.markdown-preview-github-styles",
+    "yzhang.markdown-all-in-one"
+  ]
+}
