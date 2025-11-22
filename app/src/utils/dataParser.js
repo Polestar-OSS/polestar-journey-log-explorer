@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export const parseCSV = (file) => {
     return new Promise((resolve, reject) => {
@@ -17,25 +17,49 @@ export const parseCSV = (file) => {
     });
 };
 
-export const parseXLSX = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
+export const parseXLSX = async (file) => {
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(arrayBuffer);
 
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                resolve(processJourneyData(jsonData));
-            } catch (error) {
-                reject(error);
+        // Get the first worksheet
+        const worksheet = workbook.worksheets[0];
+
+        if (!worksheet) {
+            throw new Error('No worksheet found in the Excel file');
+        }
+
+        // Convert worksheet to JSON
+        const jsonData = [];
+        const headers = [];
+
+        // Get headers from the first row
+        worksheet.getRow(1).eachCell((cell, colNumber) => {
+            headers[colNumber] = cell.value;
+        });
+
+        // Process data rows
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return; // Skip header row
+
+            const rowData = {};
+            row.eachCell((cell, colNumber) => {
+                const header = headers[colNumber];
+                if (header) {
+                    rowData[header] = cell.value;
+                }
+            });
+
+            if (Object.keys(rowData).length > 0) {
+                jsonData.push(rowData);
             }
-        };
+        });
 
-        reader.onerror = () => reject(reader.error);
-        reader.readAsArrayBuffer(file);
-    });
+        return processJourneyData(jsonData);
+    } catch (error) {
+        throw new Error(`Failed to parse Excel file: ${error.message}`);
+    }
 };
 
 const processJourneyData = (rawData) => {
