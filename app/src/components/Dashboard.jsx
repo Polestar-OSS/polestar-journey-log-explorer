@@ -29,13 +29,13 @@ const COLUMNS = [
   { key: 'endOdometer', label: 'End Odometer' },
 ];
 
+// Initialize the stateless TableExporter once outside the component
+const tableExporter = new TableExporter();
+
 function Dashboard({ data, onReset }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [filteredData, setFilteredData] = useState(data);
   const [helpOpened, setHelpOpened] = useState(false);
-  
-  // Initialize services
-  const tableExporter = new TableExporter();
   
   const statistics = useMemo(() => calculateStatistics(filteredData), [filteredData]);
 
