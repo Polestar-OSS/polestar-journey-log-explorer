@@ -2,7 +2,7 @@
 
 ![Polestar Journey Log Explorer](./assets/black_transparent.png)
 
-[![Deploy to GitHub Pages](https://github.com/kinncj/polestar-journey-log-explorer/workflows/Deploy/badge.svg)](https://github.com/kinncj/polestar-journey-log-explorer/actions)
+[![Deploy to GitHub Pages](https://github.com/polestar-oss/polestar-journey-log-explorer/workflows/Deploy/badge.svg)](https://github.com/polestar-oss/polestar-journey-log-explorer/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 An interactive web-based dashboard for analyzing your Polestar journey log data. Upload your CSV/Excel files and explore comprehensive statistics, visualizations, and insights about your electric vehicle trips—all processed locally in your browser with complete privacy.
@@ -36,7 +36,7 @@ An interactive web-based dashboard for analyzing your Polestar journey log data.
 
 ### Try It Online
 
-Visit the live demo: **[https://kinncj.github.io/polestar-journey-log-explorer/](https://kinncj.github.io/polestar-journey-log-explorer/)**
+Visit the live demo: **[https://polestar-oss.github.io/polestar-journey-log-explorer/](https://polestar-oss.github.io/polestar-journey-log-explorer/)**
 
 1. Download your journey log from your Polestar app
 2. Visit the website and upload your CSV/XLSX file
@@ -46,7 +46,7 @@ Visit the live demo: **[https://kinncj.github.io/polestar-journey-log-explorer/]
 
 ```bash
 # Clone the repository
-git clone https://github.com/kinncj/polestar-journey-log-explorer.git
+git clone https://github.com/polestar-oss/polestar-journey-log-explorer.git
 cd polestar-journey-log-explorer/app
 
 # Install dependencies
@@ -124,8 +124,8 @@ This tool is created by the community for analyzing journey log data exported fr
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/kinncj/polestar-journey-log-explorer/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/kinncj/polestar-journey-log-explorer/discussions)
+- **Issues**: [GitHub Issues](https://github.com/polestar-oss/polestar-journey-log-explorer/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/polestar-oss/polestar-journey-log-explorer/discussions)
 
 ---
 
