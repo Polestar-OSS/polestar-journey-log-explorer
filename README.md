@@ -1,8 +1,10 @@
 # Polestar Journey Log Explorer
 
-![Polestar Journey Log Explorer](./assets/black_transparent.png)
+![Polestar Journey Log Explorer](./assets/white_transparent.png)
 
-[![Deploy to GitHub Pages](https://github.com/polestar-oss/polestar-journey-log-explorer/workflows/Deploy/badge.svg)](https://github.com/polestar-oss/polestar-journey-log-explorer/actions)
+[![Deploy to GitHub Pages](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/deploy.yml/badge.svg)](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/deploy.yml)
+[![Dependabot](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/dependabot/dependabot-updates)
+[![CodeQL](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/github-code-scanning/codeql)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 An interactive web-based dashboard for analyzing your Polestar journey log data. Upload your CSV/Excel files and explore comprehensive statistics, visualizations, and insights about your electric vehicle trips—all processed locally in your browser with complete privacy.
