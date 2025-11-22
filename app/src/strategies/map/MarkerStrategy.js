@@ -64,10 +64,13 @@ export class EndMarkerStrategy extends MarkerStrategy {
     }
 
     createMarker(trip, type, index) {
-        if (typeof trip.efficiency !== 'number' || isNaN(trip.efficiency)) {
-            throw new Error('Trip efficiency is required and must be a valid number');
+        // Use a default efficiency if not provided or invalid
+        let efficiency = trip.efficiency;
+        if (typeof efficiency !== 'number' || isNaN(efficiency)) {
+            efficiency = 0; // Default to 0 efficiency for trips without valid data
         }
-        let color = this.colorCalculator.getEfficiencyColor(trip.efficiency);
+
+        let color = this.colorCalculator.getEfficiencyColor(efficiency);
         color = [
             EndMarkerStrategy.sanitizeRgbComponent(color[0]),
             EndMarkerStrategy.sanitizeRgbComponent(color[1]),

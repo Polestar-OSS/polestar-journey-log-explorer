@@ -1,7 +1,6 @@
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
 import OSM from 'ol/source/OSM';
-import StadiaMaps from 'ol/source/StadiaMaps';
 
 /**
  * Strategy Pattern: Defines interface for tile layer creation
@@ -40,48 +39,6 @@ export class OSMHumanitarianStrategy extends TileLayerStrategy {
 }
 
 /**
- * Concrete Strategy: Stadia Maps Smooth
- */
-export class StadiaSmoothStrategy extends TileLayerStrategy {
-    createLayer() {
-        return new TileLayer({
-            source: new StadiaMaps({
-                layer: 'alidade_smooth',
-                retina: true
-            })
-        });
-    }
-}
-
-/**
- * Concrete Strategy: Stadia Maps Smooth Dark
- */
-export class StadiaSmoothDarkStrategy extends TileLayerStrategy {
-    createLayer() {
-        return new TileLayer({
-            source: new StadiaMaps({
-                layer: 'alidade_smooth_dark',
-                retina: true
-            })
-        });
-    }
-}
-
-/**
- * Concrete Strategy: Stadia Maps Outdoors
- */
-export class StadiaOutdoorsStrategy extends TileLayerStrategy {
-    createLayer() {
-        return new TileLayer({
-            source: new StadiaMaps({
-                layer: 'outdoors',
-                retina: true
-            })
-        });
-    }
-}
-
-/**
  * Factory: Creates appropriate tile layer strategy
  * Single Responsibility: Only responsible for creating tile layers
  */
@@ -89,10 +46,7 @@ export class TileLayerFactory {
     constructor() {
         this.strategies = {
             'osm': new OSMStandardStrategy(),
-            'osm-humanitarian': new OSMHumanitarianStrategy(),
-            'stadia-smooth': new StadiaSmoothStrategy(),
-            'stadia-smooth-dark': new StadiaSmoothDarkStrategy(),
-            'stadia-outdoors': new StadiaOutdoorsStrategy()
+            'osm-humanitarian': new OSMHumanitarianStrategy()
         };
     }
 
@@ -107,10 +61,7 @@ export class TileLayerFactory {
     getAvailableLayers() {
         return [
             { value: 'osm', label: 'OpenStreetMap Standard' },
-            { value: 'osm-humanitarian', label: 'OpenStreetMap Humanitarian (HOT)' },
-            { value: 'stadia-smooth', label: 'Stadia Maps - Alidade Smooth' },
-            { value: 'stadia-smooth-dark', label: 'Stadia Maps - Alidade Smooth Dark' },
-            { value: 'stadia-outdoors', label: 'Stadia Maps - Outdoors' }
+            { value: 'osm-humanitarian', label: 'OpenStreetMap Humanitarian (HOT)' }
         ];
     }
 }
