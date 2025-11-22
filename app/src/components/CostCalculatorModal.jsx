@@ -142,6 +142,7 @@ function CostCalculatorModal({ opened, onClose, statistics }) {
 
   return (
     <Modal
+      zIndex={99999999999999}
       opened={opened}
       onClose={onClose}
       title="Charging Cost Calculator"
