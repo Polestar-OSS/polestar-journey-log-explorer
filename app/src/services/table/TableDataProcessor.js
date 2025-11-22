@@ -123,7 +123,7 @@ export class TableRowFormatter {
      */
     formatEfficiency(efficiency) {
         const eff = parseFloat(efficiency);
-        let color = 'gray';
+        let color;
 
         if (eff < 15) color = 'green';
         else if (eff < 20) color = 'yellow';
