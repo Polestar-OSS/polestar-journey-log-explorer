@@ -19,7 +19,7 @@ graph TD
     FileUploader -.->|Uses| ParserUtil[dataParser.js<br/>Utility Functions<br/>CSV/XLSX Parsing]
     
     ChartsView -.->|Uses| Recharts[Recharts Library<br/>Chart Components]
-    MapView -.->|Uses| Leaflet[React-Leaflet<br/>Map Components]
+    MapView -.->|Uses| OpenLayers[OpenLayers<br/>Map Components]
     TableView -.->|Uses| MantineTable[Mantine Table<br/>Table Components]
     
     StatsCards -.->|Uses| Icons[Tabler Icons<br/>Icon Components]

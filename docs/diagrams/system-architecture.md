@@ -21,7 +21,7 @@ graph TB
                 Dashboard[Dashboard Component<br/>Tab Navigation]
                 StatsCards[Statistics Cards<br/>Key Metrics Display]
                 Charts[Charts View<br/>Recharts Integration]
-                Map[Map View<br/>Leaflet Maps]
+                Map[Map View<br/>OpenLayers Maps]
                 Table[Table View<br/>Data Grid]
             end
         end

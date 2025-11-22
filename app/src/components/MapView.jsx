@@ -4,7 +4,10 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
+import Heatmap from 'ol/layer/Heatmap';
 import XYZ from 'ol/source/XYZ';
+import OSM from 'ol/source/OSM';
+import StadiaMaps from 'ol/source/StadiaMaps';
 import VectorSource from 'ol/source/Vector';
 import { Feature } from 'ol';
 import { Point, LineString } from 'ol/geom';
@@ -25,6 +28,58 @@ function MapView({ data }) {
   const [linkTripsByDay, setLinkTripsByDay] = useState(false);
   const [tripsToShow, setTripsToShow] = useState('100');
   const [popupContent, setPopupContent] = useState(null);
+  const [selectedTileLayer, setSelectedTileLayer] = useState('osm');
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showMarkers, setShowMarkers] = useState(true);
+  const tileLayerRef = useRef(null);
+  const heatmapLayerRef = useRef(null);
+
+  const tileLayerOptions = [
+    { value: 'osm', label: 'OpenStreetMap Standard' },
+    { value: 'osm-humanitarian', label: 'OpenStreetMap Humanitarian (HOT)' },
+    { value: 'stadia-smooth', label: 'Stadia Maps - Alidade Smooth' },
+    { value: 'stadia-smooth-dark', label: 'Stadia Maps - Alidade Smooth Dark' },
+    { value: 'stadia-outdoors', label: 'Stadia Maps - Outdoors' }
+  ];
+
+  const createTileLayer = (layerType) => {
+    switch (layerType) {
+      case 'stadia-smooth':
+        return new TileLayer({
+          source: new StadiaMaps({
+            layer: 'alidade_smooth',
+            retina: true
+          })
+        });
+      case 'stadia-smooth-dark':
+        return new TileLayer({
+          source: new StadiaMaps({
+            layer: 'alidade_smooth_dark',
+            retina: true
+          })
+        });
+      case 'stadia-outdoors':
+        return new TileLayer({
+          source: new StadiaMaps({
+            layer: 'outdoors',
+            retina: true
+          })
+        });
+      case 'osm-humanitarian':
+        return new TileLayer({
+          source: new XYZ({
+            url: 'https://tile-{a-c}.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+            attributions: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
+            maxZoom: 19
+          })
+        });
+      case 'osm':
+      default:
+        return new TileLayer({
+          source: new OSM()
+        });
+    }
+  };
 
   const { center, allTrips, tripsByDay } = useMemo(() => {
     const validTrips = data.filter(
@@ -131,17 +186,12 @@ function MapView({ data }) {
       undefinedHTML: '&nbsp;'
     });
 
+    const baseLayer = createTileLayer(selectedTileLayer);
+    tileLayerRef.current = baseLayer;
+
     const map = new Map({
       target: mapRef.current,
-      layers: [
-        new TileLayer({
-          source: new XYZ({
-            url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            attributions: '© OpenStreetMap contributors',
-            maxZoom: 19
-          })
-        })
-      ],
+      layers: [baseLayer],
       view: new View({
         center: fromLonLat(center),
         zoom: 11,
@@ -164,6 +214,20 @@ function MapView({ data }) {
     });
 
     mapInstanceRef.current = map;
+
+    // Create heatmap layer
+    const heatmapSource = new VectorSource();
+    const heatmapLayer = new Heatmap({
+      source: heatmapSource,
+      blur: 15,
+      radius: 8,
+      weight: function() {
+        return 1; // Equal weight for all points
+      },
+      visible: false // Hidden by default
+    });
+    map.addLayer(heatmapLayer);
+    heatmapLayerRef.current = heatmapLayer;
 
     // Handle click events for popups
     map.on('click', (evt) => {
@@ -219,6 +283,29 @@ function MapView({ data }) {
     };
   }, []);
 
+  // Handle tile layer changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !tileLayerRef.current) return;
+    
+    const map = mapInstanceRef.current;
+    const layers = map.getLayers();
+    const oldLayer = tileLayerRef.current;
+    
+    // Remove old layer
+    map.removeLayer(oldLayer);
+    
+    // Create and add new layer
+    const newLayer = createTileLayer(selectedTileLayer);
+    layers.insertAt(0, newLayer);
+    tileLayerRef.current = newLayer;
+  }, [selectedTileLayer]);
+
+  // Handle heatmap visibility
+  useEffect(() => {
+    if (!heatmapLayerRef.current) return;
+    heatmapLayerRef.current.setVisible(showHeatmap);
+  }, [showHeatmap]);
+
   // Update map view and features when data changes
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -258,52 +345,66 @@ function MapView({ data }) {
       
       features.push(routeLine);
 
-      // Start marker - filled circle with border
-      const startMarker = new Feature({
+      // Add markers only if showMarkers is enabled
+      if (showMarkers) {
+        // Start marker - teardrop/pin shape
+        const startMarker = new Feature({
         geometry: new Point(fromLonLat([trip.startLng, trip.startLat])),
         tripData: trip,
         type: 'start'
       });
       
       startMarker.setStyle(new Style({
-        image: new Circle({
-          radius: 8,
-          fill: new Fill({ color: '#228be6' }),
-          stroke: new Stroke({ 
-            color: 'white', 
-            width: 3 
-          })
+        image: new Icon({
+          anchor: [0.5, 1],
+          anchorXUnits: 'fraction',
+          anchorYUnits: 'fraction',
+          src: 'data:image/svg+xml;base64,' + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+              <path fill="#2196F3" stroke="white" stroke-width="2" d="M16,2 C8.82,2 3,7.82 3,15 C3,24 16,40 16,40 C16,40 29,24 29,15 C29,7.82 23.18,2 16,2 Z"/>
+              <circle cx="16" cy="15" r="5" fill="white"/>
+            </svg>
+          `),
+          scale: 0.8
         }),
         zIndex: 1000 + tripIdx
       }));
       
       features.push(startMarker);
 
-      // End marker - star shape
+      // End marker - colored teardrop/pin based on efficiency
       const endMarker = new Feature({
         geometry: new Point(fromLonLat([trip.endLng, trip.endLat])),
         tripData: trip,
         type: 'end'
       });
       
+      const markerColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
       endMarker.setStyle(new Style({
-        image: new RegularShape({
-          points: 5,
-          radius: 10,
-          radius2: 4,
-          fill: new Fill({ 
-            color: `rgb(${color[0]}, ${color[1]}, ${color[2]})` 
-          }),
-          stroke: new Stroke({ 
-            color: 'white', 
-            width: 3 
-          })
+        image: new Icon({
+          anchor: [0.5, 1],
+          anchorXUnits: 'fraction',
+          anchorYUnits: 'fraction',
+          src: 'data:image/svg+xml;base64,' + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+              <path fill="${markerColor}" stroke="white" stroke-width="2" d="M16,2 C8.82,2 3,7.82 3,15 C3,24 16,40 16,40 C16,40 29,24 29,15 C29,7.82 23.18,2 16,2 Z"/>
+              <circle cx="16" cy="15" r="5" fill="white"/>
+            </svg>
+          `),
+          scale: 0.8
         }),
         zIndex: 1000 + tripIdx
       }));
       
       features.push(endMarker);
+    }
     });
+
+    // Collect heatmap points from all displayed trips
+    const heatmapFeatures = displayTrips.flatMap(trip => [
+      new Feature({ geometry: new Point(fromLonLat([trip.startLng, trip.startLat])) }),
+      new Feature({ geometry: new Point(fromLonLat([trip.endLng, trip.endLat])) })
+    ]);
 
     // Add day connection lines
     if (linkTripsByDay) {
@@ -343,7 +444,14 @@ function MapView({ data }) {
     });
     
     map.addLayer(vectorLayer);
-  }, [displayTrips, linkTripsByDay, center, selectedTrip, tripsByDay]);
+
+    // Update heatmap layer
+    if (heatmapLayerRef.current) {
+      const heatmapSource = heatmapLayerRef.current.getSource();
+      heatmapSource.clear();
+      heatmapSource.addFeatures(heatmapFeatures);
+    }
+  }, [displayTrips, linkTripsByDay, center, selectedTrip, tripsByDay, showMarkers]);
 
   return (
     <Stack gap="md">
@@ -369,12 +477,33 @@ function MapView({ data }) {
               disabled={selectedTrip !== null}
             />
             
+            <Select
+              label="Map tile layer"
+              value={selectedTileLayer}
+              onChange={setSelectedTileLayer}
+              data={tileLayerOptions}
+            />
+            
             <Switch
               label="Link trips by day"
               description="Shows daily journey chains"
               checked={linkTripsByDay}
               onChange={(event) => setLinkTripsByDay(event.currentTarget.checked)}
               disabled={selectedTrip !== null}
+            />
+            
+            <Switch
+              label="Show heatmap"
+              description="Display density heatmap"
+              checked={showHeatmap}
+              onChange={(event) => setShowHeatmap(event.currentTarget.checked)}
+            />
+            
+            <Switch
+              label="Show markers"
+              description="Display trip start/end pins"
+              checked={showMarkers}
+              onChange={(event) => setShowMarkers(event.currentTarget.checked)}
             />
           </Group>
         </Stack>

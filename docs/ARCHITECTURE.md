@@ -40,44 +40,63 @@ This application follows a pure client-side architecture, ensuring:
   - Line charts for time series data
   - Bar charts for distribution analysis
   - Pie charts for categorical data
-- **Leaflet 1.9.4**: Interactive map library
-- **React-Leaflet 4.2.1**: React components for Leaflet
+- **OpenLayers (ol)**: Interactive map library with multiple tile layer support
+- **ol-ext**: OpenLayers extensions for additional controls
 
 ## System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Browser                               │
-│                                                              │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │                    React Application                    │ │
-│  │                                                         │ │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  │ │
-│  │  │ FileUploader │  │  Dashboard   │  │   StatsCards│  │ │
-│  │  │  Component   │  │  Component   │  │   Component │  │ │
-│  │  └──────────────┘  └──────────────┘  └─────────────┘  │ │
-│  │         │                  │                │          │ │
-│  │         ▼                  ▼                ▼          │ │
-│  │  ┌─────────────────────────────────────────────────┐  │ │
-│  │  │         Data Processing Layer                   │  │ │
-│  │  │  (PapaParse, XLSX, Data Parser Utils)           │  │ │
-│  │  └─────────────────────────────────────────────────┘  │ │
-│  │         │                                              │ │
-│  │         ▼                                              │ │
-│  │  ┌─────────────────────────────────────────────────┐  │ │
-│  │  │         Visualization Layer                      │  │ │
-│  │  │  ┌─────────┐ ┌─────────┐ ┌──────────┐           │  │ │
-│  │  │  │ Charts  │ │   Map   │ │  Table   │           │  │ │
-│  │  │  │  View   │ │   View  │ │   View   │           │  │ │
-│  │  │  └─────────┘ └─────────┘ └──────────┘           │  │ │
-│  │  └─────────────────────────────────────────────────┘  │ │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │        User's Local File System                      │  │
-│  │         (CSV/XLSX Files)                             │  │
-│  └─────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Browser["🌐 Browser Environment"]
+        subgraph UI["React Application"]
+            App[App Component<br/>State Management]
+            
+            subgraph Upload["📁 Upload Layer"]
+                FileUpload[FileUploader Component<br/>Drag & Drop Interface]
+            end
+            
+            subgraph Processing["⚙️ Data Processing"]
+                Parser[Data Parser<br/>CSV/XLSX Processing]
+                Stats[Statistics Calculator<br/>Metrics & Analytics]
+            end
+            
+            subgraph Visualization["📊 Visualization Layer"]
+                Dashboard[Dashboard Component<br/>Tab Navigation]
+                StatsCards[Statistics Cards<br/>Key Metrics Display]
+                Charts[Charts View<br/>Recharts Integration]
+                Map[Map View<br/>OpenLayers Maps]
+                Table[Table View<br/>Data Grid]
+            end
+        end
+        
+        subgraph Storage["💾 Storage"]
+            State[React State<br/>In-Memory Data]
+            LocalFile[User's Local Files<br/>CSV/XLSX]
+            LocalStorage[localStorage<br/>Trip Annotations]
+        end
+    end
+    
+    subgraph External["🌍 External Services"]
+        OSM[OpenStreetMap<br/>Map Tiles]
+        Stadia[Stadia Maps<br/>Retina Tiles]
+        CDN[CDN Resources<br/>Icons & Fonts]
+        Nominatim[Nominatim API<br/>City Autocomplete]
+    end
+    
+    LocalFile -->|User Upload| FileUpload
+    FileUpload -->|File Object| Parser
+    Parser -->|Parsed Data| Stats
+    Parser -->|Journey Records| State
+    Stats -->|Calculated Metrics| State
+    State -->|Data Flow| Dashboard
+    Dashboard --> StatsCards
+    Dashboard --> Charts
+    Dashboard --> Map
+    Dashboard --> Table
+    Map -.->|Fetch Tiles| OSM
+    Map -.->|Fetch Tiles| Stadia
+    StatsCards -.->|City Search| Nominatim
+    Table <-.->|Read/Write| LocalStorage
 ```
 
 ## Component Architecture
@@ -127,10 +146,13 @@ This application follows a pure client-side architecture, ensuring:
 - **Responsibility**: Geographic visualization
 - **Features**:
   - Interactive map with trip routes
-  - Start/end markers with popups
+  - Multiple tile layer options (OpenStreetMap, Stadia Maps, Vector Tiles)
+  - Start/end markers with popups (circles for start, stars for end)
   - Color-coded efficiency indicators
-  - Trip selection dropdown
-  - Performance optimization (limit displayed trips)
+  - Advanced controls (scale line, zoom to extent, fullscreen, mouse position)
+  - Day linking with dashed connection lines
+  - Trip count selector
+  - Performance optimization with vector layers
 
 ### 7. TableView Component
 - **Responsibility**: Tabular data display
@@ -142,38 +164,55 @@ This application follows a pure client-side architecture, ensuring:
 
 ## Data Flow
 
-```
-User File Upload
-       │
-       ▼
-FileUploader Component
-       │
-       ├─► CSV → PapaParse → Raw JSON
-       │
-       └─► XLSX → XLSX.js → Raw JSON
-       │
-       ▼
-Data Processing (dataParser.js)
-       │
-       ├─► Parse dates
-       ├─► Convert types
-       ├─► Calculate efficiency
-       ├─► Filter invalid entries
-       └─► Calculate statistics
-       │
-       ▼
-Application State (React useState)
-       │
-       ▼
-Dashboard Component
-       │
-       ├─► StatsCards (summary metrics)
-       │
-       ├─► ChartsView (visual analysis)
-       │
-       ├─► MapView (geographic display)
-       │
-       └─► TableView (detailed data)
+```mermaid
+flowchart TD
+    Start([User Opens App]) --> Upload{File Uploaded?}
+    
+    Upload -->|No| ShowUploader[Display File Uploader]
+    ShowUploader --> WaitFile[Wait for File]
+    WaitFile --> Upload
+    
+    Upload -->|Yes| DetectType{File Type?}
+    
+    DetectType -->|CSV| ParseCSV[PapaParse<br/>Parse CSV]
+    DetectType -->|XLSX| ParseXLSX[XLSX.js<br/>Parse Excel]
+    
+    ParseCSV --> RawData[Raw JSON Data]
+    ParseXLSX --> RawData
+    
+    RawData --> Process[Data Processing]
+    
+    Process --> Validate[Validate Records<br/>- Filter zero distance<br/>- Check required fields]
+    Validate --> Transform[Transform Data<br/>- Parse dates<br/>- Convert types<br/>- Calculate efficiency]
+    Transform --> Enrich[Enrich Data<br/>- Add calculated fields<br/>- Generate IDs<br/>- Carbon calculations]
+    
+    Enrich --> CalcStats[Calculate Statistics<br/>- Total trips<br/>- Total distance<br/>- Efficiency metrics<br/>- Carbon savings]
+    
+    CalcStats --> UpdateState[Update React State]
+    
+    UpdateState --> RenderDash[Render Dashboard]
+    
+    RenderDash --> ShowStats[Display Stats Cards]
+    RenderDash --> ShowCharts[Display Charts View]
+    RenderDash --> ShowMap[Display Map View]
+    RenderDash --> ShowTable[Display Table View]
+    
+    ShowStats --> UserInteract{User Action?}
+    ShowCharts --> UserInteract
+    ShowMap --> UserInteract
+    ShowTable --> UserInteract
+    
+    UserInteract -->|Switch Tab| RenderDash
+    UserInteract -->|Sort/Filter| ShowTable
+    UserInteract -->|Select Trip| ShowMap
+    UserInteract -->|Upload New| Upload
+    UserInteract -->|Add Notes/Tags| ShowTable
+    UserInteract -->|Calculate Cost| ShowStats
+    
+    style Start fill:#4caf50
+    style Upload fill:#2196f3
+    style DetectType fill:#ff9800
+    style RenderDash fill:#9c27b0
 ```
 
 ## Data Model
