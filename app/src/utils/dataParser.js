@@ -1,6 +1,14 @@
 import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 
+// Constants for carbon calculations
+// Average ICE car fuel consumption (L/100km) -- US EPA average
+export const AVG_ICE_FUEL_CONSUMPTION = 8.9;
+// Gasoline produces ~2.31 kg CO2 per liter 
+export const CO2_PER_LITER_GASOLINE = 2.31;
+// One tree absorbs ~21kg CO2/year
+export const TREE_CO2_ABSORPTION_PER_YEAR = 21;
+
 export const parseCSV = (file) => {
     return new Promise((resolve, reject) => {
         Papa.parse(file, {
@@ -8,7 +16,27 @@ export const parseCSV = (file) => {
             dynamicTyping: true,
             skipEmptyLines: true,
             complete: (results) => {
-                resolve(processJourneyData(results.data));
+                // Optionally detect columns or allow mapping as a second argument
+                const defaultMapping = {
+                    distanceKm: 'Distance in KM',
+                    startDate: 'Start Date',
+                    endDate: 'End Date',
+                    startAddress: 'Start Address',
+                    endAddress: 'End Address',
+                    consumptionKwh: 'Consumption in Kwh',
+                    category: 'Category',
+                    startLat: 'Start Latitude',
+                    startLng: 'Start Longitude',
+                    endLat: 'End Latitude',
+                    endLng: 'End Longitude',
+                    startOdometer: 'Start Odometer',
+                    endOdometer: 'End Odometer',
+                    tripType: 'Trip Type',
+                    socSource: 'SOC Source',
+                    socDestination: 'SOC Destination',
+                    comments: 'Comments',
+                };
+                resolve(processJourneyData(results.data, defaultMapping));
             },
             error: (error) => {
                 reject(error);
@@ -56,39 +84,86 @@ export const parseXLSX = async (file) => {
             }
         });
 
-        return processJourneyData(jsonData);
+        // Provide the mapping for Excel
+        const defaultMapping = {
+            distanceKm: 'Distance in KM',
+            startDate: 'Start Date',
+            endDate: 'End Date',
+            startAddress: 'Start Address',
+            endAddress: 'End Address',
+            consumptionKwh: 'Consumption in Kwh',
+            category: 'Category',
+            startLat: 'Start Latitude',
+            startLng: 'Start Longitude',
+            endLat: 'End Latitude',
+            endLng: 'End Longitude',
+            startOdometer: 'Start Odometer',
+            endOdometer: 'End Odometer',
+            tripType: 'Trip Type',
+            socSource: 'SOC Source',
+            socDestination: 'SOC Destination',
+            comments: 'Comments',
+        };
+        return processJourneyData(jsonData, defaultMapping);
     } catch (error) {
         throw new Error(`Failed to parse Excel file: ${error.message}`);
     }
 };
 
-const processJourneyData = (rawData) => {
+const calculateEfficiency = (consumption, distance) => {
+    const d = parseFloat(distance);
+    const c = parseFloat(consumption);
+    if (d > 0) {
+        return ((c / d) * 100).toFixed(2);
+    }
+    return '0';
+};
+
+const processJourneyData = (rawData, mapping) => {
+    // Use provided mapping, fallback to defaults if not specified
+    const m = mapping || {
+        distanceKm: 'Distance in KM',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        startAddress: 'Start Address',
+        endAddress: 'End Address',
+        consumptionKwh: 'Consumption in Kwh',
+        category: 'Category',
+        startLat: 'Start Latitude',
+        startLng: 'Start Longitude',
+        endLat: 'End Latitude',
+        endLng: 'End Longitude',
+        startOdometer: 'Start Odometer',
+        endOdometer: 'End Odometer',
+        tripType: 'Trip Type',
+        socSource: 'SOC Source',
+        socDestination: 'SOC Destination',
+        comments: 'Comments',
+    };
     return rawData
-        .filter(row => row['Distance in KM'] > 0) // Filter out zero-distance entries
+        .filter(row => parseFloat(row[m.distanceKm]) > 0) // Filter out zero-distance entries
         .map((row, index) => ({
             id: index,
-            startDate: row['Start Date'],
-            endDate: row['End Date'],
-            startAddress: row['Start Address'],
-            endAddress: row['End Address'],
-            distanceKm: parseFloat(row['Distance in KM']) || 0,
-            consumptionKwh: parseFloat(row['Consumption in Kwh']) || 0,
-            category: row['Category'] || 'Uncategorized',
-            startLat: parseFloat(row['Start Latitude']) || 0,
-            startLng: parseFloat(row['Start Longitude']) || 0,
-            endLat: parseFloat(row['End Latitude']) || 0,
-            endLng: parseFloat(row['End Longitude']) || 0,
-            startOdometer: parseInt(row['Start Odometer']) || 0,
-            endOdometer: parseInt(row['End Odometer']) || 0,
-            tripType: row['Trip Type'] || 'SINGLE',
-            socSource: parseInt(row['SOC Source']) || 0,
-            socDestination: parseInt(row['SOC Destination']) || 0,
-            comments: row['Comments'] || '',
+            startDate: row[m.startDate],
+            endDate: row[m.endDate],
+            startAddress: row[m.startAddress],
+            endAddress: row[m.endAddress],
+            distanceKm: parseFloat(row[m.distanceKm]) || 0,
+            consumptionKwh: parseFloat(row[m.consumptionKwh]) || 0,
+            category: row[m.category] || 'Uncategorized',
+            startLat: parseFloat(row[m.startLat]) || 0,
+            startLng: parseFloat(row[m.startLng]) || 0,
+            endLat: parseFloat(row[m.endLat]) || 0,
+            endLng: parseFloat(row[m.endLng]) || 0,
+            startOdometer: parseInt(row[m.startOdometer]) || 0,
+            endOdometer: parseInt(row[m.endOdometer]) || 0,
+            tripType: row[m.tripType] || 'SINGLE',
+            socSource: parseInt(row[m.socSource]) || 0,
+            socDestination: parseInt(row[m.socDestination]) || 0,
+            comments: row[m.comments] || '',
             // Calculated fields
-            efficiency: parseFloat(row['Distance in KM']) > 0
-                ? (parseFloat(row['Consumption in Kwh']) / parseFloat(row['Distance in KM']) * 100).toFixed(2)
-                : 0,
-            socDrop: (parseInt(row['SOC Source']) || 0) - (parseInt(row['SOC Destination']) || 0),
+            efficiency: calculateEfficiency(row[m.consumptionKwh], row[m.distanceKm]),
+            socDrop: (parseInt(row[m.socSource]) || 0) - (parseInt(row[m.socDestination]) || 0),
         }));
 };
 
@@ -97,7 +172,7 @@ export const calculateStatistics = (data) => {
 
     const totalDistance = data.reduce((sum, trip) => sum + trip.distanceKm, 0);
     const totalConsumption = data.reduce((sum, trip) => sum + trip.consumptionKwh, 0);
-    const avgEfficiency = totalDistance > 0 ? (totalConsumption / totalDistance * 100) : 0;
+    const avgEfficiency = calculateEfficiency(totalConsumption, totalDistance);
 
     const efficiencies = data
         .filter(trip => trip.efficiency > 0)
@@ -106,22 +181,32 @@ export const calculateStatistics = (data) => {
     // Carbon savings calculation
     // Average ICE car: 8.9 L/100km (US EPA average)
     // Gas produces ~2.31 kg CO2 per liter
-    const avgIceFuelConsumption = 8.9; // L/100km
-    const co2PerLiter = 2.31; // kg
-    const gasConsumed = (totalDistance / 100) * avgIceFuelConsumption; // liters
-    const co2Saved = gasConsumed * co2PerLiter; // kg
-    const treesEquivalent = co2Saved / 21; // One tree absorbs ~21kg CO2/year
+    const gasConsumed = (totalDistance / 100) * AVG_ICE_FUEL_CONSUMPTION; // liters
+    const co2Saved = gasConsumed * CO2_PER_LITER_GASOLINE; // kg
+    const treesEquivalent = co2Saved / TREE_CO2_ABSORPTION_PER_YEAR; // One tree absorbs ~21kg CO2/year
 
     return {
         totalTrips: data.length,
         totalDistance: totalDistance.toFixed(2),
         totalConsumption: totalConsumption.toFixed(2),
-        avgEfficiency: avgEfficiency.toFixed(2),
+        avgEfficiency: avgEfficiency,
         bestEfficiency: efficiencies.length > 0 ? Math.min(...efficiencies).toFixed(2) : 0,
         worstEfficiency: efficiencies.length > 0 ? Math.max(...efficiencies).toFixed(2) : 0,
         avgTripDistance: (totalDistance / data.length).toFixed(2),
-        odometerStart: Math.min(...data.map(t => t.startOdometer)),
-        odometerEnd: Math.max(...data.map(t => t.endOdometer)),
+        ...(() => {
+            // Find min startOdometer and max endOdometer in a single pass
+            const { minStart, maxEnd } = data.reduce(
+                (acc, t) => ({
+                    minStart: Math.min(acc.minStart, t.startOdometer),
+                    maxEnd: Math.max(acc.maxEnd, t.endOdometer),
+                }),
+                {
+                    minStart: data[0]?.startOdometer ?? 0,
+                    maxEnd: data[0]?.endOdometer ?? 0,
+                }
+            );
+            return { odometerStart: minStart, odometerEnd: maxEnd };
+        })(),
         carbonSaved: co2Saved.toFixed(2),
         treesEquivalent: treesEquivalent.toFixed(1),
         gasSaved: gasConsumed.toFixed(2),
