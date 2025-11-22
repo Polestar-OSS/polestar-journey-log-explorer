@@ -239,7 +239,7 @@ npm run deploy
 ### For Developers
 ```bash
 # Clone
-git clone https://github.com/kinncj/polestar-journey-log-explorer.git
+git clone https://github.com/polestar-oss/polestar-journey-log-explorer.git
 
 # Install
 cd polestar-journey-log-explorer/app

@@ -28,7 +28,7 @@ That's it! 🎉
 
 ```bash
 # Clone the repository
-git clone https://github.com/kinncj/polestar-journey-log-explorer.git
+git clone https://github.com/polestar-oss/polestar-journey-log-explorer.git
 cd polestar-journey-log-explorer
 
 # Install dependencies

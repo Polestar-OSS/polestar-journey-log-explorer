@@ -21,7 +21,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/kinncj/polestar-journey-log-explorer.git
+git clone https://github.com/polestar-oss/polestar-journey-log-explorer.git
 cd polestar-journey-log-explorer
 ```
 

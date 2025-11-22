@@ -120,7 +120,7 @@ Interactive Mermaid diagrams visualizing system components:
 
 ### I Want to Contribute
 1. Read the [Contributing Guide](./CONTRIBUTING.md)
-2. Browse [open issues](https://github.com/kinncj/polestar-journey-log-explorer/issues)
+2. Browse [open issues](https://github.com/polestar-oss/polestar-journey-log-explorer/issues)
 3. Fork, develop, and submit a pull request!
 
 ---
@@ -196,11 +196,11 @@ All documentation follows these principles:
 ## 📞 Support & Community
 
 ### Get Help
-- **Issues**: [Report bugs or request features](https://github.com/kinncj/polestar-journey-log-explorer/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/kinncj/polestar-journey-log-explorer/discussions)
+- **Issues**: [Report bugs or request features](https://github.com/polestar-oss/polestar-journey-log-explorer/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/polestar-oss/polestar-journey-log-explorer/discussions)
 
 ### Stay Updated
-- **Repository**: [github.com/kinncj/polestar-journey-log-explorer](https://github.com/kinncj/polestar-journey-log-explorer)
+- **Repository**: [github.com/polestar-oss/polestar-journey-log-explorer](https://github.com/polestar-oss/polestar-journey-log-explorer)
 - **Live Demo**: [kinncj.github.io/polestar-journey-log-explorer](https://kinncj.github.io/polestar-journey-log-explorer/)
 
 ---
