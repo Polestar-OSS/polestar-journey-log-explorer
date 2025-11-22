@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Button, Grid, Stack, Tabs, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconArrowLeft, IconChartBar, IconMap, IconList, IconDownload, IconHelp } from '@tabler/icons-react';
+import { IconArrowLeft, IconChartBar, IconMap, IconList, IconDownload, IconHelp, IconBook } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import StatsCards from './stats/StatsCards';
 import ChartsView from './charts/ChartsView';
 import MapView from './map/MapView';
 import TableView from './table/TableView';
+import DataGuide from './DataGuide';
 import Filters from './filters/Filters';
 import { calculateStatistics } from '../utils/dataParser';
 import { TableExporter } from '../services/table/TableDataProcessor';
@@ -99,6 +100,9 @@ function Dashboard({ data, onReset }) {
           <Tabs.Tab value="table" leftSection={<IconList size={16} />}>
             Data Table
           </Tabs.Tab>
+          <Tabs.Tab value="guide" leftSection={<IconBook size={16} />}>
+            Understand your data
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="overview" pt="md">
@@ -111,6 +115,10 @@ function Dashboard({ data, onReset }) {
 
         <Tabs.Panel value="table" pt="md">
           <TableView data={filteredData} />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="guide" pt="md">
+          <DataGuide />
         </Tabs.Panel>
       </Tabs>
 
