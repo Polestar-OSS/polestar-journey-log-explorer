@@ -1,21 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Modal, TextInput, Textarea, Button, Group, MultiSelect, Stack } from '@mantine/core';
+import { useState } from 'react';
+import { Modal, Textarea, Button, Group, MultiSelect, Stack } from '@mantine/core';
 import { IconTag, IconNote } from '@tabler/icons-react';
-import { getTripAnnotation, saveTripAnnotation, getAllTags } from '../utils/tripAnnotations';
+import { saveTripAnnotation, getAllTags } from '../utils/tripAnnotations';
 
 function TripNotesModal({ opened, onClose, trip, tripId, onSave }) {
   const [notes, setNotes] = useState('');
   const [tags, setTags] = useState([]);
-  const [availableTags, setAvailableTags] = useState([]);
-
-  useEffect(() => {
-    if (opened && tripId) {
-      const annotation = getTripAnnotation(tripId);
-      setNotes(annotation.notes || '');
-      setTags(annotation.tags || []);
-      setAvailableTags(getAllTags());
-    }
-  }, [opened, tripId]);
+  const [availableTags, setAvailableTags] = useState(getAllTags());
 
   const handleSave = () => {
     saveTripAnnotation(tripId, { notes, tags });

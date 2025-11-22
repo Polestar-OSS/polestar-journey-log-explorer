@@ -1,4 +1,4 @@
-import { Modal, Text, Stack, List, Anchor, Badge, Divider, Button, Group } from '@mantine/core';
+import { Modal, Text, Stack, List, Anchor, Divider, Button, Group } from '@mantine/core';
 import { IconExternalLink, IconInfoCircle } from '@tabler/icons-react';
 
 function HelpModal({ opened, onClose }) {

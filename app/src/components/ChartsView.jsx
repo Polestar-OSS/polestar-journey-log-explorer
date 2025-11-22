@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
-import { Paper, Title, Grid, Text } from '@mantine/core';
+import { Paper, Title, Grid } from '@mantine/core';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import dayjs from 'dayjs';
 
 function ChartsView({ data }) {
   const chartData = useMemo(() => {

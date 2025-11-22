@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Paper, Text, Group, Button, Stack, Image, useMantineColorScheme, ActionIcon, Tooltip } from '@mantine/core';
+import { Paper, Text, Group, Stack, Image, useMantineColorScheme, ActionIcon, Tooltip } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 import { IconUpload, IconFile, IconX, IconHelp } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';

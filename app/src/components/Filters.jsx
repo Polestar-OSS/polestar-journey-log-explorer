@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { Paper, Group, Select, NumberInput, Button, Stack, Collapse, Text, Badge, MultiSelect } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { IconFilter, IconX, IconChevronDown, IconChevronUp, IconCalendar, IconTag } from '@tabler/icons-react';
-import dayjs from 'dayjs';
 import { getAllTags, generateTripId, getTripAnnotation } from '../utils/tripAnnotations';
 
 function Filters({ data, onFilterChange }) {
@@ -21,6 +20,7 @@ function Filters({ data, onFilterChange }) {
   });
 
   // Calculate available date range and values
+  // eslint-disable-next-line no-unused-vars
   const { dateRange, categories, stats } = useMemo(() => {
     if (!data || data.length === 0) return { dateRange: { min: null, max: null }, categories: [], stats: {} };
 

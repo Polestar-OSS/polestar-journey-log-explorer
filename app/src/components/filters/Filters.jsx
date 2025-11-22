@@ -21,7 +21,7 @@ function Filters({ data, onFilterChange }) {
     [data, metadataService]
   );
 
-  const { dateRange, categories, ranges: stats } = metadata;
+  const { categories, ranges: stats } = metadata;
 
   const categoryOptions = useMemo(() => 
     categories.map(cat => ({ value: cat, label: cat })),

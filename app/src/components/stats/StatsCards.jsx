@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Paper, SimpleGrid, Text, Group, ThemeIcon, ActionIcon, Tooltip } from '@mantine/core';
 import { 
   IconRoute, 
@@ -12,7 +12,6 @@ import {
   IconCurrencyDollar
 } from '@tabler/icons-react';
 import CostCalculatorModal from '../CostCalculatorModal';
-import { StatisticsCalculator } from '../../services/stats/StatisticsCalculator';
 
 function StatCard({ title, value, unit, icon: Icon, color }) {
   return (

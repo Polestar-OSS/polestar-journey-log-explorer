@@ -167,6 +167,7 @@ export class FilterService {
      * @param {Array} tags - Tags to filter by
      * @returns {Array} Filtered data
      */
+    /* eslint-disable no-unused-vars */
     filterByTags(data, tags) {
         // This would require integration with the trip annotations utility
         // For now, return data as-is

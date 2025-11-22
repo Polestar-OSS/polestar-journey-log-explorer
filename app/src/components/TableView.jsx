@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { Paper, Table, TextInput, Select, Badge, ScrollArea, Text, ActionIcon, Tooltip, Group } from '@mantine/core';
 import { IconSearch, IconNote, IconTag } from '@tabler/icons-react';
 import TripNotesModal from './TripNotesModal';
@@ -11,7 +11,6 @@ function TableView({ data }) {
   const [modalOpened, setModalOpened] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [selectedTripId, setSelectedTripId] = useState(null);
-  const [annotationsRefresh, setAnnotationsRefresh] = useState(0);
 
   const filteredAndSortedData = useMemo(() => {
     let filtered = data.filter(trip => 
@@ -57,7 +56,7 @@ function TableView({ data }) {
   };
 
   const handleSaveAnnotation = () => {
-    setAnnotationsRefresh(prev => prev + 1);
+    // Refresh handled by modal close
   };
 
   const rows = filteredAndSortedData.map((trip) => {

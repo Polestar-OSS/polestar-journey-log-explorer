@@ -1,15 +1,10 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
-import { Paper, Select, Text, Badge, Group, Stack, Switch } from '@mantine/core';
+import { Paper, Select, Text, Group, Stack, Switch } from '@mantine/core';
 import { TileLayerFactory } from '../../strategies/map/LayerStrategy';
 import { MarkerFactory } from '../../strategies/map/MarkerStrategy';
 import { ColorCalculator } from '../../services/map/ColorCalculator';
 import { FeatureBuilder } from '../../services/map/FeatureBuilder';
 import { MapService } from '../../services/map/MapService';
-import { Feature } from 'ol';
-import { Point, LineString } from 'ol/geom';
-import { fromLonLat } from 'ol/proj';
-import VectorLayer from 'ol/layer/Vector';
-import VectorSource from 'ol/source/Vector';
 import 'ol/ol.css';
 
 function MapView({ data }) {
@@ -85,6 +80,7 @@ function MapView({ data }) {
     { value: 'ALL', label: `All trips (${allTrips.length})` },
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const displayTrips = selectedTrip !== null 
     ? [allTrips[parseInt(selectedTrip)]] 
     : (tripsToShow === 'ALL' ? allTrips : allTrips.slice(0, parseInt(tripsToShow)));
@@ -103,7 +99,7 @@ function MapView({ data }) {
         mapServiceRef.current = null;
       }
     };
-  }, []);
+  }, [center, featureBuilder, markerFactory, selectedTileLayer, tileLayerFactory]);
 
   // Handle tile layer changes
   useEffect(() => {
@@ -146,7 +142,7 @@ function MapView({ data }) {
 
     // Add day connection lines if enabled
     if (linkTripsByDay) {
-      Object.entries(tripsByDay).forEach(([day, trips], dayIdx) => {
+      Object.entries(tripsByDay).forEach(([_day, trips], dayIdx) => {
         trips.forEach((trip, idx) => {
           if (idx < trips.length - 1) {
             const nextTrip = trips[idx + 1];
@@ -160,7 +156,7 @@ function MapView({ data }) {
     // Update map view and features
     mapServiceRef.current.updateView(center, selectedTrip !== null ? 12 : 11);
     mapServiceRef.current.updateFeatures(features, heatmapFeatures);
-  }, [displayTrips, linkTripsByDay, center, selectedTrip, tripsByDay, showMarkers]);
+  }, [displayTrips, linkTripsByDay, center, selectedTrip, tripsByDay, showMarkers, featureBuilder, markerFactory]);
 
   return (
     <Stack gap="md">

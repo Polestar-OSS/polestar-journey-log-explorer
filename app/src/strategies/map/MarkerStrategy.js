@@ -8,6 +8,7 @@ import { fromLonLat } from 'ol/proj';
  * Single Responsibility: Each strategy handles one type of marker creation
  */
 export class MarkerStrategy {
+    /* eslint-disable no-unused-vars */
     createMarker(trip, type, index) {
         throw new Error('createMarker must be implemented by subclass');
     }
