@@ -19,6 +19,8 @@ on:
 jobs:
     eslint:
         name: Run ESLint
+        permissions:
+            contents: read
         runs-on: ubuntu-latest
 
         steps:
