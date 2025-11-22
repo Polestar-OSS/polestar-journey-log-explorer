@@ -8,8 +8,15 @@ import { fromLonLat } from 'ol/proj';
  * Single Responsibility: Each strategy handles one type of marker creation
  */
 export class MarkerStrategy {
-    /* eslint-disable no-unused-vars */
-    createMarker(trip, type, index) {
+    /**
+     * Abstract method for creating a marker.
+     * The parameters are intentionally unused in this base class, but their inclusion enforces
+     * a consistent interface for subclasses implementing Strategy Pattern.
+     * @param {*} _trip - Trip data object for marker generation.
+     * @param {*} _type - Type of marker to create.
+     * @param {*} _index - Index of the marker in the sequence.
+     */
+    createMarker(_trip, _type, _index) {
         throw new Error('createMarker must be implemented by subclass');
     }
 }
@@ -30,12 +37,7 @@ export class StartMarkerStrategy extends MarkerStrategy {
                 anchor: [0.5, 1],
                 anchorXUnits: 'fraction',
                 anchorYUnits: 'fraction',
-                src: 'data:image/svg+xml;base64,' + btoa(`
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
-            <path fill="#2196F3" stroke="white" stroke-width="2" d="M16,2 C8.82,2 3,7.82 3,15 C3,24 16,40 16,40 C16,40 29,24 29,15 C29,7.82 23.18,2 16,2 Z"/>
-            <circle cx="16" cy="15" r="5" fill="white"/>
-          </svg>
-        `),
+                src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MiIgdmlld0JveD0iMCAwIDMyIDQyIj4KICA8cGF0aCBmaWxsPSIjMjE5NkYzIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xNiwyIEM4LjgyLDIgMyw3LjgyIDMsMTUgQzMsMjQgMTYsNDAgMTYsNDAgQzE2LDQwIDI5LDI0IDI5LDE1IEMyOSw3LjgyIDIzLjE4LDIgMTYsMiBaIi8+CiAgPGNpcmNsZSBjeD0iMTYiIGN5PSIxNSIgcj0iNSIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==',
                 scale: 0.8
             }),
             zIndex: 1000 + index
@@ -49,14 +51,44 @@ export class StartMarkerStrategy extends MarkerStrategy {
  * Concrete Strategy: Creates end markers (efficiency-colored pins)
  */
 export class EndMarkerStrategy extends MarkerStrategy {
+    // Sanitizer for individual RGB channel values
+    static sanitizeRgbComponent(value) {
+        const num = Number(value);
+        if (isNaN(num)) return 0;
+        return Math.max(0, Math.min(255, Math.floor(num)));
+    }
+
     constructor(colorCalculator) {
         super();
         this.colorCalculator = colorCalculator;
     }
 
     createMarker(trip, type, index) {
-        const color = this.colorCalculator.getEfficiencyColor(trip.efficiency);
-        const markerColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+        if (typeof trip.efficiency !== 'number' || isNaN(trip.efficiency)) {
+            throw new Error('Trip efficiency is required and must be a valid number');
+        }
+        let color = this.colorCalculator.getEfficiencyColor(trip.efficiency);
+        color = [
+            EndMarkerStrategy.sanitizeRgbComponent(color[0]),
+            EndMarkerStrategy.sanitizeRgbComponent(color[1]),
+            EndMarkerStrategy.sanitizeRgbComponent(color[2])
+        ];
+        // Validate that color is a safe RGB array
+        let safeColor = [0, 0, 255]; // default to blue if invalid
+        if (
+            Array.isArray(color) &&
+            color.length === 3 &&
+            color.every(
+                (c) =>
+                    typeof c === 'number' &&
+                    Number.isInteger(c) &&
+                    c >= 0 &&
+                    c <= 255
+            )
+        ) {
+            safeColor = color;
+        }
+        const markerColor = `rgb(${safeColor[0]}, ${safeColor[1]}, ${safeColor[2]})`;
 
         const marker = new Feature({
             geometry: new Point(fromLonLat([trip.endLng, trip.endLat])),
