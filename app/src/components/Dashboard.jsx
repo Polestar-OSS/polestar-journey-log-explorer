@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Button, Grid, Stack, Tabs, Group, ActionIcon, Tooltip } from '@mantine/core';
+import { Button, Stack, Tabs, Group, ActionIcon, Tooltip } from '@mantine/core';
 import { IconArrowLeft, IconChartBar, IconMap, IconList, IconDownload, IconHelp, IconBook } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import StatsCards from './stats/StatsCards';
