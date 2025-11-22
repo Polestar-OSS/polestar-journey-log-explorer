@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Paper, Text, Group, Button, Stack, Image, useMantineColorScheme } from '@mantine/core';
+import { Paper, Text, Group, Button, Stack, Image, useMantineColorScheme, ActionIcon, Tooltip } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
-import { IconUpload, IconFile, IconX } from '@tabler/icons-react';
+import { IconUpload, IconFile, IconX, IconHelp } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { parseCSV, parseXLSX } from '../utils/dataParser';
+import HelpModal from './HelpModal';
 
 function FileUploader({ onDataLoaded }) {
   const [loading, setLoading] = useState(false);
+  const [helpOpened, setHelpOpened] = useState(false);
   const { colorScheme } = useMantineColorScheme();
 
   const handleFileDrop = async (files) => {
@@ -62,9 +64,20 @@ function FileUploader({ onDataLoaded }) {
           style={{ margin: '0 auto' }}
           mb="xl"
         />
-        <Text size="xl" fw={700} mb="sm">
-          Upload Your Journey Log
-        </Text>
+        <Group justify="center" gap="xs" mb="sm">
+          <Text size="xl" fw={700}>
+            Upload Your Journey Log
+          </Text>
+          <Tooltip label="How to get your journey data">
+            <ActionIcon 
+              variant="subtle" 
+              size="lg"
+              onClick={() => setHelpOpened(true)}
+            >
+              <IconHelp size={20} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
         <Text size="sm" c="dimmed" mb="xl">
           Upload a CSV or XLSX file containing your Polestar journey data to get started
         </Text>
@@ -111,6 +124,8 @@ function FileUploader({ onDataLoaded }) {
           Consumption in Kwh, Start Address, End Address, Start/End Latitude/Longitude, etc.
         </Text>
       </Paper>
+
+      <HelpModal opened={helpOpened} onClose={() => setHelpOpened(false)} />
     </Stack>
   );
 }

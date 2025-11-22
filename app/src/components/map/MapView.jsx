@@ -1,10 +1,10 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { Paper, Select, Text, Badge, Group, Stack, Switch } from '@mantine/core';
-import { TileLayerFactory } from '../strategies/LayerStrategy';
-import { MarkerFactory } from '../strategies/MarkerStrategy';
-import { ColorCalculator } from '../services/ColorCalculator';
-import { FeatureBuilder } from '../services/FeatureBuilder';
-import { MapService } from '../services/MapService';
+import { TileLayerFactory } from '../../strategies/map/LayerStrategy';
+import { MarkerFactory } from '../../strategies/map/MarkerStrategy';
+import { ColorCalculator } from '../../services/map/ColorCalculator';
+import { FeatureBuilder } from '../../services/map/FeatureBuilder';
+import { MapService } from '../../services/map/MapService';
 import { Feature } from 'ol';
 import { Point, LineString } from 'ol/geom';
 import { fromLonLat } from 'ol/proj';

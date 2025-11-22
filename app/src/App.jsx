@@ -76,7 +76,7 @@ function App() {
               </Group>
               <Group gap="md">
                 <Anchor
-                  href="https://github.com/kinncj/polestar-journey-log-explorer"
+                  href="https://github.com/Polestar-OSS/polestar-journey-log-explorer"
                   target="_blank"
                   c="dimmed"
                   size="sm"
@@ -87,7 +87,7 @@ function App() {
                   </Group>
                 </Anchor>
                 <Anchor
-                  href="https://github.com/kinncj/polestar-journey-log-explorer/blob/main/LICENSE"
+                  href="https://github.com/Polestar-OSS/polestar-journey-log-explorer/blob/main/LICENSE"
                   target="_blank"
                   c="dimmed"
                   size="sm"

@@ -1,17 +1,23 @@
 import { useMemo, useState } from 'react';
-import { Button, Grid, Stack, Tabs, Group } from '@mantine/core';
-import { IconArrowLeft, IconChartBar, IconMap, IconList, IconDownload } from '@tabler/icons-react';
+import { Button, Grid, Stack, Tabs, Group, ActionIcon, Tooltip } from '@mantine/core';
+import { IconArrowLeft, IconChartBar, IconMap, IconList, IconDownload, IconHelp } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import StatsCards from './StatsCards';
-import ChartsView from './ChartsView';
-import MapView from './MapView';
-import TableView from './TableView';
-import Filters from './Filters';
+import StatsCards from './stats/StatsCards';
+import ChartsView from './charts/ChartsView';
+import MapView from './map/MapView';
+import TableView from './table/TableView';
+import Filters from './filters/Filters';
 import { calculateStatistics } from '../utils/dataParser';
+import { TableExporter } from '../services/table/TableDataProcessor';
+import HelpModal from './HelpModal';
 
 function Dashboard({ data, onReset }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [filteredData, setFilteredData] = useState(data);
+  const [helpOpened, setHelpOpened] = useState(false);
+  
+  // Initialize services
+  const tableExporter = useMemo(() => new TableExporter(), []);
   
   const statistics = useMemo(() => calculateStatistics(filteredData), [filteredData]);
 
@@ -20,43 +26,26 @@ function Dashboard({ data, onReset }) {
   };
 
   const exportToCSV = () => {
-    const headers = [
-      'Start Date', 'End Date', 'Start Address', 'End Address',
-      'Distance (km)', 'Consumption (kWh)', 'Efficiency (kWh/100km)',
-      'Category', 'SOC Start', 'SOC End', 'SOC Drop',
-      'Start Odometer', 'End Odometer'
+    const columns = [
+      { key: 'startDate', label: 'Start Date' },
+      { key: 'endDate', label: 'End Date' },
+      { key: 'startAddress', label: 'Start Address' },
+      { key: 'endAddress', label: 'End Address' },
+      { key: 'distanceKm', label: 'Distance (km)' },
+      { key: 'consumptionKwh', label: 'Consumption (kWh)' },
+      { key: 'efficiency', label: 'Efficiency (kWh/100km)' },
+      { key: 'category', label: 'Category' },
+      { key: 'socSource', label: 'SOC Start' },
+      { key: 'socDestination', label: 'SOC End' },
+      { key: 'socDrop', label: 'SOC Drop' },
+      { key: 'startOdometer', label: 'Start Odometer' },
+      { key: 'endOdometer', label: 'End Odometer' },
     ];
 
-    const rows = filteredData.map(trip => [
-      trip.startDate,
-      trip.endDate,
-      trip.startAddress,
-      trip.endAddress,
-      trip.distanceKm,
-      trip.consumptionKwh,
-      trip.efficiency,
-      trip.category,
-      trip.socSource,
-      trip.socDestination,
-      trip.socDrop,
-      trip.startOdometer,
-      trip.endOdometer
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `polestar-journey-export-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = tableExporter.exportToCSV(filteredData, columns);
+    const filename = `polestar-journey-export-${new Date().toISOString().split('T')[0]}.csv`;
+    
+    tableExporter.downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
 
     notifications.show({
       title: 'Export successful',
@@ -75,13 +64,24 @@ function Dashboard({ data, onReset }) {
         >
           Upload New File
         </Button>
-        <Button
-          leftSection={<IconDownload size={16} />}
-          variant="light"
-          onClick={exportToCSV}
-        >
-          Export to CSV ({filteredData.length} trips)
-        </Button>
+        <Group gap="xs">
+          <Button
+            leftSection={<IconDownload size={16} />}
+            variant="light"
+            onClick={exportToCSV}
+          >
+            Export to CSV ({filteredData.length} trips)
+          </Button>
+          <Tooltip label="How to get your journey data">
+            <ActionIcon 
+              variant="light" 
+              size="lg"
+              onClick={() => setHelpOpened(true)}
+            >
+              <IconHelp size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
       </Group>
 
       <Filters data={data} onFilterChange={handleFilterChange} />
@@ -113,6 +113,8 @@ function Dashboard({ data, onReset }) {
           <TableView data={filteredData} />
         </Tabs.Panel>
       </Tabs>
+
+      <HelpModal opened={helpOpened} onClose={() => setHelpOpened(false)} />
     </Stack>
   );
 }
