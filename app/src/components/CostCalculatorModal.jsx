@@ -1,13 +1,15 @@
-import { Modal, Stack, NumberInput, Select, Text, Group, Button, Divider, Paper, SimpleGrid, Autocomplete, Loader } from '@mantine/core';
+import { Modal, Stack, NumberInput, Select, Text, Group, Button, Divider, Paper, SimpleGrid, Loader, TextInput, Combobox, useCombobox, ScrollArea } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { IconCurrencyDollar, IconBolt, IconHome, IconMapPin } from '@tabler/icons-react';
 
 function CostCalculatorModal({ opened, onClose, statistics }) {
+  const combobox = useCombobox();
   const [electricityRate, setElectricityRate] = useState(0.13);
   const [currency, setCurrency] = useState('USD');
   const [homeChargingPercent, setHomeChargingPercent] = useState(80);
   const [citySearch, setCitySearch] = useState('');
   const [cityOptions, setCityOptions] = useState([]);
+  const [cityData, setCityData] = useState([]); // Store full city data with country info
   const [loadingCities, setLoadingCities] = useState(false);
 
   // Global electricity rates by country (USD per kWh, approximate 2025 rates)
@@ -56,6 +58,7 @@ function CostCalculatorModal({ opened, onClose, statistics }) {
   useEffect(() => {
     if (citySearch.length < 3) {
       setCityOptions([]);
+      setCityData([]);
       return;
     }
 
@@ -73,15 +76,24 @@ function CostCalculatorModal({ opened, onClose, statistics }) {
           }
         );
         const data = await response.json();
-        const options = data.map(place => ({
-          value: place.display_name,
+        
+        console.log('Fetched cities:', data); // Debug log
+        
+        // Store city data with country info
+        const cityDataWithCountry = data.map(place => ({
+          displayName: place.display_name,
           country: place.address?.country,
-          label: place.display_name,
         }));
+        setCityData(cityDataWithCountry);
+        
+        // Options for autocomplete (just display names)
+        const options = data.map(place => place.display_name);
+        console.log('City options:', options); // Debug log
         setCityOptions(options);
       } catch (error) {
         console.error('Error fetching cities:', error);
         setCityOptions([]);
+        setCityData([]);
       } finally {
         setLoadingCities(false);
       }
@@ -92,7 +104,7 @@ function CostCalculatorModal({ opened, onClose, statistics }) {
 
   const handleCitySelect = (value) => {
     setCitySearch(value);
-    const selectedCity = cityOptions.find(opt => opt.value === value);
+    const selectedCity = cityData.find(city => city.displayName === value);
     if (selectedCity?.country) {
       const countryRate = electricityRatesByCountry[selectedCity.country];
       if (countryRate) {
@@ -153,18 +165,51 @@ function CostCalculatorModal({ opened, onClose, statistics }) {
           Estimate your charging costs based on your electricity rates and charging habits.
         </Text>
 
-        <Autocomplete
-          label="City or Location (Optional)"
-          description="Search for your city to auto-fill electricity rates"
-          placeholder="Type your city name..."
-          leftSection={<IconMapPin size={16} />}
-          rightSection={loadingCities ? <Loader size={16} /> : null}
-          data={cityOptions.map(opt => opt.value)}
-          value={citySearch}
-          onChange={setCitySearch}
-          onOptionSubmit={handleCitySelect}
-          limit={5}
-        />
+        <Combobox
+          store={combobox}
+          onOptionSubmit={(value) => {
+            handleCitySelect(value);
+            combobox.closeDropdown();
+          }}
+          zIndex={999999999999999}
+        >
+          <Combobox.Target>
+            <TextInput
+              label="City or Location (Optional)"
+              description="Search for your city to auto-fill electricity rates"
+              placeholder="Type your city name..."
+              leftSection={<IconMapPin size={16} />}
+              rightSection={loadingCities ? <Loader size={16} /> : null}
+              value={citySearch}
+              onChange={(event) => {
+                setCitySearch(event.currentTarget.value);
+                combobox.openDropdown();
+                combobox.updateSelectedOptionIndex();
+              }}
+              onClick={() => combobox.openDropdown()}
+              onFocus={() => combobox.openDropdown()}
+              onBlur={() => combobox.closeDropdown()}
+            />
+          </Combobox.Target>
+
+          <Combobox.Dropdown>
+            <Combobox.Options>
+              <ScrollArea.Autosize mah={200} type="scroll">
+                {cityOptions.length > 0 ? (
+                  cityOptions.map((city) => (
+                    <Combobox.Option value={city} key={city}>
+                      {city}
+                    </Combobox.Option>
+                  ))
+                ) : (
+                  <Combobox.Empty>
+                    {citySearch.length >= 3 && !loadingCities ? 'No cities found' : 'Type to search...'}
+                  </Combobox.Empty>
+                )}
+              </ScrollArea.Autosize>
+            </Combobox.Options>
+          </Combobox.Dropdown>
+        </Combobox>
 
         <NumberInput
           label="Home Electricity Rate"

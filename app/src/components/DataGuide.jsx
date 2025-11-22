@@ -68,15 +68,15 @@ function DataGuide() {
                     <strong>Example:</strong> If you consumed 150 kWh over 750 km: (150 / 750) × 100 = 20 kWh/100km
                   </Text>
                 </Paper>
-                <Text size="xs" c="dimmed" mt="xs">
-                  <strong>What's considered efficient?</strong>
+                <div>
+                  <Text size="xs" c="dimmed" mt="xs" fw={600}>What's considered efficient?</Text>
                   <List size="xs" mt={4}>
                     <List.Item><Badge color="green" size="xs">Excellent</Badge> Below 17 kWh/100km</List.Item>
                     <List.Item><Badge color="blue" size="xs">Good</Badge> 17-20 kWh/100km</List.Item>
                     <List.Item><Badge color="yellow" size="xs">Average</Badge> 20-23 kWh/100km</List.Item>
                     <List.Item><Badge color="red" size="xs">High</Badge> Above 23 kWh/100km</List.Item>
                   </List>
-                </Text>
+                </div>
               </div>
 
               <Divider />
@@ -98,8 +98,8 @@ function DataGuide() {
                     <strong>Example:</strong> For 1,000 km traveled: 1,000 × 0.12 = 120 kg CO₂ saved
                   </Text>
                 </Paper>
-                <Text size="xs" c="dimmed" mt="xs">
-                  <strong>Assumptions:</strong>
+                <div>
+                  <Text size="xs" c="dimmed" mt="xs" fw={600}>Assumptions:</Text>
                   <List size="xs" mt={4}>
                     <List.Item>
                       Based on average ICE vehicle emissions of 120g CO₂/km (typical for mid-size sedans)
@@ -111,7 +111,7 @@ function DataGuide() {
                       Your actual environmental impact may vary based on your electricity source
                     </List.Item>
                   </List>
-                </Text>
+                </div>
               </div>
 
               <Divider />
@@ -133,14 +133,14 @@ function DataGuide() {
                     - Gasoline: $1.50/L{'\n'}
                     - ICE Efficiency: 8.5 L/100km
                   </Code>
-                  <Text size="xs" c="dimmed" mt="xs">
-                    <strong>Example:</strong> 150 kWh used over 750 km
+                  <div>
+                    <Text size="xs" c="dimmed" mt="xs" fw={600}>Example: 150 kWh used over 750 km</Text>
                     <List size="xs" mt={4}>
                       <List.Item>EV cost: 150 × $0.13 = $19.50</List.Item>
                       <List.Item>ICE cost: (750 / 100) × 8.5 × $1.50 = $95.63</List.Item>
                       <List.Item>Savings: $95.63 - $19.50 = $76.13</List.Item>
                     </List>
-                  </Text>
+                  </div>
                 </Paper>
               </div>
             </Stack>
