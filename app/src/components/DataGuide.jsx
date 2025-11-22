@@ -1,6 +1,19 @@
 import { Stack, Title, Text, Paper, Divider, List, Accordion, Badge, Code, Group } from '@mantine/core';
 import { IconChartBar, IconMap, IconCalculator, IconInfoCircle } from '@tabler/icons-react';
 
+// Reusable Paper with colored left border
+function BorderedPaper({ borderColor, style, ...props }) {
+  return (
+    <Paper
+      {...props}
+      style={{
+        borderLeft: `3px solid var(--mantine-color-${borderColor})`,
+        ...style
+      }}
+    />
+  );
+}
+
 function DataGuide() {
   return (
     <Stack gap="lg">
@@ -59,7 +72,7 @@ function DataGuide() {
                   Your average energy consumption expressed as kWh per 100 kilometers (kWh/100km). 
                   This is the key metric for understanding your vehicle's efficiency.
                 </Text>
-                <Paper p="sm" withBorder bg="gray.0" style={{ borderLeft: '3px solid var(--mantine-color-blue-6)' }}>
+                <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="blue-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
                     Average Efficiency = (Total Energy / Total Distance) × 100
@@ -67,7 +80,7 @@ function DataGuide() {
                   <Text size="xs" c="dimmed" mt="xs">
                     <strong>Example:</strong> If you consumed 150 kWh over 750 km: (150 / 750) × 100 = 20 kWh/100km
                   </Text>
-                </Paper>
+                </BorderedPaper>
                 <div>
                   <Text size="xs" c="dimmed" mt="xs" fw={600}>What's considered efficient?</Text>
                   <List size="xs" mt={4}>
@@ -87,7 +100,7 @@ function DataGuide() {
                   The estimated carbon dioxide emissions you avoided by driving an electric vehicle 
                   instead of a comparable internal combustion engine (ICE) vehicle.
                 </Text>
-                <Paper p="sm" withBorder bg="gray.0" style={{ borderLeft: '3px solid var(--mantine-color-green-6)' }}>
+                <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="green-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
                     CO₂ Saved = Total Distance (km) × ICE Emissions per km
@@ -97,7 +110,7 @@ function DataGuide() {
                   <Text size="xs" c="dimmed" mt="xs">
                     <strong>Example:</strong> For 1,000 km traveled: 1,000 × 0.12 = 120 kg CO₂ saved
                   </Text>
-                </Paper>
+                </BorderedPaper>
                 <div>
                   <Text size="xs" c="dimmed" mt="xs" fw={600}>Assumptions:</Text>
                   <List size="xs" mt={4}>
@@ -122,7 +135,7 @@ function DataGuide() {
                   An estimate of money saved by using electricity instead of gasoline, comparing 
                   your EV's energy costs to a comparable ICE vehicle's fuel costs.
                 </Text>
-                <Paper p="sm" withBorder bg="gray.0" style={{ borderLeft: '3px solid var(--mantine-color-teal-6)' }}>
+                <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="teal-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
                     EV Cost = Total Energy (kWh) × Electricity Rate{'\n'}
@@ -141,7 +154,7 @@ function DataGuide() {
                       <List.Item>Savings: $95.63 - $19.50 = $76.13</List.Item>
                     </List>
                   </div>
-                </Paper>
+                </BorderedPaper>
               </div>
             </Stack>
           </Accordion.Panel>
@@ -309,7 +322,7 @@ function DataGuide() {
                 <List size="sm">
                   <List.Item>
                     <span style={{ color: '#22c55e', fontWeight: 600 }}>■</span> <strong>Green</strong> 
-                    - Excellent efficiency (&lt;17 kWh/100km)
+                    {' - Excellent efficiency (<17 kWh/100km)'}
                   </List.Item>
                   <List.Item>
                     <span style={{ color: '#3b82f6', fontWeight: 600 }}>■</span> <strong>Blue</strong> 
@@ -321,7 +334,7 @@ function DataGuide() {
                   </List.Item>
                   <List.Item>
                     <span style={{ color: '#ef4444', fontWeight: 600 }}>■</span> <strong>Red</strong> 
-                    - High consumption (&gt;23 kWh/100km)
+                    {' - High consumption (>23 kWh/100km)'}
                   </List.Item>
                 </List>
               </div>

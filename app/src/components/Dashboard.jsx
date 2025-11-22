@@ -12,13 +12,30 @@ import { calculateStatistics } from '../utils/dataParser';
 import { TableExporter } from '../services/table/TableDataProcessor';
 import HelpModal from './HelpModal';
 
+// Columns to be used for CSV export and potentially other components.
+const COLUMNS = [
+  { key: 'startDate', label: 'Start Date' },
+  { key: 'endDate', label: 'End Date' },
+  { key: 'startAddress', label: 'Start Address' },
+  { key: 'endAddress', label: 'End Address' },
+  { key: 'distanceKm', label: 'Distance (km)' },
+  { key: 'consumptionKwh', label: 'Consumption (kWh)' },
+  { key: 'efficiency', label: 'Efficiency (kWh/100km)' },
+  { key: 'category', label: 'Category' },
+  { key: 'socSource', label: 'SOC Start' },
+  { key: 'socDestination', label: 'SOC End' },
+  { key: 'socDrop', label: 'SOC Drop' },
+  { key: 'startOdometer', label: 'Start Odometer' },
+  { key: 'endOdometer', label: 'End Odometer' },
+];
+
 function Dashboard({ data, onReset }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [filteredData, setFilteredData] = useState(data);
   const [helpOpened, setHelpOpened] = useState(false);
   
   // Initialize services
-  const tableExporter = useMemo(() => new TableExporter(), []);
+  const tableExporter = new TableExporter();
   
   const statistics = useMemo(() => calculateStatistics(filteredData), [filteredData]);
 
@@ -27,24 +44,10 @@ function Dashboard({ data, onReset }) {
   };
 
   const exportToCSV = () => {
-    const columns = [
-      { key: 'startDate', label: 'Start Date' },
-      { key: 'endDate', label: 'End Date' },
-      { key: 'startAddress', label: 'Start Address' },
-      { key: 'endAddress', label: 'End Address' },
-      { key: 'distanceKm', label: 'Distance (km)' },
-      { key: 'consumptionKwh', label: 'Consumption (kWh)' },
-      { key: 'efficiency', label: 'Efficiency (kWh/100km)' },
-      { key: 'category', label: 'Category' },
-      { key: 'socSource', label: 'SOC Start' },
-      { key: 'socDestination', label: 'SOC End' },
-      { key: 'socDrop', label: 'SOC Drop' },
-      { key: 'startOdometer', label: 'Start Odometer' },
-      { key: 'endOdometer', label: 'End Odometer' },
-    ];
+    const columns = COLUMNS;
 
     const csvContent = tableExporter.exportToCSV(filteredData, columns);
-    const filename = `polestar-journey-export-${new Date().toISOString().split('T')[0]}.csv`;
+    const filename = `polestar-journey-export-${new Date().toISOString().slice(0, 10)}.csv`;
     
     tableExporter.downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
 
