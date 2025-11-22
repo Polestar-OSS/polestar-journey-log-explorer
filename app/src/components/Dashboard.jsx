@@ -44,9 +44,7 @@ function Dashboard({ data, onReset }) {
   };
 
   const exportToCSV = () => {
-    const columns = COLUMNS;
-
-    const csvContent = tableExporter.exportToCSV(filteredData, columns);
+    const csvContent = tableExporter.exportToCSV(filteredData, COLUMNS);
     const filename = `polestar-journey-export-${new Date().toISOString().slice(0, 10)}.csv`;
     
     tableExporter.downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
