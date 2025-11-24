@@ -17,6 +17,30 @@ import {
 } from "recharts";
 import { ChartDataProcessor } from "../../services/charts/ChartDataProcessor";
 
+// Custom tick component with responsive font size using CSS
+const ResponsiveTick = ({ x, y, payload, ...props }) => {
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor={props.textAnchor || "middle"}
+      fill="#666"
+      className="recharts-tick"
+      style={{ fontSize: "10px" }}
+      {...props}
+    >
+      <style>{`
+        @media (min-width: 768px) {
+          .recharts-tick {
+            font-size: 12px;
+          }
+        }
+      `}</style>
+      {payload.value}
+    </text>
+  );
+};
+
 function ChartsView({ data }) {
   // Initialize service using useMemo (Dependency Injection)
   const chartDataProcessor = useMemo(() => new ChartDataProcessor(), []);
@@ -190,9 +214,9 @@ function ChartsView({ data }) {
                 angle={-45}
                 textAnchor="end"
                 height={80}
-                tick={{ fontSize: { base: 10, sm: 12 } }}
+                tick={<ResponsiveTick textAnchor="end" />}
               />
-              <YAxis tick={{ fontSize: { base: 10, sm: 12 } }} />
+              <YAxis tick={<ResponsiveTick />} />
               <Tooltip />
               <Bar dataKey="trips" fill="#be4bdb" name="Number of Trips" />
             </BarChart>
