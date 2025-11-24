@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Paper, Table, TextInput, Select, Badge, ScrollArea, Text, ActionIcon, Tooltip, Group } from '@mantine/core';
+import { Paper, Table, TextInput, Select, Badge, ScrollArea, Text, ActionIcon, Tooltip, Group, Stack } from '@mantine/core';
 import { IconSearch, IconNote, IconTag } from '@tabler/icons-react';
 import TripNotesModal from '../TripNotesModal';
 import { generateTripId, getTripAnnotation } from '../../utils/tripAnnotations';
@@ -103,46 +103,45 @@ function TableView({ data }) {
   });
 
   return (
-    <Paper p="md" withBorder>
-      <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+    <Paper p={{ base: 'xs', sm: 'md' }} withBorder>
+      <Stack gap="md" mb="md">
         <TextInput
           placeholder="Search by address or date..."
           leftSection={<IconSearch size={16} />}
           value={search}
           onChange={(e) => setSearch(e.currentTarget.value)}
-          style={{ flex: '1 1 300px' }}
         />
-        <Select
-          placeholder="Sort by"
-          value={sortBy}
-          onChange={setSortBy}
-          data={[
-            { value: 'startDate', label: 'Date' },
-            { value: 'distanceKm', label: 'Distance' },
-            { value: 'consumptionKwh', label: 'Consumption' },
-            { value: 'efficiency', label: 'Efficiency' },
-            { value: 'socDrop', label: 'SOC Drop' },
-          ]}
-          style={{ width: '150px' }}
-        />
-        <Select
-          placeholder="Order"
-          value={sortOrder}
-          onChange={setSortOrder}
-          data={[
-            { value: 'asc', label: 'Ascending' },
-            { value: 'desc', label: 'Descending' },
-          ]}
-          style={{ width: '130px' }}
-        />
-      </div>
+        <Group grow>
+          <Select
+            placeholder="Sort by"
+            value={sortBy}
+            onChange={setSortBy}
+            data={[
+              { value: 'startDate', label: 'Date' },
+              { value: 'distanceKm', label: 'Distance' },
+              { value: 'consumptionKwh', label: 'Consumption' },
+              { value: 'efficiency', label: 'Efficiency' },
+              { value: 'socDrop', label: 'SOC Drop' },
+            ]}
+          />
+          <Select
+            placeholder="Order"
+            value={sortOrder}
+            onChange={setSortOrder}
+            data={[
+              { value: 'asc', label: 'Ascending' },
+              { value: 'desc', label: 'Descending' },
+            ]}
+          />
+        </Group>
+      </Stack>
 
       <Text size="sm" c="dimmed" mb="sm">
         Showing {filteredAndSortedData.length} of {data.length} trips
       </Text>
 
       <ScrollArea>
-        <Table striped highlightOnHover>
+        <Table striped highlightOnHover style={{ minWidth: '800px' }}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Date</Table.Th>

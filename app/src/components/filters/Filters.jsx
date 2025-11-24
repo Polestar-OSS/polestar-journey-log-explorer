@@ -97,7 +97,7 @@ function Filters({ data, onFilterChange }) {
         <Collapse in={opened}>
           <Stack gap="md">
             <Text size="sm" fw={500} c="dimmed">Date Range</Text>
-            <Group grow>
+            <Stack gap="xs">
               <DatePickerInput
                 label="From Date"
                 placeholder="Select start date"
@@ -116,10 +116,10 @@ function Filters({ data, onFilterChange }) {
                 leftSection={<IconCalendar size={16} />}
                 minDate={filters.dateFrom || undefined}
               />
-            </Group>
+            </Stack>
 
             <Text size="sm" fw={500} c="dimmed" mt="xs">Distance (km)</Text>
-            <Group grow>
+            <Stack gap="xs">
               <NumberInput
                 label="Min Distance"
                 placeholder={`Min: ${stats.minDistance || 0}`}
@@ -138,10 +138,10 @@ function Filters({ data, onFilterChange }) {
                 max={stats.maxDistance}
                 allowNegative={false}
               />
-            </Group>
+            </Stack>
 
             <Text size="sm" fw={500} c="dimmed" mt="xs">Efficiency (kWh/100km)</Text>
-            <Group grow>
+            <Stack gap="xs">
               <NumberInput
                 label="Min Efficiency"
                 placeholder={`Min: ${stats.minEfficiency || 0}`}
@@ -162,10 +162,10 @@ function Filters({ data, onFilterChange }) {
                 allowNegative={false}
                 decimalScale={2}
               />
-            </Group>
+            </Stack>
 
             <Text size="sm" fw={500} c="dimmed" mt="xs">Battery SOC Drop (%)</Text>
-            <Group grow>
+            <Stack gap="xs">
               <NumberInput
                 label="Min SOC Drop"
                 placeholder={`Min: ${stats.minSocDrop || 0}`}
@@ -184,7 +184,7 @@ function Filters({ data, onFilterChange }) {
                 max={100}
                 allowNegative={false}
               />
-            </Group>
+            </Stack>
 
             {categories.length > 0 && (
               <>

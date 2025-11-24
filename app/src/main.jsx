@@ -8,6 +8,7 @@ import '@mantine/charts/styles.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/dropzone/styles.css';
 import '@mantine/dates/styles.css';
+import './mobile.css';
 
 const theme = createTheme({
   primaryColor: 'blue',
