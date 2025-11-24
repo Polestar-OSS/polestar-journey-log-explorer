@@ -1,32 +1,46 @@
-import { useState } from 'react';
-import { Paper, SimpleGrid, Text, Group, ThemeIcon, ActionIcon, Tooltip } from '@mantine/core';
-import { 
-  IconRoute, 
-  IconBolt, 
-  IconGasStation, 
+import { useState } from "react";
+import {
+  Paper,
+  SimpleGrid,
+  Text,
+  Group,
+  ThemeIcon,
+  ActionIcon,
+  Tooltip,
+} from "@mantine/core";
+import {
+  IconRoute,
+  IconBolt,
+  IconGasStation,
   IconTrendingUp,
   IconTrendingDown,
   IconRoad,
   IconLeaf,
   IconDroplet,
-  IconCurrencyDollar
-} from '@tabler/icons-react';
-import CostCalculatorModal from '../CostCalculatorModal';
+  IconCurrencyDollar,
+} from "@tabler/icons-react";
+import CostCalculatorModal from "../CostCalculatorModal";
 
 function StatCard({ title, value, unit, icon: Icon, color }) {
   return (
-    <Paper p="md" radius="md" withBorder>
-      <Group justify="apart">
-        <div>
+    <Paper p={{ base: "xs", sm: "md" }} radius="md" withBorder>
+      <Group justify="apart" wrap="nowrap">
+        <div style={{ minWidth: 0, flex: 1 }}>
           <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
             {title}
           </Text>
-          <Text size="xl" fw={700} mt="xs">
-            {value}{unit && <Text span size="sm" c="dimmed" fw={400}> {unit}</Text>}
+          <Text size="xl" fw={700} mt="xs" style={{ wordBreak: "break-word" }}>
+            {value}
+            {unit && (
+              <Text span size="sm" c="dimmed" fw={400}>
+                {" "}
+                {unit}
+              </Text>
+            )}
           </Text>
         </div>
-        <ThemeIcon size={44} radius="md" variant="light" color={color}>
-          <Icon size={26} stroke={1.5} />
+        <ThemeIcon size={40} radius="md" variant="light" color={color}>
+          <Icon size={23} stroke={1.5} />
         </ThemeIcon>
       </Group>
     </Paper>
@@ -53,7 +67,10 @@ function StatsCards({ statistics }) {
         </Tooltip>
       </Group>
 
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
+      <SimpleGrid
+        cols={{ base: 1, xs: 2, sm: 2, md: 3, lg: 4 }}
+        spacing={{ base: "xs", sm: "md" }}
+      >
         <StatCard
           title="Total Trips"
           value={statistics.totalTrips}

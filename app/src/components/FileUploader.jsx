@@ -1,10 +1,19 @@
-import { useState } from 'react';
-import { Paper, Text, Group, Stack, Image, useMantineColorScheme, ActionIcon, Tooltip } from '@mantine/core';
-import { Dropzone } from '@mantine/dropzone';
-import { IconUpload, IconFile, IconX, IconHelp } from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
-import { parseCSV, parseXLSX } from '../utils/dataParser';
-import HelpModal from './HelpModal';
+import { useState } from "react";
+import {
+  Paper,
+  Text,
+  Group,
+  Stack,
+  Image,
+  useMantineColorScheme,
+  ActionIcon,
+  Tooltip,
+} from "@mantine/core";
+import { Dropzone } from "@mantine/dropzone";
+import { IconUpload, IconFile, IconX, IconHelp } from "@tabler/icons-react";
+import { notifications } from "@mantine/notifications";
+import { parseCSV, parseXLSX } from "../utils/dataParser";
+import HelpModal from "./HelpModal";
 
 function FileUploader({ onDataLoaded }) {
   const [loading, setLoading] = useState(false);
@@ -21,31 +30,33 @@ function FileUploader({ onDataLoaded }) {
 
     try {
       let data;
-      
-      if (fileName.endsWith('.csv')) {
+
+      if (fileName.endsWith(".csv")) {
         data = await parseCSV(file);
-      } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+      } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
         data = await parseXLSX(file);
       } else {
-        throw new Error('Unsupported file format. Please upload a CSV or XLSX file.');
+        throw new Error(
+          "Unsupported file format. Please upload a CSV or XLSX file."
+        );
       }
 
       if (data.length === 0) {
-        throw new Error('No valid journey data found in the file.');
+        throw new Error("No valid journey data found in the file.");
       }
 
       notifications.show({
-        title: 'Success!',
+        title: "Success!",
         message: `Loaded ${data.length} journeys from ${file.name}`,
-        color: 'green',
+        color: "green",
       });
 
       onDataLoaded(data);
     } catch (error) {
       notifications.show({
-        title: 'Error',
-        message: error.message || 'Failed to parse file',
-        color: 'red',
+        title: "Error",
+        message: error.message || "Failed to parse file",
+        color: "red",
       });
     } finally {
       setLoading(false);
@@ -54,14 +65,17 @@ function FileUploader({ onDataLoaded }) {
 
   return (
     <Stack gap="xl" mt="xl">
-      <div style={{ textAlign: 'center' }}>
+      <div style={{ textAlign: "center" }}>
         <Image
-          src={colorScheme === 'dark' ? '/polestar-journey-log-explorer/logo-white.png' : '/polestar-journey-log-explorer/logo-black.png'}
+          src={
+            colorScheme === "dark"
+              ? "/polestar-journey-log-explorer/logo-white.png"
+              : "/polestar-journey-log-explorer/logo-black.png"
+          }
           alt="Polestar OSS Logo"
           h={120}
-          w="auto"
           fit="contain"
-          style={{ margin: '0 auto' }}
+          style={{ margin: "0 auto" }}
           mb="xl"
         />
         <Group justify="center" gap="xs" mb="sm">
@@ -69,8 +83,8 @@ function FileUploader({ onDataLoaded }) {
             Upload Your Journey Log
           </Text>
           <Tooltip label="How to get your journey data">
-            <ActionIcon 
-              variant="subtle" 
+            <ActionIcon
+              variant="subtle"
               size="lg"
               onClick={() => setHelpOpened(true)}
             >
@@ -79,7 +93,8 @@ function FileUploader({ onDataLoaded }) {
           </Tooltip>
         </Group>
         <Text size="sm" c="dimmed" mb="xl">
-          Upload a CSV or XLSX file containing your Polestar journey data to get started
+          Upload a CSV or XLSX file containing your Polestar journey data to get
+          started
         </Text>
       </div>
 
@@ -88,13 +103,17 @@ function FileUploader({ onDataLoaded }) {
           onDrop={handleFileDrop}
           loading={loading}
           accept={[
-            'text/csv',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            "text/csv",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           ]}
           maxFiles={1}
         >
-          <Group justify="center" gap="xl" style={{ minHeight: 200, pointerEvents: 'none' }}>
+          <Group
+            justify="center"
+            gap="xl"
+            style={{ minHeight: 200, pointerEvents: "none" }}
+          >
             <Dropzone.Accept>
               <IconUpload size={50} stroke={1.5} />
             </Dropzone.Accept>
@@ -118,10 +137,13 @@ function FileUploader({ onDataLoaded }) {
       </Paper>
 
       <Paper p="md" radius="md" withBorder>
-        <Text size="sm" fw={600} mb="xs">Expected file format:</Text>
+        <Text size="sm" fw={600} mb="xs">
+          Expected file format:
+        </Text>
         <Text size="xs" c="dimmed">
-          Your file should contain columns like: Start Date, End Date, Distance in KM, 
-          Consumption in Kwh, Start Address, End Address, Start/End Latitude/Longitude, etc.
+          Your file should contain columns like: Start Date, End Date, Distance
+          in KM, Consumption in Kwh, Start Address, End Address, Start/End
+          Latitude/Longitude, etc.
         </Text>
       </Paper>
 

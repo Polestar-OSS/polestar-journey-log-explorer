@@ -1,0 +1,94 @@
+/* Mobile-friendly styles */
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+  button,
+  .mantine-Button-root,
+  .mantine-ActionIcon-root,
+  .mantine-Tab-tab {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Make tabs more touch-friendly */
+  .mantine-Tabs-tab {
+    padding: 12px 8px !important;
+  }
+
+  /* Reduce font size in charts for better mobile display */
+  .recharts-text {
+    font-size: 10px !important;
+  }
+
+  /* Improve modal padding on mobile */
+  .mantine-Modal-body {
+    padding: 12px;
+  }
+
+  /* Better spacing for stat cards on mobile */
+  .mantine-Paper-root {
+    margin-bottom: 8px;
+  }
+
+  /* Ensure scrollable areas work well on mobile */
+  .mantine-ScrollArea-viewport {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Make filter collapse smoother */
+  .mantine-Collapse-root {
+    overflow: hidden;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  /* Reduce padding for very small screens */
+  .mantine-Container-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  /* Make tabs even more compact */
+  .mantine-Tabs-tab {
+    padding: 10px 4px !important;
+    font-size: 11px;
+  }
+
+  /* Compact stat cards further */
+  .mantine-ThemeIcon-root {
+    min-width: 32px !important;
+    min-height: 32px !important;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .mantine-AppShell-header {
+    height: 50px !important;
+  }
+
+  .mantine-Title-root {
+    font-size: 1.2rem !important;
+  }
+}
+
+/* Improve tap highlight */
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth scrolling for better mobile experience */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent text selection on buttons for better UX */
+button,
+.mantine-Button-root,
+.mantine-ActionIcon-root {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
