@@ -16,7 +16,8 @@
   }
 
   /* Reduce font size in charts for better mobile display */
-  .recharts-text {
+  .recharts-text,
+  .recharts-responsive-tick {
     font-size: 10px !important;
   }
 
@@ -38,6 +39,13 @@
   /* Make filter collapse smoother */
   .mantine-Collapse-root {
     overflow: hidden;
+  }
+}
+
+/* Larger screens - increase chart text size */
+@media (min-width: 768px) {
+  .recharts-responsive-tick {
+    font-size: 12px !important;
   }
 }
 
