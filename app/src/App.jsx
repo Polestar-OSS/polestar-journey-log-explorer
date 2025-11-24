@@ -29,7 +29,6 @@ function App() {
   return (
     <AppShell
       header={{ height: { base: 60, sm: 70 } }}
-      footer={{ height: { base: 280, sm: 150 } }}
       padding={{ base: "xs", sm: "md" }}
     >
       <AppShell.Header>
@@ -96,113 +95,114 @@ function App() {
             />
           )}
         </Container>
-      </AppShell.Main>
 
-      <AppShell.Footer
-        component="footer"
-        p={{ base: "xs", sm: "md" }}
-        style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}
-      >
-        <Container size="xl" px={{ base: "xs", sm: "md" }}>
-          <Stack gap="sm">
-            <Stack gap="sm" hiddenFrom="sm">
-              <Group gap="xs" justify="center">
-                <Image
-                  src={
-                    colorScheme === "dark"
-                      ? "/polestar-journey-log-explorer/logo-white.png"
-                      : "/polestar-journey-log-explorer/logo-black.png"
-                  }
-                  alt="Polestar OSS Logo"
-                  h={24}
-                  fit="contain"
-                />
-                <div>
-                  <Text size="xs" fw={500}>
-                    Polestar Journey Log Explorer
-                  </Text>
-                </div>
+        <Box
+          component="footer"
+          mt="xl"
+          pt="xl"
+          style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}
+        >
+          <Container size="xl" px={{ base: "xs", sm: "md" }}>
+            <Stack gap="sm">
+              <Stack gap="sm" hiddenFrom="sm">
+                <Group gap="xs" justify="center">
+                  <Image
+                    src={
+                      colorScheme === "dark"
+                        ? "/polestar-journey-log-explorer/logo-white.png"
+                        : "/polestar-journey-log-explorer/logo-black.png"
+                    }
+                    alt="Polestar OSS Logo"
+                    h={24}
+                    fit="contain"
+                  />
+                  <div>
+                    <Text size="xs" fw={500}>
+                      Polestar Journey Log Explorer
+                    </Text>
+                  </div>
+                </Group>
+                <Group gap="sm" justify="center">
+                  <Anchor
+                    href="https://github.com/Polestar-OSS/polestar-journey-log-explorer"
+                    target="_blank"
+                    c="dimmed"
+                    size="xs"
+                  >
+                    <Group gap={4}>
+                      <IconBrandGithub size={14} />
+                      <span>GitHub</span>
+                    </Group>
+                  </Anchor>
+                  <Anchor
+                    href="https://github.com/Polestar-OSS/polestar-journey-log-explorer/blob/main/LICENSE"
+                    target="_blank"
+                    c="dimmed"
+                    size="xs"
+                  >
+                    MIT License
+                  </Anchor>
+                </Group>
+              </Stack>
+              <Group justify="space-between" align="center" visibleFrom="sm">
+                <Group gap="md">
+                  <Image
+                    src={
+                      colorScheme === "dark"
+                        ? "/polestar-journey-log-explorer/logo-white.png"
+                        : "/polestar-journey-log-explorer/logo-black.png"
+                    }
+                    alt="Polestar OSS Logo"
+                    h={30}
+                    fit="contain"
+                  />
+                  <div>
+                    <Text size="sm" fw={500}>
+                      Polestar Journey Log Explorer
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      A community-driven project
+                    </Text>
+                  </div>
+                </Group>
+                <Group gap="md">
+                  <Anchor
+                    href="https://github.com/Polestar-OSS/polestar-journey-log-explorer"
+                    target="_blank"
+                    c="dimmed"
+                    size="sm"
+                  >
+                    <Group gap={4}>
+                      <IconBrandGithub size={16} />
+                      <span>GitHub</span>
+                    </Group>
+                  </Anchor>
+                  <Anchor
+                    href="https://github.com/Polestar-OSS/polestar-journey-log-explorer/blob/main/LICENSE"
+                    target="_blank"
+                    c="dimmed"
+                    size="sm"
+                  >
+                    MIT License
+                  </Anchor>
+                </Group>
               </Group>
-              <Group gap="sm" justify="center">
-                <Anchor
-                  href="https://github.com/Polestar-OSS/polestar-journey-log-explorer"
-                  target="_blank"
-                  c="dimmed"
-                  size="xs"
-                >
-                  <Group gap={4}>
-                    <IconBrandGithub size={14} />
-                    <span>GitHub</span>
-                  </Group>
-                </Anchor>
-                <Anchor
-                  href="https://github.com/Polestar-OSS/polestar-journey-log-explorer/blob/main/LICENSE"
-                  target="_blank"
-                  c="dimmed"
-                  size="xs"
-                >
-                  MIT License
-                </Anchor>
-              </Group>
+              <Divider />
+              <Box>
+                <Text size="xs" c="dimmed" ta="center">
+                  © 2025 Kinn Coelho Juliao &lt;kinncj@gmail.com&gt; • Made with
+                  ⚡ by the community
+                </Text>
+                <Text size="xs" c="dimmed" ta="center" mt={4}>
+                  This project is not affiliated with, endorsed by, or in any
+                  way officially connected with Polestar, the Polestar brand,
+                  Geely, or any of their subsidiaries.
+                </Text>
+              </Box>
             </Stack>
-            <Group justify="space-between" align="center" visibleFrom="sm">
-              <Group gap="md">
-                <Image
-                  src={
-                    colorScheme === "dark"
-                      ? "/polestar-journey-log-explorer/logo-white.png"
-                      : "/polestar-journey-log-explorer/logo-black.png"
-                  }
-                  alt="Polestar OSS Logo"
-                  h={30}
-                  fit="contain"
-                />
-                <div>
-                  <Text size="sm" fw={500}>
-                    Polestar Journey Log Explorer
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    A community-driven project
-                  </Text>
-                </div>
-              </Group>
-              <Group gap="md">
-                <Anchor
-                  href="https://github.com/Polestar-OSS/polestar-journey-log-explorer"
-                  target="_blank"
-                  c="dimmed"
-                  size="sm"
-                >
-                  <Group gap={4}>
-                    <IconBrandGithub size={16} />
-                    <span>GitHub</span>
-                  </Group>
-                </Anchor>
-                <Anchor
-                  href="https://github.com/Polestar-OSS/polestar-journey-log-explorer/blob/main/LICENSE"
-                  target="_blank"
-                  c="dimmed"
-                  size="sm"
-                >
-                  MIT License
-                </Anchor>
-              </Group>
-            </Group>
-            <Divider />
-            <Box>
-              <Text size="xs" c="dimmed" ta="center">
-                © 2025 Kinn Coelho Juliao &lt;kinncj@gmail.com&gt; • Made with
-                ⚡ by the community
-              </Text>
-              <Text size="xs" c="dimmed" ta="center" mt={4}>
-                This project is not affiliated with, endorsed by, or in any
-                way officially connected with Polestar, the Polestar brand,
-                Geely, or any of their subsidiaries.
-              </Text>
-            </Box>
-          </Stack>
-        </Container>
-      </AppShell.Footer>
+          </Container>
+        </Box>
+      </AppShell.Main>
     </AppShell>
   );
 }
