@@ -16,7 +16,10 @@
   }
 
   /* Reduce font size in charts for better mobile display */
-  .recharts-text,
+  .recharts-text {
+    font-size: 10px !important;
+  }
+  
   .recharts-responsive-tick {
     font-size: 10px !important;
   }

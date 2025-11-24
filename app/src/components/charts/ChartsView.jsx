@@ -19,14 +19,17 @@ import { ChartDataProcessor } from "../../services/charts/ChartDataProcessor";
 
 // Custom tick component with responsive font size using CSS
 const ResponsiveTick = ({ x, y, payload, ...props }) => {
+  // Handle cases where payload might be undefined
+  if (!payload) return null;
+  
   return (
     <text
+      {...props}
       x={x}
       y={y}
       textAnchor={props.textAnchor || "middle"}
       fill="#666"
       className="recharts-responsive-tick"
-      {...props}
     >
       {payload.value}
     </text>
