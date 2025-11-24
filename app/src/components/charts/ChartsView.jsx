@@ -25,17 +25,9 @@ const ResponsiveTick = ({ x, y, payload, ...props }) => {
       y={y}
       textAnchor={props.textAnchor || "middle"}
       fill="#666"
-      className="recharts-tick"
-      style={{ fontSize: "10px" }}
+      className="recharts-responsive-tick"
       {...props}
     >
-      <style>{`
-        @media (min-width: 768px) {
-          .recharts-tick {
-            font-size: 12px;
-          }
-        }
-      `}</style>
       {payload.value}
     </text>
   );
