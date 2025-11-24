@@ -92,3 +92,95 @@ button,
   -ms-user-select: none;
   user-select: none;
 }
+
+/* OpenLayers map controls - mobile friendly */
+@media (max-width: 768px) {
+  /* Make zoom controls larger and easier to tap */
+  .ol-zoom {
+    left: auto !important;
+    right: 8px;
+    top: 8px;
+  }
+
+  .ol-zoom button {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+    line-height: 44px !important;
+  }
+
+  /* Make full screen button larger */
+  .ol-full-screen {
+    right: 8px !important;
+    top: 104px !important;
+  }
+
+  .ol-full-screen button {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  /* Make zoom to extent button larger */
+  .ol-zoomtoextent {
+    right: 8px !important;
+    top: 156px !important;
+  }
+
+  .ol-zoomtoextent button {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  /* Hide mouse position on mobile (not needed for touch) */
+  .ol-mouse-position,
+  .custom-mouse-position {
+    display: none !important;
+  }
+
+  /* Make scale line more compact */
+  .ol-scale-line {
+    left: 8px !important;
+    bottom: 8px !important;
+  }
+
+  .ol-scale-line-inner {
+    font-size: 10px !important;
+    border-width: 1px !important;
+  }
+
+  /* Adjust popup for mobile */
+  .ol-popup {
+    max-width: calc(100vw - 40px) !important;
+    font-size: 12px !important;
+  }
+
+  /* Make attribution more compact on mobile */
+  .ol-attribution {
+    max-width: 60% !important;
+    font-size: 10px !important;
+  }
+
+  .ol-attribution button {
+    width: 30px !important;
+    height: 30px !important;
+  }
+}
+
+/* Extra small devices - even more compact */
+@media (max-width: 480px) {
+  .ol-zoom button,
+  .ol-full-screen button,
+  .ol-zoomtoextent button {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 18px !important;
+  }
+
+  .ol-full-screen {
+    top: 96px !important;
+  }
+
+  .ol-zoomtoextent {
+    top: 144px !important;
+  }
+}
