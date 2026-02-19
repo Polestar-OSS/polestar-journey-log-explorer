@@ -28,34 +28,37 @@ import { calculateStatistics } from "../utils/dataParser";
 import { TableExporter } from "../services/table/TableDataProcessor";
 import HelpModal from "./HelpModal";
 
-// Columns to be used for CSV export and potentially other components.
-const COLUMNS = [
-  { key: "startDate", label: "Start Date" },
-  { key: "endDate", label: "End Date" },
-  { key: "startAddress", label: "Start Address" },
-  { key: "endAddress", label: "End Address" },
-  { key: "distanceKm", label: "Distance (km)" },
-  { key: "consumptionKwh", label: "Consumption (kWh)" },
-  { key: "efficiency", label: "Efficiency (kWh/100km)" },
-  { key: "category", label: "Category" },
-  { key: "socSource", label: "SOC Start" },
-  { key: "socDestination", label: "SOC End" },
-  { key: "socDrop", label: "SOC Drop" },
-  { key: "startOdometer", label: "Start Odometer" },
-  { key: "endOdometer", label: "End Odometer" },
-];
+// Build columns for CSV export based on distance unit
+const getColumns = (distanceUnit) => {
+  const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
+  return [
+    { key: "startDate", label: "Start Date" },
+    { key: "endDate", label: "End Date" },
+    { key: "startAddress", label: "Start Address" },
+    { key: "endAddress", label: "End Address" },
+    { key: "distanceKm", label: `Distance (${distLabel})` },
+    { key: "consumptionKwh", label: "Consumption (kWh)" },
+    { key: "efficiency", label: `Efficiency (kWh/100${distLabel})` },
+    { key: "category", label: "Category" },
+    { key: "socSource", label: "SOC Start" },
+    { key: "socDestination", label: "SOC End" },
+    { key: "socDrop", label: "SOC Drop" },
+    { key: "startOdometer", label: "Start Odometer" },
+    { key: "endOdometer", label: "End Odometer" },
+  ];
+};
 
 // Initialize the stateless TableExporter once outside the component
 const tableExporter = new TableExporter();
 
-function Dashboard({ data, onReset }) {
+function Dashboard({ data, distanceUnit = 'km', onReset }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [filteredData, setFilteredData] = useState(data);
   const [helpOpened, setHelpOpened] = useState(false);
 
   const statistics = useMemo(
-    () => calculateStatistics(filteredData),
-    [filteredData]
+    () => calculateStatistics(filteredData, distanceUnit),
+    [filteredData, distanceUnit]
   );
 
   const handleFilterChange = (filtered) => {
@@ -63,7 +66,7 @@ function Dashboard({ data, onReset }) {
   };
 
   const exportToCSV = () => {
-    const csvContent = tableExporter.exportToCSV(filteredData, COLUMNS);
+    const csvContent = tableExporter.exportToCSV(filteredData, getColumns(distanceUnit));
     const filename = `polestar-journey-export-${new Date()
       .toISOString()
       .slice(0, 10)}.csv`;
@@ -114,9 +117,9 @@ function Dashboard({ data, onReset }) {
         </Group>
       </Stack>
 
-      <Filters data={data} onFilterChange={handleFilterChange} />
+      <Filters data={data} distanceUnit={distanceUnit} onFilterChange={handleFilterChange} />
 
-      <StatsCards statistics={statistics} />
+      <StatsCards statistics={statistics} distanceUnit={distanceUnit} />
 
       <Tabs
         value={activeTab}
@@ -152,19 +155,19 @@ function Dashboard({ data, onReset }) {
         </Tabs.List>
 
         <Tabs.Panel value="overview" pt="md">
-          <ChartsView data={filteredData} />
+          <ChartsView data={filteredData} distanceUnit={distanceUnit} />
         </Tabs.Panel>
 
         <Tabs.Panel value="map" pt="md">
-          <MapView data={filteredData} />
+          <MapView data={filteredData} distanceUnit={distanceUnit} />
         </Tabs.Panel>
 
         <Tabs.Panel value="table" pt="md">
-          <TableView data={filteredData} />
+          <TableView data={filteredData} distanceUnit={distanceUnit} />
         </Tabs.Panel>
 
         <Tabs.Panel value="guide" pt="md">
-          <DataGuide />
+          <DataGuide distanceUnit={distanceUnit} />
         </Tabs.Panel>
       </Tabs>
 

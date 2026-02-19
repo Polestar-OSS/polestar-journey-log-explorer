@@ -20,10 +20,12 @@ import Dashboard from "./components/Dashboard";
 
 function App() {
   const [journeyData, setJourneyData] = useState(null);
+  const [distanceUnit, setDistanceUnit] = useState('km');
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
-  const handleDataLoaded = (data) => {
+  const handleDataLoaded = ({ data, distanceUnit: unit }) => {
     setJourneyData(data);
+    setDistanceUnit(unit);
   };
 
   return (
@@ -91,6 +93,7 @@ function App() {
           ) : (
             <Dashboard
               data={journeyData}
+              distanceUnit={distanceUnit}
               onReset={() => setJourneyData(null)}
             />
           )}

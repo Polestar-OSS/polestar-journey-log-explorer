@@ -4,6 +4,13 @@
  */
 export class StatisticsCalculator {
     /**
+     * @param {string} distanceUnit - Distance unit ('km' or 'mi')
+     */
+    constructor(distanceUnit = 'km') {
+        this.distanceUnit = distanceUnit;
+    }
+
+    /**
      * Calculate comprehensive statistics from trip data
      * @param {Array} data - Trip data
      * @returns {Object} Statistics object
@@ -30,15 +37,17 @@ export class StatisticsCalculator {
     /**
      * Calculate carbon savings compared to ICE vehicles
      * @param {Array} data - Trip data
-     * @param {number} iceEmissions - ICE vehicle emissions in kg CO2/km (default: 0.171)
+     * @param {number} iceEmissions - ICE vehicle emissions in kg CO2 per distance unit (default: 0.171 for km, 0.275 for mi)
      * @returns {number} Carbon savings in kg
      */
-    calculateCarbonSavings(data, iceEmissions = 0.171) {
+    calculateCarbonSavings(data, iceEmissions) {
+        const defaultEmissions = this.distanceUnit === 'mi' ? 0.275 : 0.171;
+        const emissions = iceEmissions !== undefined ? iceEmissions : defaultEmissions;
         const totalDistance = this._calculateTotalDistance(data);
         // Assuming grid emissions of ~0.4 kg CO2/kWh
         const totalConsumption = this._calculateTotalConsumption(data);
         const evEmissions = totalConsumption * 0.4;
-        const iceEquivalent = totalDistance * iceEmissions;
+        const iceEquivalent = totalDistance * emissions;
 
         return Math.max(0, iceEquivalent - evEmissions);
     }
@@ -47,17 +56,19 @@ export class StatisticsCalculator {
      * Calculate cost comparison between electric and gasoline
      * @param {Array} data - Trip data
      * @param {number} electricityCost - Cost per kWh
-     * @param {number} gasolinePrice - Price per liter
-     * @param {number} fuelEfficiency - L/100km for comparable ICE vehicle
+     * @param {number} gasolinePrice - Price per liter (or per gallon for mi)
+     * @param {number} fuelEfficiency - L/100km (or gal/100mi) for comparable ICE vehicle
      * @returns {Object} Cost comparison
      */
-    calculateCostComparison(data, electricityCost, gasolinePrice, fuelEfficiency = 7.5) {
+    calculateCostComparison(data, electricityCost, gasolinePrice, fuelEfficiency) {
+        const defaultEfficiency = this.distanceUnit === 'mi' ? 4.2 : 7.5;
+        const eff = fuelEfficiency !== undefined ? fuelEfficiency : defaultEfficiency;
         const totalDistance = this._calculateTotalDistance(data);
         const totalConsumption = this._calculateTotalConsumption(data);
 
         const electricCost = totalConsumption * electricityCost;
-        const gasolineLiters = (totalDistance / 100) * fuelEfficiency;
-        const gasolineCost = gasolineLiters * gasolinePrice;
+        const fuelVolume = (totalDistance / 100) * eff;
+        const gasolineCost = fuelVolume * gasolinePrice;
 
         return {
             electricCost: electricCost.toFixed(2),

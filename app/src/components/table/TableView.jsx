@@ -5,7 +5,7 @@ import TripNotesModal from '../TripNotesModal';
 import { generateTripId, getTripAnnotation } from '../../utils/tripAnnotations';
 import { TableDataProcessor, TableRowFormatter } from '../../services/table/TableDataProcessor';
 
-function TableView({ data }) {
+function TableView({ data, distanceUnit = 'km' }) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('startDate');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -47,7 +47,7 @@ function TableView({ data }) {
     const hasTags = annotation.tags?.length > 0;
 
     // Use formatter service for consistent formatting
-    const efficiency = rowFormatter.formatEfficiency(trip.efficiency);
+    const efficiency = rowFormatter.formatEfficiency(trip.efficiency, distanceUnit);
     const socRange = rowFormatter.formatSOCRange(trip.socSource, trip.socDestination);
 
     return (
@@ -147,9 +147,9 @@ function TableView({ data }) {
               <Table.Th>Date</Table.Th>
               <Table.Th>Start Address</Table.Th>
               <Table.Th>End Address</Table.Th>
-              <Table.Th>Distance (km)</Table.Th>
+              <Table.Th>Distance ({distanceUnit === 'mi' ? 'mi' : 'km'})</Table.Th>
               <Table.Th>Consumption (kWh)</Table.Th>
-              <Table.Th>Efficiency (kWh/100km)</Table.Th>
+              <Table.Th>Efficiency (kWh/100{distanceUnit === 'mi' ? 'mi' : 'km'})</Table.Th>
               <Table.Th>SOC Change</Table.Th>
               <Table.Th>SOC Drop (%)</Table.Th>
               <Table.Th>Notes/Tags</Table.Th>

@@ -41,19 +41,22 @@ const ResponsiveTick = ({ x, y, payload, textAnchor, ...props }) => {
   );
 };
 
-function ChartsView({ data }) {
+function ChartsView({ data, distanceUnit = 'km' }) {
   // Initialize service using useMemo (Dependency Injection)
   const chartDataProcessor = useMemo(() => new ChartDataProcessor(), []);
 
+  const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
+
   // Process chart data using service
   const chartData = useMemo(() => {
+    const multiplier = distanceUnit === 'mi' ? 1.60934 : 1;
     return {
       timeSeriesData: chartDataProcessor.processTimeSeriesData(data, 30),
-      efficiencyData: chartDataProcessor.processEfficiencyData(data, 0, 50),
-      distanceRanges: chartDataProcessor.processDistanceRanges(data),
+      efficiencyData: chartDataProcessor.processEfficiencyData(data, 0, Math.round(50 * multiplier)),
+      distanceRanges: chartDataProcessor.processDistanceRanges(data, distanceUnit),
       socData: chartDataProcessor.processSOCData(data, 20),
     };
-  }, [data, chartDataProcessor]);
+  }, [data, chartDataProcessor, distanceUnit]);
 
   const COLORS = ["#228be6", "#12b886", "#fab005", "#fa5252", "#be4bdb"];
 
@@ -81,7 +84,7 @@ function ChartsView({ data }) {
                 type="monotone"
                 dataKey="distance"
                 stroke="#228be6"
-                name="Distance (km)"
+                name={`Distance (${distLabel})`}
               />
               <Line
                 type="monotone"
@@ -134,7 +137,7 @@ function ChartsView({ data }) {
               <XAxis
                 dataKey="distance"
                 label={{
-                  value: "Distance (km)",
+                  value: `Distance (${distLabel})`,
                   position: "insideBottom",
                   offset: -5,
                   fontSize: 11,
@@ -143,7 +146,7 @@ function ChartsView({ data }) {
               />
               <YAxis
                 label={{
-                  value: "Efficiency (kWh/100km)",
+                  value: `Efficiency (kWh/100${distLabel})`,
                   angle: -90,
                   position: "insideLeft",
                   fontSize: 11,

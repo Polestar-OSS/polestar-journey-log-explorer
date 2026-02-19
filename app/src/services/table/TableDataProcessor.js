@@ -119,21 +119,28 @@ export class TableRowFormatter {
     /**
      * Format efficiency value with color coding
      * @param {number} efficiency - Efficiency value
+     * @param {string} distanceUnit - Unit of distance ('km' or 'mi')
      * @returns {Object} Formatted efficiency with color
      */
-    formatEfficiency(efficiency) {
+    formatEfficiency(efficiency, distanceUnit = 'km') {
         const eff = parseFloat(efficiency);
+        const multiplier = distanceUnit === 'mi' ? 1.60934 : 1;
+        // km thresholds: 15, 20, 25
+        const t1 = Math.round(15 * multiplier);
+        const t2 = Math.round(20 * multiplier);
+        const t3 = Math.round(25 * multiplier);
         let color;
 
-        if (eff < 15) color = 'green';
-        else if (eff < 20) color = 'yellow';
-        else if (eff < 25) color = 'orange';
+        if (eff < t1) color = 'green';
+        else if (eff < t2) color = 'blue';
+        else if (eff < t3) color = 'orange';
         else color = 'red';
 
+        const unit = distanceUnit === 'mi' ? 'mi' : 'km';
         return {
             value: eff.toFixed(1),
             color,
-            label: `${eff.toFixed(1)} kWh/100km`,
+            label: `${eff.toFixed(1)} kWh/100${unit}`,
         };
     }
 
@@ -160,11 +167,13 @@ export class TableRowFormatter {
 
     /**
      * Format distance with unit
-     * @param {number} distance - Distance in km
+     * @param {number} distance - Distance value
+     * @param {string} distanceUnit - Unit of distance ('km' or 'mi')
      * @returns {string} Formatted distance
      */
-    formatDistance(distance) {
-        return `${distance.toFixed(1)} km`;
+    formatDistance(distance, distanceUnit = 'km') {
+        const unit = distanceUnit === 'mi' ? 'mi' : 'km';
+        return `${distance.toFixed(1)} ${unit}`;
     }
 
     /**

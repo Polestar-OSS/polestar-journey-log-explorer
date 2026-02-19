@@ -46,15 +46,22 @@ export class ChartDataProcessor {
     /**
      * Process trip distance distribution into ranges
      * @param {Array} data - Raw trip data
+     * @param {string} distanceUnit - Distance unit ('km' or 'mi')
      * @returns {Array} Distance range data with counts
      */
-    processDistanceRanges(data) {
+    processDistanceRanges(data, distanceUnit = 'km') {
+        const u = distanceUnit === 'mi' ? 'mi' : 'km';
+        const multiplier = distanceUnit === 'mi' ? 1.60934 : 1;
+        const r1 = Math.round(5 / multiplier);
+        const r2 = Math.round(10 / multiplier);
+        const r3 = Math.round(20 / multiplier);
+        const r4 = Math.round(50 / multiplier);
         const distanceRanges = [
-            { range: '0-5 km', min: 0, max: 5, count: 0 },
-            { range: '5-10 km', min: 5, max: 10, count: 0 },
-            { range: '10-20 km', min: 10, max: 20, count: 0 },
-            { range: '20-50 km', min: 20, max: 50, count: 0 },
-            { range: '50+ km', min: 50, max: Infinity, count: 0 },
+            { range: `0-${r1} ${u}`, min: 0, max: r1, count: 0 },
+            { range: `${r1}-${r2} ${u}`, min: r1, max: r2, count: 0 },
+            { range: `${r2}-${r3} ${u}`, min: r2, max: r3, count: 0 },
+            { range: `${r3}-${r4} ${u}`, min: r3, max: r4, count: 0 },
+            { range: `${r4}+ ${u}`, min: r4, max: Infinity, count: 0 },
         ];
 
         data.forEach(trip => {

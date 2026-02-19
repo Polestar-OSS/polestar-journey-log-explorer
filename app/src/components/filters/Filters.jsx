@@ -5,7 +5,7 @@ import { IconFilter, IconX, IconChevronDown, IconChevronUp, IconCalendar, IconTa
 import { getAllTags, generateTripId, getTripAnnotation } from '../../utils/tripAnnotations';
 import { FilterService, FilterStateManager, FilterMetadataService } from '../../services/filters/FilterService';
 
-function Filters({ data, onFilterChange }) {
+function Filters({ data, distanceUnit = 'km', onFilterChange }) {
   const [opened, setOpened] = useState(false);
 
   // Initialize services (Dependency Injection)
@@ -118,7 +118,7 @@ function Filters({ data, onFilterChange }) {
               />
             </Stack>
 
-            <Text size="sm" fw={500} c="dimmed" mt="xs">Distance (km)</Text>
+            <Text size="sm" fw={500} c="dimmed" mt="xs">Distance ({distanceUnit === 'mi' ? 'mi' : 'km'})</Text>
             <Stack gap="xs">
               <NumberInput
                 label="Min Distance"
@@ -140,7 +140,7 @@ function Filters({ data, onFilterChange }) {
               />
             </Stack>
 
-            <Text size="sm" fw={500} c="dimmed" mt="xs">Efficiency (kWh/100km)</Text>
+            <Text size="sm" fw={500} c="dimmed" mt="xs">Efficiency (kWh/100{distanceUnit === 'mi' ? 'mi' : 'km'})</Text>
             <Stack gap="xs">
               <NumberInput
                 label="Min Efficiency"

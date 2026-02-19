@@ -33,10 +33,14 @@ function StatCard({ title, value, unit, icon: Icon, color }) {
   );
 }
 
-function StatsCards({ statistics }) {
+function StatsCards({ statistics, distanceUnit = 'km' }) {
   const [costModalOpened, setCostModalOpened] = useState(false);
 
   if (!statistics) return null;
+
+  const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
+  const effUnit = `kWh/100${distLabel}`;
+  const fuelUnit = statistics.fuelUnit || (distanceUnit === 'mi' ? 'gal' : 'L');
 
   return (
     <>
@@ -63,7 +67,7 @@ function StatsCards({ statistics }) {
       <StatCard
         title="Total Distance"
         value={statistics.totalDistance}
-        unit="km"
+        unit={distLabel}
         icon={IconRoad}
         color="cyan"
       />
@@ -77,35 +81,35 @@ function StatsCards({ statistics }) {
       <StatCard
         title="Avg Efficiency"
         value={statistics.avgEfficiency}
-        unit="kWh/100km"
+        unit={effUnit}
         icon={IconGasStation}
         color="green"
       />
       <StatCard
         title="Best Efficiency"
         value={statistics.bestEfficiency}
-        unit="kWh/100km"
+        unit={effUnit}
         icon={IconTrendingDown}
         color="teal"
       />
       <StatCard
         title="Worst Efficiency"
         value={statistics.worstEfficiency}
-        unit="kWh/100km"
+        unit={effUnit}
         icon={IconTrendingUp}
         color="red"
       />
       <StatCard
         title="Avg Trip Distance"
         value={statistics.avgTripDistance}
-        unit="km"
+        unit={distLabel}
         icon={IconRoute}
         color="grape"
       />
       <StatCard
         title="Odometer Range"
         value={`${statistics.odometerStart} - ${statistics.odometerEnd}`}
-        unit="km"
+        unit={distLabel}
         icon={IconRoad}
         color="violet"
       />
@@ -119,7 +123,7 @@ function StatsCards({ statistics }) {
       <StatCard
         title="Gas Not Used"
         value={statistics.gasSaved}
-        unit="L"
+        unit={fuelUnit}
         icon={IconDroplet}
         color="orange"
       />
@@ -136,6 +140,7 @@ function StatsCards({ statistics }) {
       opened={costModalOpened}
       onClose={() => setCostModalOpened(false)}
       statistics={statistics}
+      distanceUnit={distanceUnit}
     />
     </>
   );

@@ -2,8 +2,11 @@ import { useMemo } from 'react';
 import { Paper, Title, Grid } from '@mantine/core';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-function ChartsView({ data }) {
+function ChartsView({ data, distanceUnit = 'km' }) {
+  const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
+
   const chartData = useMemo(() => {
+    const multiplier = distanceUnit === 'mi' ? 1.60934 : 1;
     // Distance over time
     const distanceByDate = data.reduce((acc, trip) => {
       const date = trip.startDate.split(',')[0];
@@ -22,7 +25,7 @@ function ChartsView({ data }) {
 
     // Efficiency distribution
     const efficiencyData = data
-      .filter(trip => trip.efficiency > 0 && trip.efficiency < 50)
+      .filter(trip => trip.efficiency > 0 && trip.efficiency < Math.round(50 * multiplier))
       .map(trip => ({
         efficiency: parseFloat(trip.efficiency),
         distance: trip.distanceKm,
@@ -30,12 +33,17 @@ function ChartsView({ data }) {
       .sort((a, b) => a.efficiency - b.efficiency);
 
     // Trip distance distribution
+    const u = distanceUnit === 'mi' ? 'mi' : 'km';
+    const r1 = Math.round(5 / multiplier);
+    const r2 = Math.round(10 / multiplier);
+    const r3 = Math.round(20 / multiplier);
+    const r4 = Math.round(50 / multiplier);
     const distanceRanges = [
-      { range: '0-5 km', min: 0, max: 5, count: 0 },
-      { range: '5-10 km', min: 5, max: 10, count: 0 },
-      { range: '10-20 km', min: 10, max: 20, count: 0 },
-      { range: '20-50 km', min: 20, max: 50, count: 0 },
-      { range: '50+ km', min: 50, max: Infinity, count: 0 },
+      { range: `0-${r1} ${u}`, min: 0, max: r1, count: 0 },
+      { range: `${r1}-${r2} ${u}`, min: r1, max: r2, count: 0 },
+      { range: `${r2}-${r3} ${u}`, min: r2, max: r3, count: 0 },
+      { range: `${r3}-${r4} ${u}`, min: r3, max: r4, count: 0 },
+      { range: `${r4}+ ${u}`, min: r4, max: Infinity, count: 0 },
     ];
 
     data.forEach(trip => {
@@ -59,7 +67,7 @@ function ChartsView({ data }) {
       distanceRanges,
       socData,
     };
-  }, [data]);
+  }, [data, distanceUnit]);
 
   const COLORS = ['#228be6', '#12b886', '#fab005', '#fa5252', '#be4bdb'];
 
@@ -81,7 +89,7 @@ function ChartsView({ data }) {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="distance" stroke="#228be6" name="Distance (km)" />
+              <Line type="monotone" dataKey="distance" stroke="#228be6" name={`Distance (${distLabel})`} />
               <Line type="monotone" dataKey="consumption" stroke="#fab005" name="Consumption (kWh)" />
             </LineChart>
           </ResponsiveContainer>
@@ -118,8 +126,8 @@ function ChartsView({ data }) {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData.efficiencyData.slice(0, 30)}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="distance" label={{ value: 'Distance (km)', position: 'insideBottom', offset: -5 }} />
-              <YAxis label={{ value: 'Efficiency (kWh/100km)', angle: -90, position: 'insideLeft' }} />
+              <XAxis dataKey="distance" label={{ value: `Distance (${distLabel})`, position: 'insideBottom', offset: -5 }} />
+              <YAxis label={{ value: `Efficiency (kWh/100${distLabel})`, angle: -90, position: 'insideLeft' }} />
               <Tooltip />
               <Bar dataKey="efficiency" fill="#12b886" />
             </BarChart>

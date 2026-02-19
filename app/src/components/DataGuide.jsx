@@ -14,7 +14,65 @@ function BorderedPaper({ borderColor, style, ...props }) {
   );
 }
 
-function DataGuide() {
+function DataGuide({ distanceUnit = 'km' }) {
+  const isMi = distanceUnit === 'mi';
+  const dist = isMi ? 'mi' : 'km';
+  const effUnit = `kWh/100${dist}`;
+  const speedUnit = isMi ? 'mph' : 'km/h';
+  const speedThreshold = Math.round(110 / (isMi ? 1.60934 : 1));
+
+  // Examples vary by unit
+  const effExample = isMi
+    ? 'If you consumed 150 kWh over 470 mi: (150 / 470) \u00d7 100 = 31.9 kWh/100mi'
+    : 'If you consumed 150 kWh over 750 km: (150 / 750) \u00d7 100 = 20 kWh/100km';
+
+  const co2Formula = isMi
+    ? `CO\u2082 Saved = Total Distance (mi) \u00d7 ICE Emissions per mi\nDefault: 0.19 kg CO\u2082/mi (based on avg US ICE vehicle)`
+    : `CO\u2082 Saved = Total Distance (km) \u00d7 ICE Emissions per km\nDefault: 0.12 kg CO\u2082/km (120g CO\u2082/km)`;
+
+  const co2Example = isMi
+    ? 'For 620 mi traveled: 620 \u00d7 0.19 = 117.8 kg CO\u2082 saved'
+    : 'For 1,000 km traveled: 1,000 \u00d7 0.12 = 120 kg CO\u2082 saved';
+
+  const co2Assumption = isMi
+    ? 'Based on average US ICE vehicle emissions of ~190g CO\u2082/mi (typical for mid-size sedans)'
+    : 'Based on average ICE vehicle emissions of 120g CO\u2082/km (typical for mid-size sedans)';
+
+  const costDefaults = isMi
+    ? `Defaults:\n- Electricity: $0.13/kWh\n- Gasoline: $3.50/gal\n- ICE Efficiency: 4.2 gal/100mi (~23.8 mpg)`
+    : `Defaults:\n- Electricity: $0.13/kWh\n- Gasoline: $1.50/L\n- ICE Efficiency: 8.5 L/100km`;
+
+  const costExampleTitle = isMi
+    ? 'Example: 150 kWh used over 470 mi'
+    : 'Example: 150 kWh used over 750 km';
+
+  const costExampleItems = isMi
+    ? [
+        'EV cost: 150 \u00d7 $0.13 = $19.50',
+        'ICE cost: (470 / 100) \u00d7 4.2 \u00d7 $3.50 = $69.09',
+        'Savings: $69.09 - $19.50 = $49.59',
+      ]
+    : [
+        'EV cost: 150 \u00d7 $0.13 = $19.50',
+        'ICE cost: (750 / 100) \u00d7 8.5 \u00d7 $1.50 = $95.63',
+        'Savings: $95.63 - $19.50 = $76.13',
+      ];
+
+  // Efficiency thresholds scaled to distance unit
+  // km thresholds: 15, 20, 25
+  const multiplier = isMi ? 1.60934 : 1;
+  const t1 = Math.round(15 * multiplier);
+  const t2 = Math.round(20 * multiplier);
+  const t3 = Math.round(25 * multiplier);
+  const effExcellent = `Below ${t1} ${effUnit}`;
+  const effGood = `${t1}-${t2} ${effUnit}`;
+  const effAverage = `${t2}-${t3} ${effUnit}`;
+  const effHigh = `Above ${t3} ${effUnit}`;
+
+  // Distance range examples
+  const shortTrips = `0-${Math.round(20 / multiplier)} ${dist}`;
+  const longTrips = `${Math.round(100 / multiplier)}+ ${dist}`;
+
   return (
     <Stack gap="lg">
       <Paper p="xl" radius="md" withBorder>
@@ -49,7 +107,7 @@ function DataGuide() {
               <div>
                 <Text fw={600} size="sm" mb="xs">🛣️ Total Distance</Text>
                 <Text size="sm" c="dimmed">
-                  The cumulative distance traveled across all your trips, displayed in kilometers. 
+                  The cumulative distance traveled across all your trips, displayed in {isMi ? 'miles' : 'kilometers'}. 
                   This includes all journeys regardless of category (Business, Private, Commute).
                 </Text>
               </div>
@@ -69,7 +127,7 @@ function DataGuide() {
               <div>
                 <Text fw={600} size="sm" mb="xs">📈 Average Efficiency</Text>
                 <Text size="sm" c="dimmed" mb="xs">
-                  Your average energy consumption expressed as kWh per 100 kilometers (kWh/100km). 
+                  Your average energy consumption expressed as kWh per 100 {isMi ? 'miles' : 'kilometers'} ({effUnit}). 
                   This is the key metric for understanding your vehicle's efficiency.
                 </Text>
                 <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="blue-6">
@@ -78,16 +136,16 @@ function DataGuide() {
                     Average Efficiency = (Total Energy / Total Distance) × 100
                   </Code>
                   <Text size="xs" c="dimmed" mt="xs">
-                    <strong>Example:</strong> If you consumed 150 kWh over 750 km: (150 / 750) × 100 = 20 kWh/100km
+                    <strong>Example:</strong> {effExample}
                   </Text>
                 </BorderedPaper>
                 <div>
                   <Text size="xs" c="dimmed" mt="xs" fw={600}>What's considered efficient?</Text>
                   <List size="xs" mt={4}>
-                    <List.Item><Badge color="green" size="xs">Excellent</Badge> Below 17 kWh/100km</List.Item>
-                    <List.Item><Badge color="blue" size="xs">Good</Badge> 17-20 kWh/100km</List.Item>
-                    <List.Item><Badge color="yellow" size="xs">Average</Badge> 20-23 kWh/100km</List.Item>
-                    <List.Item><Badge color="red" size="xs">High</Badge> Above 23 kWh/100km</List.Item>
+                    <List.Item><Badge color="green" size="xs">Excellent</Badge> {effExcellent} - Ideal conditions, gentle driving, optimal temperature</List.Item>
+                    <List.Item><Badge color="blue" size="xs">Good</Badge> {effGood} - Normal efficient driving</List.Item>
+                    <List.Item><Badge color="yellow" size="xs">Average</Badge> {effAverage} - Mixed conditions or moderate highway speeds</List.Item>
+                    <List.Item><Badge color="red" size="xs">High</Badge> {effHigh} - High speeds, cold weather, aggressive driving, or heavy climate control use</List.Item>
                   </List>
                 </div>
               </div>
@@ -103,19 +161,17 @@ function DataGuide() {
                 <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="green-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
-                    CO₂ Saved = Total Distance (km) × ICE Emissions per km
-                    {'\n'}
-                    Default: 0.12 kg CO₂/km (120g CO₂/km)
+                    {co2Formula}
                   </Code>
                   <Text size="xs" c="dimmed" mt="xs">
-                    <strong>Example:</strong> For 1,000 km traveled: 1,000 × 0.12 = 120 kg CO₂ saved
+                    <strong>Example:</strong> {co2Example}
                   </Text>
                 </BorderedPaper>
                 <div>
                   <Text size="xs" c="dimmed" mt="xs" fw={600}>Assumptions:</Text>
                   <List size="xs" mt={4}>
                     <List.Item>
-                      Based on average ICE vehicle emissions of 120g CO₂/km (typical for mid-size sedans)
+                      {co2Assumption}
                     </List.Item>
                     <List.Item>
                       Does not account for electricity generation emissions (assumes renewable energy or average grid mix)
@@ -138,20 +194,14 @@ function DataGuide() {
                 <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="teal-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
-                    EV Cost = Total Energy (kWh) × Electricity Rate{'\n'}
-                    ICE Cost = (Total Distance / 100) × Fuel Efficiency × Gas Price{'\n'}
-                    Savings = ICE Cost - EV Cost{'\n\n'}
-                    Defaults:{'\n'}
-                    - Electricity: $0.13/kWh{'\n'}
-                    - Gasoline: $1.50/L{'\n'}
-                    - ICE Efficiency: 8.5 L/100km
+                    {`EV Cost = Total Energy (kWh) × Electricity Rate\nICE Cost = (Total Distance / 100) × Fuel Efficiency × Gas Price\nSavings = ICE Cost - EV Cost\n\n${costDefaults}`}
                   </Code>
                   <div>
-                    <Text size="xs" c="dimmed" mt="xs" fw={600}>Example: 150 kWh used over 750 km</Text>
+                    <Text size="xs" c="dimmed" mt="xs" fw={600}>{costExampleTitle}</Text>
                     <List size="xs" mt={4}>
-                      <List.Item>EV cost: 150 × $0.13 = $19.50</List.Item>
-                      <List.Item>ICE cost: (750 / 100) × 8.5 × $1.50 = $95.63</List.Item>
-                      <List.Item>Savings: $95.63 - $19.50 = $76.13</List.Item>
+                      {costExampleItems.map((item, i) => (
+                        <List.Item key={i}>{item}</List.Item>
+                      ))}
                     </List>
                   </div>
                 </BorderedPaper>
@@ -174,7 +224,7 @@ function DataGuide() {
                 </Text>
                 <List size="sm">
                   <List.Item>
-                    <strong>Blue line (Distance):</strong> Shows kilometers driven each day. Peaks indicate 
+                    <strong>Blue line (Distance):</strong> Shows {isMi ? 'miles' : 'kilometers'} driven each day. Peaks indicate 
                     days with longer trips.
                   </List.Item>
                   <List.Item>
@@ -197,18 +247,18 @@ function DataGuide() {
                 </Text>
                 <List size="sm">
                   <List.Item>
-                    <Badge color="green" size="sm">Excellent</Badge> Below 17 kWh/100km - Ideal conditions, 
+                    <Badge color="green" size="sm">Excellent</Badge> {effExcellent} - Ideal conditions, 
                     gentle driving, optimal temperature
                   </List.Item>
                   <List.Item>
-                    <Badge color="blue" size="sm">Good</Badge> 17-20 kWh/100km - Normal efficient driving
+                    <Badge color="blue" size="sm">Good</Badge> {effGood} - Normal efficient driving
                   </List.Item>
                   <List.Item>
-                    <Badge color="yellow" size="sm">Average</Badge> 20-23 kWh/100km - Mixed conditions or 
+                    <Badge color="yellow" size="sm">Average</Badge> {effAverage} - Mixed conditions or 
                     moderate highway speeds
                   </List.Item>
                   <List.Item>
-                    <Badge color="red" size="sm">High</Badge> Above 23 kWh/100km - High speeds, cold weather, 
+                    <Badge color="red" size="sm">High</Badge> {effHigh} - High speeds, cold weather, 
                     aggressive driving, or heavy climate control use
                   </List.Item>
                 </List>
@@ -226,10 +276,10 @@ function DataGuide() {
                     Helps you understand your typical trip patterns (short city trips vs. longer journeys)
                   </List.Item>
                   <List.Item>
-                    Most EV owners have a high percentage of short trips (0-20 km), which is ideal for EVs
+                    Most EV owners have a high percentage of short trips ({shortTrips}), which is ideal for EVs
                   </List.Item>
                   <List.Item>
-                    Long trips (100+ km) may require charging planning
+                    Long trips ({longTrips}) may require charging planning
                   </List.Item>
                 </List>
               </div>
@@ -322,19 +372,19 @@ function DataGuide() {
                 <List size="sm">
                   <List.Item>
                     <span style={{ color: '#22c55e', fontWeight: 600 }}>■</span> <strong>Green</strong> 
-                    {' - Excellent efficiency (<17 kWh/100km)'}
+                    {` - Excellent efficiency (<${t1} ${effUnit})`}
                   </List.Item>
                   <List.Item>
                     <span style={{ color: '#3b82f6', fontWeight: 600 }}>■</span> <strong>Blue</strong> 
-                    - Good efficiency (17-20 kWh/100km)
+                    {` - Good efficiency (${t1}-${t2} ${effUnit})`}
                   </List.Item>
                   <List.Item>
                     <span style={{ color: '#eab308', fontWeight: 600 }}>■</span> <strong>Yellow</strong> 
-                    - Average efficiency (20-23 kWh/100km)
+                    {` - Average efficiency (${t2}-${t3} ${effUnit})`}
                   </List.Item>
                   <List.Item>
                     <span style={{ color: '#ef4444', fontWeight: 600 }}>■</span> <strong>Red</strong> 
-                    {' - High consumption (>23 kWh/100km)'}
+                    {` - High consumption (>${t3} ${effUnit})`}
                   </List.Item>
                 </List>
               </div>
@@ -408,10 +458,10 @@ function DataGuide() {
                     </Text>
                   </Paper>
 
-                  <Paper p="xs" withBorder>
-                    <Text size="xs" fw={600}>Distance (km)</Text>
+                   <Paper p="xs" withBorder>
+                    <Text size="xs" fw={600}>Distance ({dist})</Text>
                     <Text size="xs" c="dimmed">
-                      The total distance traveled during this specific journey.
+                      The total distance traveled during this specific journey, in {isMi ? 'miles' : 'kilometers'}.
                     </Text>
                   </Paper>
 
@@ -423,7 +473,7 @@ function DataGuide() {
                   </Paper>
 
                   <Paper p="xs" withBorder>
-                    <Text size="xs" fw={600}>Efficiency (kWh/100km)</Text>
+                    <Text size="xs" fw={600}>Efficiency ({effUnit})</Text>
                     <Text size="xs" c="dimmed">
                       The efficiency rating for this specific trip, color-coded for quick assessment.
                     </Text>
@@ -445,9 +495,9 @@ function DataGuide() {
                   </Paper>
 
                   <Paper p="xs" withBorder>
-                    <Text size="xs" fw={600}>Odometer</Text>
+                    <Text size="xs" fw={600}>Odometer ({dist})</Text>
                     <Text size="xs" c="dimmed">
-                      Vehicle's odometer reading at the start of the trip (total lifetime kilometers).
+                      Vehicle's odometer reading at the start of the trip (total lifetime {isMi ? 'miles' : 'kilometers'}).
                     </Text>
                   </Paper>
                 </Stack>
@@ -487,7 +537,7 @@ function DataGuide() {
 
               <List size="sm">
                 <List.Item>
-                  <strong>Moderate speed:</strong> Highway speeds above 110 km/h significantly increase 
+                  <strong>Moderate speed:</strong> Highway speeds above {speedThreshold} {speedUnit} significantly increase 
                   energy consumption due to air resistance
                 </List.Item>
                 <List.Item>
