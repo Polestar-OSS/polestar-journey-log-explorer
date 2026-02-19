@@ -41,19 +41,19 @@ function FileUploader({ onDataLoaded }) {
         );
       }
 
-      const { trips, distanceUnit } = result;
+      const { data, distanceUnit } = result;
 
-      if (trips.length === 0) {
+      if (data.length === 0) {
         throw new Error("No valid journey data found in the file.");
       }
 
       notifications.show({
         title: "Success!",
-        message: `Loaded ${trips.length} journeys from ${file.name}`,
+        message: `Loaded ${data.length} journeys from ${file.name}`,
         color: "green",
       });
 
-      onDataLoaded({ trips, distanceUnit });
+      onDataLoaded({ data, distanceUnit });
     } catch (error) {
       notifications.show({
         title: "Error",
