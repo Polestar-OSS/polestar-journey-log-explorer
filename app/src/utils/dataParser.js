@@ -64,8 +64,8 @@ export const parseCSV = (file) => {
                 const headers = results.meta?.fields || [];
                 const { distanceColumn, distanceUnit } = detectDistanceColumn(headers);
                 const mapping = buildMapping(distanceColumn);
-                const trips = processJourneyData(results.data, mapping);
-                resolve({ trips, distanceUnit });
+                const data = processJourneyData(results.data, mapping);
+                resolve({ data, distanceUnit });
             },
             error: (error) => {
                 reject(error);
@@ -117,8 +117,8 @@ export const parseXLSX = async (file) => {
         const headerNames = headers.filter(Boolean);
         const { distanceColumn, distanceUnit } = detectDistanceColumn(headerNames);
         const mapping = buildMapping(distanceColumn);
-        const trips = processJourneyData(jsonData, mapping);
-        return { trips, distanceUnit };
+        const data = processJourneyData(jsonData, mapping);
+        return { data, distanceUnit };
     } catch (error) {
         throw new Error(`Failed to parse Excel file: ${error.message}`);
     }
