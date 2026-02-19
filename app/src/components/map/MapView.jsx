@@ -7,7 +7,7 @@ import { FeatureBuilder } from "../../services/map/FeatureBuilder";
 import { MapService } from "../../services/map/MapService";
 import "ol/ol.css";
 
-function MapView({ data }) {
+function MapView({ data, distanceUnit = 'km' }) {
   const mapRef = useRef(null);
   const mapServiceRef = useRef(null);
 
@@ -19,7 +19,7 @@ function MapView({ data }) {
   const [showMarkers, setShowMarkers] = useState(true);
 
   // Initialize services (Dependency Injection)
-  const colorCalculator = useMemo(() => new ColorCalculator(), []);
+  const colorCalculator = useMemo(() => new ColorCalculator(distanceUnit), [distanceUnit]);
   const tileLayerFactory = useMemo(() => new TileLayerFactory(), []);
   const featureBuilder = useMemo(
     () => new FeatureBuilder(colorCalculator),
@@ -116,6 +116,7 @@ function MapView({ data }) {
       featureBuilder,
       markerFactory
     );
+    mapService.setDistanceUnit(distanceUnit);
     mapService.initializeMap(mapRef.current, center, selectedTileLayer);
     mapServiceRef.current = mapService;
 
@@ -127,6 +128,7 @@ function MapView({ data }) {
     };
   }, [
     center,
+    distanceUnit,
     featureBuilder,
     markerFactory,
     selectedTileLayer,

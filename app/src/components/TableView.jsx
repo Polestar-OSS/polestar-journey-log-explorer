@@ -4,7 +4,7 @@ import { IconSearch, IconNote, IconTag } from '@tabler/icons-react';
 import TripNotesModal from './TripNotesModal';
 import { generateTripId, getTripAnnotation } from '../utils/tripAnnotations';
 
-function TableView({ data }) {
+function TableView({ data, distanceUnit = 'km' }) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('startDate');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -43,9 +43,14 @@ function TableView({ data }) {
 
   const getEfficiencyColor = (efficiency) => {
     const eff = parseFloat(efficiency);
-    if (eff < 15) return 'green';
-    if (eff < 20) return 'yellow';
-    if (eff < 25) return 'orange';
+    const multiplier = distanceUnit === 'mi' ? 1.60934 : 1;
+    // km thresholds: 15, 20, 25
+    const t1 = Math.round(15 * multiplier);
+    const t2 = Math.round(20 * multiplier);
+    const t3 = Math.round(25 * multiplier);
+    if (eff < t1) return 'green';
+    if (eff < t2) return 'blue';
+    if (eff < t3) return 'orange';
     return 'red';
   };
 
@@ -163,9 +168,9 @@ function TableView({ data }) {
               <Table.Th>Date</Table.Th>
               <Table.Th>Start Address</Table.Th>
               <Table.Th>End Address</Table.Th>
-              <Table.Th>Distance (km)</Table.Th>
+              <Table.Th>Distance ({distanceUnit === 'mi' ? 'mi' : 'km'})</Table.Th>
               <Table.Th>Consumption (kWh)</Table.Th>
-              <Table.Th>Efficiency (kWh/100km)</Table.Th>
+              <Table.Th>Efficiency (kWh/100{distanceUnit === 'mi' ? 'mi' : 'km'})</Table.Th>
               <Table.Th>SOC Change</Table.Th>
               <Table.Th>SOC Drop (%)</Table.Th>
               <Table.Th>Notes/Tags</Table.Th>

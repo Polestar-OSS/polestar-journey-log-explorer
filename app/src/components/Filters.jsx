@@ -4,7 +4,7 @@ import { DatePickerInput } from '@mantine/dates';
 import { IconFilter, IconX, IconChevronDown, IconChevronUp, IconCalendar, IconTag } from '@tabler/icons-react';
 import { getAllTags, generateTripId, getTripAnnotation } from '../utils/tripAnnotations';
 
-function Filters({ data, onFilterChange }) {
+function Filters({ data, distanceUnit = 'km', onFilterChange }) {
   const [opened, setOpened] = useState(false);
   const [filters, setFilters] = useState({
     dateFrom: null,
@@ -194,7 +194,7 @@ function Filters({ data, onFilterChange }) {
               />
             </Group>
 
-            <Text size="sm" fw={500} c="dimmed" mt="xs">Distance (km)</Text>
+            <Text size="sm" fw={500} c="dimmed" mt="xs">Distance ({distanceUnit === 'mi' ? 'mi' : 'km'})</Text>
             <Group grow>
               <NumberInput
                 label="Min Distance"
@@ -216,7 +216,7 @@ function Filters({ data, onFilterChange }) {
               />
             </Group>
 
-            <Text size="sm" fw={500} c="dimmed" mt="xs">Efficiency (kWh/100km)</Text>
+            <Text size="sm" fw={500} c="dimmed" mt="xs">Efficiency (kWh/100{distanceUnit === 'mi' ? 'mi' : 'km'})</Text>
             <Group grow>
               <NumberInput
                 label="Min Efficiency"

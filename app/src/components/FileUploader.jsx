@@ -29,29 +29,31 @@ function FileUploader({ onDataLoaded }) {
     setLoading(true);
 
     try {
-      let data;
+      let result;
 
       if (fileName.endsWith(".csv")) {
-        data = await parseCSV(file);
+        result = await parseCSV(file);
       } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
-        data = await parseXLSX(file);
+        result = await parseXLSX(file);
       } else {
         throw new Error(
           "Unsupported file format. Please upload a CSV or XLSX file."
         );
       }
 
-      if (data.length === 0) {
+      const { trips, distanceUnit } = result;
+
+      if (trips.length === 0) {
         throw new Error("No valid journey data found in the file.");
       }
 
       notifications.show({
         title: "Success!",
-        message: `Loaded ${data.length} journeys from ${file.name}`,
+        message: `Loaded ${trips.length} journeys from ${file.name}`,
         color: "green",
       });
 
-      onDataLoaded(data);
+      onDataLoaded({ trips, distanceUnit });
     } catch (error) {
       notifications.show({
         title: "Error",
@@ -142,8 +144,8 @@ function FileUploader({ onDataLoaded }) {
         </Text>
         <Text size="xs" c="dimmed">
           Your file should contain columns like: Start Date, End Date, Distance
-          in KM, Consumption in Kwh, Start Address, End Address, Start/End
-          Latitude/Longitude, etc.
+          in KM (or Distance in Mile), Consumption in Kwh, Start Address, End
+          Address, Start/End Latitude/Longitude, etc.
         </Text>
       </Paper>
 

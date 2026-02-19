@@ -4,10 +4,55 @@ import ExcelJS from 'exceljs';
 // Constants for carbon calculations
 // Average ICE car fuel consumption (L/100km) -- US EPA average
 export const AVG_ICE_FUEL_CONSUMPTION = 8.9;
+// Average ICE car fuel consumption (gal/100mi) -- US EPA average
+export const AVG_ICE_FUEL_CONSUMPTION_GAL = 4.2;
 // Gasoline produces ~2.31 kg CO2 per liter 
 export const CO2_PER_LITER_GASOLINE = 2.31;
+// Gasoline produces ~8.887 kg CO2 per gallon
+export const CO2_PER_GALLON_GASOLINE = 8.887;
 // One tree absorbs ~21kg CO2/year
 export const TREE_CO2_ABSORPTION_PER_YEAR = 21;
+
+/**
+ * Detect the distance column name from CSV/XLSX headers
+ * @param {Array} headers - Column header names
+ * @returns {{ distanceColumn: string, distanceUnit: 'km'|'mi' }}
+ */
+const detectDistanceColumn = (headers) => {
+    if (headers.includes('Distance in Mile')) {
+        return { distanceColumn: 'Distance in Mile', distanceUnit: 'mi' };
+    }
+    if (headers.includes('Distance in KM')) {
+        return { distanceColumn: 'Distance in KM', distanceUnit: 'km' };
+    }
+    // Fallback to KM if neither is found
+    return { distanceColumn: 'Distance in KM', distanceUnit: 'km' };
+};
+
+/**
+ * Build column mapping based on detected headers
+ * @param {string} distanceColumn - The detected distance column name
+ * @returns {Object} Column mapping
+ */
+const buildMapping = (distanceColumn) => ({
+    distanceKm: distanceColumn,
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    startAddress: 'Start Address',
+    endAddress: 'End Address',
+    consumptionKwh: 'Consumption in Kwh',
+    category: 'Category',
+    startLat: 'Start Latitude',
+    startLng: 'Start Longitude',
+    endLat: 'End Latitude',
+    endLng: 'End Longitude',
+    startOdometer: 'Start Odometer',
+    endOdometer: 'End Odometer',
+    tripType: 'Trip Type',
+    socSource: 'SOC Source',
+    socDestination: 'SOC Destination',
+    comments: 'Comments',
+});
 
 export const parseCSV = (file) => {
     return new Promise((resolve, reject) => {
@@ -16,27 +61,11 @@ export const parseCSV = (file) => {
             dynamicTyping: true,
             skipEmptyLines: true,
             complete: (results) => {
-                // Optionally detect columns or allow mapping as a second argument
-                const defaultMapping = {
-                    distanceKm: 'Distance in KM',
-                    startDate: 'Start Date',
-                    endDate: 'End Date',
-                    startAddress: 'Start Address',
-                    endAddress: 'End Address',
-                    consumptionKwh: 'Consumption in Kwh',
-                    category: 'Category',
-                    startLat: 'Start Latitude',
-                    startLng: 'Start Longitude',
-                    endLat: 'End Latitude',
-                    endLng: 'End Longitude',
-                    startOdometer: 'Start Odometer',
-                    endOdometer: 'End Odometer',
-                    tripType: 'Trip Type',
-                    socSource: 'SOC Source',
-                    socDestination: 'SOC Destination',
-                    comments: 'Comments',
-                };
-                resolve(processJourneyData(results.data, defaultMapping));
+                const headers = results.meta?.fields || [];
+                const { distanceColumn, distanceUnit } = detectDistanceColumn(headers);
+                const mapping = buildMapping(distanceColumn);
+                const trips = processJourneyData(results.data, mapping);
+                resolve({ trips, distanceUnit });
             },
             error: (error) => {
                 reject(error);
@@ -84,27 +113,12 @@ export const parseXLSX = async (file) => {
             }
         });
 
-        // Provide the mapping for Excel
-        const defaultMapping = {
-            distanceKm: 'Distance in KM',
-            startDate: 'Start Date',
-            endDate: 'End Date',
-            startAddress: 'Start Address',
-            endAddress: 'End Address',
-            consumptionKwh: 'Consumption in Kwh',
-            category: 'Category',
-            startLat: 'Start Latitude',
-            startLng: 'Start Longitude',
-            endLat: 'End Latitude',
-            endLng: 'End Longitude',
-            startOdometer: 'Start Odometer',
-            endOdometer: 'End Odometer',
-            tripType: 'Trip Type',
-            socSource: 'SOC Source',
-            socDestination: 'SOC Destination',
-            comments: 'Comments',
-        };
-        return processJourneyData(jsonData, defaultMapping);
+        // Detect distance column and build mapping
+        const headerNames = headers.filter(Boolean);
+        const { distanceColumn, distanceUnit } = detectDistanceColumn(headerNames);
+        const mapping = buildMapping(distanceColumn);
+        const trips = processJourneyData(jsonData, mapping);
+        return { trips, distanceUnit };
     } catch (error) {
         throw new Error(`Failed to parse Excel file: ${error.message}`);
     }
@@ -121,25 +135,7 @@ const calculateEfficiency = (consumption, distance) => {
 
 const processJourneyData = (rawData, mapping) => {
     // Use provided mapping, fallback to defaults if not specified
-    const m = mapping || {
-        distanceKm: 'Distance in KM',
-        startDate: 'Start Date',
-        endDate: 'End Date',
-        startAddress: 'Start Address',
-        endAddress: 'End Address',
-        consumptionKwh: 'Consumption in Kwh',
-        category: 'Category',
-        startLat: 'Start Latitude',
-        startLng: 'Start Longitude',
-        endLat: 'End Latitude',
-        endLng: 'End Longitude',
-        startOdometer: 'Start Odometer',
-        endOdometer: 'End Odometer',
-        tripType: 'Trip Type',
-        socSource: 'SOC Source',
-        socDestination: 'SOC Destination',
-        comments: 'Comments',
-    };
+    const m = mapping || buildMapping('Distance in KM');
     return rawData
         .filter(row => parseFloat(row[m.distanceKm]) > 0) // Filter out zero-distance entries
         .map((row, index) => ({
@@ -167,7 +163,7 @@ const processJourneyData = (rawData, mapping) => {
         }));
 };
 
-export const calculateStatistics = (data) => {
+export const calculateStatistics = (data, distanceUnit = 'km') => {
     if (!data || data.length === 0) return null;
 
     const totalDistance = data.reduce((sum, trip) => sum + trip.distanceKm, 0);
@@ -179,10 +175,20 @@ export const calculateStatistics = (data) => {
         .map(trip => parseFloat(trip.efficiency));
 
     // Carbon savings calculation
-    // Average ICE car: 8.9 L/100km (US EPA average)
-    // Gas produces ~2.31 kg CO2 per liter
-    const gasConsumed = (totalDistance / 100) * AVG_ICE_FUEL_CONSUMPTION; // liters
-    const co2Saved = gasConsumed * CO2_PER_LITER_GASOLINE; // kg
+    let fuelConsumed, co2Saved, fuelUnit;
+    if (distanceUnit === 'mi') {
+        // Average ICE car: 4.2 gal/100mi (US EPA average ~23.8 mpg combined)
+        // Gas produces ~8.887 kg CO2 per gallon
+        fuelConsumed = (totalDistance / 100) * AVG_ICE_FUEL_CONSUMPTION_GAL; // gallons
+        co2Saved = fuelConsumed * CO2_PER_GALLON_GASOLINE; // kg
+        fuelUnit = 'gal';
+    } else {
+        // Average ICE car: 8.9 L/100km (US EPA average)
+        // Gas produces ~2.31 kg CO2 per liter
+        fuelConsumed = (totalDistance / 100) * AVG_ICE_FUEL_CONSUMPTION; // liters
+        co2Saved = fuelConsumed * CO2_PER_LITER_GASOLINE; // kg
+        fuelUnit = 'L';
+    }
     const treesEquivalent = co2Saved / TREE_CO2_ABSORPTION_PER_YEAR; // One tree absorbs ~21kg CO2/year
 
     return {
@@ -209,6 +215,8 @@ export const calculateStatistics = (data) => {
         })(),
         carbonSaved: co2Saved.toFixed(2),
         treesEquivalent: treesEquivalent.toFixed(1),
-        gasSaved: gasConsumed.toFixed(2),
+        gasSaved: fuelConsumed.toFixed(2),
+        distanceUnit,
+        fuelUnit,
     };
 };

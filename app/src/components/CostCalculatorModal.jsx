@@ -2,7 +2,7 @@ import { Modal, Stack, NumberInput, Select, Text, Group, Button, Divider, Paper,
 import { useState, useEffect } from 'react';
 import { IconCurrencyDollar, IconBolt, IconHome, IconMapPin } from '@tabler/icons-react';
 
-function CostCalculatorModal({ opened, onClose, statistics }) {
+function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' }) {
   const combobox = useCombobox();
   const [electricityRate, setElectricityRate] = useState(0.13);
   const [currency, setCurrency] = useState('USD');
@@ -274,7 +274,7 @@ function CostCalculatorModal({ opened, onClose, statistics }) {
             <Text size="lg" fw={700}>{symbol}{costs.avgPerTrip}</Text>
           </Paper>
           <Paper p="sm" withBorder>
-            <Text size="xs" c="dimmed" tt="uppercase">Avg per km</Text>
+            <Text size="xs" c="dimmed" tt="uppercase">Avg per {distanceUnit === 'mi' ? 'mi' : 'km'}</Text>
             <Text size="lg" fw={700}>{symbol}{costs.avgPerKm}</Text>
           </Paper>
         </SimpleGrid>

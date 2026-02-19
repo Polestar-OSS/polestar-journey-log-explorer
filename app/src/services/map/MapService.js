@@ -22,6 +22,7 @@ export class MapService {
         this.overlay = null;
         this.heatmapLayer = null;
         this.tileLayer = null;
+        this.distanceUnit = 'km';
     }
 
     /**
@@ -66,7 +67,7 @@ export class MapService {
                 minZoom: 3
             }),
             controls: defaultControls().extend([
-                new ScaleLine({ units: 'metric' }),
+                new ScaleLine({ units: this.distanceUnit === 'mi' ? 'imperial' : 'metric' }),
                 new ZoomToExtent({
                     extent: fromLonLat([center[0] - 1, center[1] - 1]).concat(
                         fromLonLat([center[0] + 1, center[1] + 1])
@@ -126,6 +127,14 @@ export class MapService {
     }
 
     /**
+     * Set the distance unit for popup display
+     * @param {string} unit - Distance unit ('km' or 'mi')
+     */
+    setDistanceUnit(unit) {
+        this.distanceUnit = unit || 'km';
+    }
+
+    /**
      * Create popup content HTML
      * @param {Object} trip - Trip data
      * @param {string} type - Marker type ('start' or 'end')
@@ -133,6 +142,9 @@ export class MapService {
      */
     createPopupContent(trip, type) {
         const isEnd = type === 'end';
+        const distLabel = this.distanceUnit === 'mi' ? 'mi' : 'km';
+        const multiplier = this.distanceUnit === 'mi' ? 1.60934 : 1;
+        const effThreshold = Math.round(20 * multiplier);
         return `
       <div style="font-family: system-ui, -apple-system, sans-serif;">
         <div style="font-weight: 700; margin-bottom: 8px;">${type === 'start' ? 'Trip Start' : 'Trip End'}</div>
@@ -143,14 +155,14 @@ export class MapService {
             SOC: ${isEnd ? trip.socDestination : trip.socSource}%
           </span>
           ${isEnd ? `
-            <span style="background: ${trip.efficiency < 20 ? '#12b886' : '#fa5252'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
-              ${trip.efficiency} kWh/100km
+            <span style="background: ${trip.efficiency < effThreshold ? '#12b886' : '#fa5252'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+              ${trip.efficiency} kWh/100${distLabel}
             </span>
           ` : ''}
         </div>
         ${isEnd ? `
           <div style="font-size: 11px; margin-top: 8px; color: #868e96;">
-            Distance: ${trip.distanceKm} km<br/>
+            Distance: ${trip.distanceKm} ${distLabel}<br/>
             Consumption: ${trip.consumptionKwh} kWh
           </div>
         ` : ''}
