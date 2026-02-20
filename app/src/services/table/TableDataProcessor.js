@@ -132,7 +132,7 @@ export class TableRowFormatter {
         let color;
 
         if (eff < t1) color = 'green';
-        else if (eff < t2) color = 'blue';
+        else if (eff < t2) color = 'yellow';
         else if (eff < t3) color = 'orange';
         else color = 'red';
 
