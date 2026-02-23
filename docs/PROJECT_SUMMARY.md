@@ -79,7 +79,7 @@ polestar-jourly-log-explorer/
 │       ├── deployment-process.md
 │       └── data-model.md
 ├── .gitignore                      # Git ignore rules
-├── LICENSE                         # MIT License
+├── LICENSE                         # AGPLv3 License
 ├── README.md                       # Project README
 └── QUICKSTART.md                   # Quick start guide
 ```
@@ -267,7 +267,7 @@ See DEVELOPMENT.md for detailed guidelines.
 
 ## 📄 License
 
-**MIT License** - See LICENSE file for details
+**GNU Affero General Public License v3.0 (AGPLv3)** - See LICENSE file for details
 
 Free to use, modify, and distribute.
 
@@ -285,7 +285,7 @@ Built with ❤️ for the EV community
 ✅ **Multiple Visualizations**: Charts, maps, and tables  
 ✅ **GitHub Pages**: Automatic deployment configured  
 ✅ **Comprehensive Documentation**: User guides, developer docs, and diagrams  
-✅ **Open Source**: MIT licensed, community-friendly  
+✅ **Open Source**: AGPLv3 licensed, community-friendly  
 
 ## 📊 Project Statistics
 
