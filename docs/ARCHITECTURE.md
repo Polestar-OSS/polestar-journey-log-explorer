@@ -402,7 +402,7 @@ npm run deploy
 
 ## License
 
-MIT License - Open source and free to use
+GNU Affero General Public License v3.0 (AGPLv3) - Open source and free to use
 
 ---
 

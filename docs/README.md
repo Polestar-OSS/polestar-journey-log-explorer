@@ -4,7 +4,7 @@
 
 **Polestar Journey Log Explorer Documentation**  
 **Author**: Kinn Coelho Juliao <kinncj@gmail.com>  
-**License**: MIT
+**License**: AGPLv3
 
 Welcome to the comprehensive documentation for the Polestar Journey Log Explorer! This directory contains guides for users, developers, and contributors.
 
@@ -215,7 +215,7 @@ This tool is created by the community for analyzing journey log data exported fr
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPLv3). See the [LICENSE](../LICENSE) file for details.
 
 **Copyright (c) 2025 Kinn Coelho Juliao <kinncj@gmail.com>**
 
@@ -277,7 +277,7 @@ For questions or suggestions about the documentation:
 
 ## 📄 License
 
-This documentation is part of the Polestar Journey Log Explorer project and is licensed under the MIT License.
+This documentation is part of the Polestar Journey Log Explorer project and is licensed under the GNU Affero General Public License v3.0 (AGPLv3).
 
 ---
 
