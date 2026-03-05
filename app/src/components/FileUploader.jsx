@@ -8,12 +8,20 @@ import {
   useMantineColorScheme,
   ActionIcon,
   Tooltip,
+  Tabs,
 } from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
-import { IconUpload, IconFile, IconX, IconHelp } from "@tabler/icons-react";
+import {
+  IconUpload,
+  IconFile,
+  IconX,
+  IconHelp,
+  IconCloud,
+} from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { parseCSV, parseXLSX } from "../utils/dataParser";
 import HelpModal from "./HelpModal";
+import PolestarConnect from "./PolestarConnect";
 
 function FileUploader({ onDataLoaded }) {
   const [loading, setLoading] = useState(false);
@@ -80,74 +88,94 @@ function FileUploader({ onDataLoaded }) {
           style={{ margin: "0 auto" }}
           mb="xl"
         />
-        <Group justify="center" gap="xs" mb="sm">
-          <Text size="xl" fw={700}>
-            Upload Your Journey Log
-          </Text>
-          <Tooltip label="How to get your journey data">
-            <ActionIcon
-              variant="subtle"
-              size="lg"
-              onClick={() => setHelpOpened(true)}
-            >
-              <IconHelp size={20} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-        <Text size="sm" c="dimmed" mb="xl">
-          Upload a CSV or XLSX file containing your Polestar journey data to get
-          started
-        </Text>
       </div>
 
-      <Paper shadow="md" p="xl" radius="md" withBorder>
-        <Dropzone
-          onDrop={handleFileDrop}
-          loading={loading}
-          accept={[
-            "text/csv",
-            "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          ]}
-          maxFiles={1}
-        >
-          <Group
-            justify="center"
-            gap="xl"
-            style={{ minHeight: 200, pointerEvents: "none" }}
-          >
-            <Dropzone.Accept>
-              <IconUpload size={50} stroke={1.5} />
-            </Dropzone.Accept>
-            <Dropzone.Reject>
-              <IconX size={50} stroke={1.5} />
-            </Dropzone.Reject>
-            <Dropzone.Idle>
-              <IconFile size={50} stroke={1.5} />
-            </Dropzone.Idle>
+      <Tabs defaultValue="upload" variant="outline">
+        <Tabs.List>
+          <Tabs.Tab value="upload" leftSection={<IconFile size={16} />}>
+            Upload File
+          </Tabs.Tab>
+          <Tabs.Tab value="cloud" leftSection={<IconCloud size={16} />}>
+            Connect to Polestar
+          </Tabs.Tab>
+        </Tabs.List>
 
-            <div>
-              <Text size="xl" inline>
-                Drag file here or click to select
+        <Tabs.Panel value="upload" pt="xl">
+          <Stack gap="xl">
+            <Group justify="center" gap="xs">
+              <Text size="xl" fw={700}>
+                Upload Your Journey Log
               </Text>
-              <Text size="sm" c="dimmed" inline mt={7}>
-                Accepts CSV and XLSX files
-              </Text>
-            </div>
-          </Group>
-        </Dropzone>
-      </Paper>
+              <Tooltip label="How to get your journey data">
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  onClick={() => setHelpOpened(true)}
+                >
+                  <IconHelp size={20} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+            <Text size="sm" c="dimmed" ta="center">
+              Upload a CSV or XLSX file containing your Polestar journey data to
+              get started
+            </Text>
 
-      <Paper p="md" radius="md" withBorder>
-        <Text size="sm" fw={600} mb="xs">
-          Expected file format:
-        </Text>
-        <Text size="xs" c="dimmed">
-          Your file should contain columns like: Start Date, End Date, Distance
-          in KM (or Distance in Mile), Consumption in Kwh, Start Address, End
-          Address, Start/End Latitude/Longitude, etc.
-        </Text>
-      </Paper>
+            <Paper shadow="md" p="xl" radius="md" withBorder>
+              <Dropzone
+                onDrop={handleFileDrop}
+                loading={loading}
+                accept={[
+                  "text/csv",
+                  "application/vnd.ms-excel",
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ]}
+                maxFiles={1}
+              >
+                <Group
+                  justify="center"
+                  gap="xl"
+                  style={{ minHeight: 200, pointerEvents: "none" }}
+                >
+                  <Dropzone.Accept>
+                    <IconUpload size={50} stroke={1.5} />
+                  </Dropzone.Accept>
+                  <Dropzone.Reject>
+                    <IconX size={50} stroke={1.5} />
+                  </Dropzone.Reject>
+                  <Dropzone.Idle>
+                    <IconFile size={50} stroke={1.5} />
+                  </Dropzone.Idle>
+
+                  <div>
+                    <Text size="xl" inline>
+                      Drag file here or click to select
+                    </Text>
+                    <Text size="sm" c="dimmed" inline mt={7}>
+                      Accepts CSV and XLSX files
+                    </Text>
+                  </div>
+                </Group>
+              </Dropzone>
+            </Paper>
+
+            <Paper p="md" radius="md" withBorder>
+              <Text size="sm" fw={600} mb="xs">
+                Expected file format:
+              </Text>
+              <Text size="xs" c="dimmed">
+                Your file should contain columns like: Start Date, End Date,
+                Distance in KM (or Distance in Mile), Consumption in Kwh, Start
+                Address, End Address, Start/End Latitude/Longitude, etc.
+              </Text>
+            </Paper>
+          </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="cloud" pt="xl">
+          <PolestarConnect />
+        </Tabs.Panel>
+      </Tabs>
 
       <HelpModal opened={helpOpened} onClose={() => setHelpOpened(false)} />
     </Stack>
