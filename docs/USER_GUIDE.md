@@ -83,11 +83,32 @@ hover.
 
 ## Map
 
-Routes are straight lines between start and end, coloured by efficiency
-(legend on the left). Toggle start/end pins, a density heatmap and day chains.
-The basemap follows your light/dark theme. Click a pin for the trip's details.
-"Most visited" lists the places that account for most of your trips; click one
-to centre the map on it.
+Four modes, switched in the panel on the left (a drawer on phones):
+
+- **Routes**: every trip as a glowing line coloured by efficiency, with a
+  slow "flow" animation along the direction of travel. Start and end pins
+  cluster when zoomed out; click a cluster to zoom in, a pin for the trip.
+  Pick one trip in "Single trip" to isolate it and dim the rest.
+- **Heat**: a density heatmap of where you start and stop.
+- **Places**: bubbles sized by how many trips touch each place, drawn from the
+  same clustering as the "Most visited" insight. Click one to fly to it.
+- **Replay**: plays the filtered period day by day with a trailing set of
+  routes, a pulse at the current position and running totals. Space plays and
+  pauses; the slider scrubs.
+
+Basemaps: dark, light, satellite, OpenStreetMap and Humanitarian. The default
+follows your theme. Trips without coordinates never appear on the map.
+
+**Road snapping** (off by default) replaces straight lines with the road route
+between start and end. It sends start and end coordinates (rounded to four
+decimals, about 10 m) to the public OSRM demo server, one request per unique
+pair, and caches the results in your browser. You are asked once before the
+first request; nothing is sent until you agree. See
+[ADR-0008](./adr/0008-opt-in-road-snapping.md).
+
+The chip at the top right counts the trips inside the current view and their
+distance; the arrows button fits the map to every visible trip. The map
+respects reduced-motion settings: the flow animation and pulse are off there.
 
 ## Trips
 
@@ -95,11 +116,34 @@ Search by address, date or category; sort by any column; page through. The
 note icon opens notes and tags for a trip. Notes and tags are stored in your
 browser only and appear as a filter once you have some.
 
-## Cost calculator
+## Electricity tariff
 
-Available from the KPI row (and the Simple story). Set your home tariff and
-currency, optionally by searching your city, and the share of charging done at
-home. The tariff is remembered and used by the Simple story's cost card.
+Open **Electricity tariff settings** under the KPI row, the "Charging cost"
+tile, or the cost card in the Simple story. Everything you set is saved in
+your browser and applied everywhere a cost is shown.
+
+- **Preset or country**: start from a bundled preset (flat, EV night rate,
+  Ontario TOU, Swedish spot-style TOU, California tiers) or type your city
+  to pick up your country's average price.
+- **Flat**: one price per kWh.
+- **Time of use**: a default price plus up to eight periods, each with a
+  price, days (every day, weekdays, weekends) and a from/to time. Windows
+  that end before they start wrap midnight. Periods are checked in order.
+- **Tiered**: monthly volume blocks. Set your household's baseline so the
+  car is priced in the block it actually lands in.
+- **Charging habits** (accordion): the share and price of public charging,
+  wall-to-battery losses, charger power, whether the car charges as soon as
+  it is plugged in, in the cheapest hours, or in a window you choose, the
+  window itself, the battery's usable capacity and any fixed monthly fee.
+
+The panel on the right prices the trips currently in view: total, home vs
+public, effective price per kWh, cost per 100 km and per trip, a breakdown by
+rate period, a month-by-month bar and the assumptions the estimate rests on.
+For time-of-use tariffs the app infers charging sessions from the battery
+level rising between trips and places each session's energy in time using
+your charging habit. If there are too few sessions it falls back to the
+average price of your charging window. The formulas are in
+[`ANALYTICS.md`](./ANALYTICS.md#9-electricity-cost-costcalculator).
 
 ## Exporting
 
@@ -110,8 +154,10 @@ builder has its own CSV button.
 ## Privacy
 
 Processing is local. The only outbound requests are map tiles, an optional
-city lookup for tariffs (the text you typed, nothing else), and the site's
-analytics and cookie-consent scripts, which never see trip data.
+city lookup for tariffs (the text you typed, nothing else), road snapping on
+the map if you turn it on (rounded start/end coordinates, after you agree),
+and the site's analytics and cookie-consent scripts, which never see trip
+data.
 
 ## Troubleshooting
 

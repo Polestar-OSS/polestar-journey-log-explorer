@@ -12,6 +12,8 @@ decisions get a new number; superseded ones are marked, never deleted.
 | [0005](./0005-experience-levels.md) | Three experience levels over one data model | Accepted |
 | [0006](./0006-design-system.md) | Token-based design system; validated chart palette; single-axis charts with table twins | Accepted |
 | [0007](./0007-strict-date-parsing.md) | Journey Log dates are parsed by a strict parser, never `new Date(string)` | Accepted |
+| [0008](./0008-opt-in-road-snapping.md) | Road-snapped routes are opt-in, consented, rounded and cached; straight lines by default | Accepted |
+| [0009](./0009-tariff-model.md) | One normalised tariff model in `localStorage`; pricing in pure cost services, never in components | Accepted |
 
 Template:
 

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { StoryBuilder, describeDistance, describeEnergy } from '../../app/src/services/story/StoryBuilder.js';
 import { InsightsCalculator } from '../../app/src/services/insights/InsightsCalculator.js';
 import { processRawRows, calculateStatistics } from '../../app/src/utils/dataParser.js';
+import { CostCalculator } from '../../app/src/services/cost/CostCalculator.js';
 import { HEADERS_KM, SMALL_EXPORT } from '../fixtures/rows.js';
 
 describe('describeDistance', () => {
@@ -36,6 +37,16 @@ describe('StoryBuilder', () => {
         expect(cards[1].headline).toMatch(/km per kWh/);
         expect(cards[2].figure).toBe('€2');
         expect(cards[2].body).toMatch(/€0.2\/kWh/);
+    });
+
+    it('prices the cost card from a CostCalculator result when given one', () => {
+        const cost = new CostCalculator({ mode: 'flat', currency: 'EUR', flat: { rate: 0.2 }, publicCharging: { enabled: true, sharePct: 50, rate: 0.5 }, chargingLossPct: 0 }).compute(data);
+        const withCost = new StoryBuilder({ distanceUnit: 'km' }).build({ statistics, insights, data, cost });
+        const card = withCost.find((c) => c.id === 'cost');
+        expect(card.figure).toBe(`€${Math.round(cost.cost.total)}`);
+        expect(card.body).toMatch(/flat rate/);
+        expect(card.body).toMatch(/public charging/);
+        expect(card.action).toBe('cost');
     });
 
     it('skips cards whose inputs are not available', () => {

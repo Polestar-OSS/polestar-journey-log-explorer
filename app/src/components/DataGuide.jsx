@@ -190,6 +190,11 @@ function DataGuide({ distanceUnit = 'km' }) {
                   An estimate of money saved by using electricity instead of gasoline, comparing 
                   your EV's energy costs to a comparable ICE vehicle's fuel costs.
                 </Text>
+                <Text size="sm" c="dimmed" mb="xs">
+                  The "Charging cost" tile and the story's cost card use your saved electricity tariff
+                  (flat, time-of-use or tiered, with public charging, losses and charging habits) from
+                  <b> Electricity tariff settings</b>. The simplified comparison below uses a flat rate.
+                </Text>
                 <BorderedPaper p="sm" withBorder borderColor="teal-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">

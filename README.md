@@ -43,6 +43,10 @@ Rendered from the built-in synthetic sample (no real data).
 |---|---|---|
 | ![Landing](./docs/screenshots/landing.png) | ![Light](./docs/screenshots/light.png) | ![Mobile](./docs/screenshots/mobile.png) |
 
+| Electricity tariff settings (flat, time-of-use, tiered) |
+|---|
+| ![Tariff settings](./docs/screenshots/tariff.png) |
+
 ## 🚀 Quick Start
 
 ### Try It Online

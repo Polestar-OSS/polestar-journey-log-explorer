@@ -16,6 +16,7 @@ export const DEFAULT_PREFERENCES = {
     electricityRate: 0.13,
     currency: 'USD',
     homeChargingPercent: 80,
+    tariff: null, // see services/cost/TariffModel.js; null until the user saves one
 };
 
 const readAll = () => {

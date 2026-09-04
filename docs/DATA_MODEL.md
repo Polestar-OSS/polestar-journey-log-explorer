@@ -58,8 +58,8 @@ type Journey = {
 
 ## Statistics
 
-Output of `calculateStatistics(data, unit)`; numeric strings are kept for the
-legacy cost calculator.
+Output of `calculateStatistics(data, unit)`; totals are numeric strings
+(fixed decimals) for display, timestamps are numbers.
 
 `totalTrips, totalDistance, totalConsumption, avgEfficiency, bestEfficiency,
 worstEfficiency, avgTripDistance, odometerStart, odometerEnd, carbonSaved,
@@ -97,7 +97,52 @@ type StoryCard = {
 ## Preferences (`localStorage`)
 
 Key `polestar-journey-explorer:prefs`:
-`{ experienceLevel: 'simple'|'detailed'|'expert', electricityRate, currency, homeChargingPercent }`.
+```ts
+{
+  experienceLevel: 'simple' | 'detailed' | 'expert';
+  tariff: Tariff | null;            // see below; null until first saved
+  // legacy (pre-tariff) keys, read once to seed a flat tariff:
+  electricityRate?: number; currency?: string; homeChargingPercent?: number;
+}
+```
+
+### Tariff (`services/cost/TariffModel.js`)
+
+Always passed through `normalizeTariff`, which fills defaults, clamps ranges
+and forces the last tier open-ended, so consumers never see a partial object.
+
+```ts
+interface Tariff {
+  version: 1;
+  currency: string;                 // ISO code; symbol from CURRENCY_SYMBOLS
+  mode: 'flat' | 'tou' | 'tiered';
+  flat:   { rate: number };                                   // per kWh
+  tou:    { defaultRate: number; periods: TouPeriod[] };      // ≤ 8 periods
+  tiered: { householdBaselineKwh: number; tiers: Tier[] };    // last upToKwh null
+  fixedMonthlyFee: number;
+  publicCharging: { enabled: boolean; sharePct: number; rate: number };
+  chargingLossPct: number;          // 0–50, wall → battery
+  homeCharger: { powerKw: number; strategy: 'plugin' | 'cheapest' | 'window' };
+  homeChargingWindow: { from: 'HH:MM'; to: 'HH:MM' };
+  batteryUsableKwh: number | null;  // null → estimate from the data
+}
+interface TouPeriod { id; label; rate; days: 'all'|'weekday'|'weekend'; from: 'HH:MM'; to: 'HH:MM' }
+interface Tier { upToKwh: number | null; rate: number }
+```
+
+### Cost result (`CostCalculator.compute`)
+
+```ts
+{
+  currency; mode; method: 'sessions' | 'proportional' | 'tiered' | 'none'; sessionsUsed;
+  energy: { driven, homeBattery, homeWall, public };          // kWh
+  cost:   { home, public, total, fixedFees };                 // fixed fees are reported, not added
+  effectiveRatePerKwh; costPer100; costPerTrip; costPerMonth;
+  byMonth:  { key, label, kwh, cost }[];
+  byPeriod: { id, label, rate, kwh, cost, sharePct }[];
+  tiers: Tier[] | null; assumptions: string[]; unit: 'km' | 'mi';
+}
+```
 
 Key `polestar-trip-annotations`: `{ [tripKey]: { notes, tags[] } }` where
 `tripKey = startDate-startOdometer-endOdometer`.

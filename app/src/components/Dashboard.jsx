@@ -78,7 +78,7 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
                 </Box>
             ) : (
                 <>
-                    <StatsCards statistics={statistics} data={filteredData} distanceUnit={distanceUnit} deltas={deltas} periodLabel={periodLabel} compact={level === 'simple'} />
+                    <StatsCards statistics={statistics} data={filteredData} distanceUnit={distanceUnit} deltas={deltas} periodLabel={periodLabel} compact={level === 'simple'} usableKwh={insights?.battery?.usableKwh ?? null} />
 
                     <Tabs value={activeTab} onChange={setActiveTab} keepMounted={false}>
                         <Tabs.List className="ps-no-print">
@@ -93,7 +93,7 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
 
                         {tabs.includes('story') && (
                             <Tabs.Panel value="story" pt="lg">
-                                <StoryView statistics={statistics} insights={insights} data={filteredData} distanceUnit={distanceUnit} onOpenTab={setActiveTab} onChangeLevel={onChangeLevel} />
+                                <StoryView statistics={statistics} insights={insights} data={filteredData} distanceUnit={distanceUnit} usableKwh={insights?.battery?.usableKwh ?? null} onOpenTab={setActiveTab} onChangeLevel={onChangeLevel} />
                             </Tabs.Panel>
                         )}
 
