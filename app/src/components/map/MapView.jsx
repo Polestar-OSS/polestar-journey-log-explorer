@@ -63,13 +63,19 @@ function MapView({ data, distanceUnit = 'km', places }) {
     const [selectedTrip, setSelectedTrip] = useState(null);
     const [tripsToShow, setTripsToShow] = useState('150');
     const [showMarkers, setShowMarkers] = useState(true);
-    const [linkTripsByDay, setLinkTripsByDay] = useState(false);
+    const [linkTripsByDay, setLinkTripsByDay] = useState(true);
     const [flow, setFlow] = useState(!reducedMotion);
     const [snapRoads, setSnapRoads] = useState(false);
     const [snapConsent, setSnapConsent] = useState(false);
     const [snapProgress, setSnapProgress] = useState(null); // { done, total }
     const [snapVersion, setSnapVersion] = useState(0);
     const [drawerOpened, setDrawerOpened] = useState(false);
+    // One-line hint under the mobile controls button until the drawer has been opened once
+    const [hintSeen, setHintSeen] = useState(() => { try { return localStorage.getItem('polestar-map-hint-seen') === '1'; } catch { return false; } });
+    const openDrawer = () => {
+        setDrawerOpened(true);
+        if (!hintSeen) { setHintSeen(true); try { localStorage.setItem('polestar-map-hint-seen', '1'); } catch { /* storage unavailable */ } }
+    };
     const [hoverTrip, setHoverTrip] = useState(null);
     const [inView, setInView] = useState(null);
 
@@ -364,9 +370,16 @@ function MapView({ data, distanceUnit = 'km', places }) {
             )}
             {isMobile && (
                 <>
-                    <Button size="xs" variant="default" leftSection={<IconAdjustments size={14} />} onClick={() => setDrawerOpened(true)} style={{ position: 'absolute', top: 12, left: 56, zIndex: 5 }} className="ps-no-print">
-                        {MODES.find((m) => m.value === mode)?.label}
-                    </Button>
+                    <Box style={{ position: 'absolute', top: 12, left: 56, zIndex: 5 }} className="ps-no-print">
+                        <Button size="xs" variant="default" leftSection={<IconAdjustments size={14} />} onClick={openDrawer}>
+                            {MODES.find((m) => m.value === mode)?.label}
+                        </Button>
+                        {!hintSeen && (
+                            <Text size="10px" c="dimmed" mt={4} lh={1.2} style={{ maxWidth: 190, textShadow: '0 0 6px var(--ps-page)' }}>
+                                Tap for modes, basemap and road snapping
+                            </Text>
+                        )}
+                    </Box>
                     <Drawer opened={drawerOpened} onClose={() => setDrawerOpened(false)} position="bottom" size="70%" title="Map" radius={0}>
                         {panel}
                     </Drawer>

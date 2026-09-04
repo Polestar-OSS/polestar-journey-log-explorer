@@ -83,12 +83,17 @@ hover.
 
 ## Map
 
-Four modes, switched in the panel on the left (a drawer on phones):
+Four modes, switched in the panel on the left (on phones, tap the button
+showing the current mode, "Routes" at first, to open the drawer with modes,
+basemap, trip linking and road snapping; a one-line hint says so until the
+first tap):
 
 - **Routes**: every trip as a glowing line coloured by efficiency, with a
   slow "flow" animation along the direction of travel. Start and end pins
   cluster when zoomed out; click a cluster to zoom in, a pin for the trip.
-  Pick one trip in "Single trip" to isolate it and dim the rest.
+  Consecutive trips of a day are linked by dotted chains (on by default;
+  switch it off in the panel). Pick one trip in "Single trip" to isolate it
+  and dim the rest.
 - **Heat**: a density heatmap of where you start and stop.
 - **Places**: bubbles sized by how many trips touch each place, drawn from the
   same clustering as the "Most visited" insight. Click one to fly to it.
