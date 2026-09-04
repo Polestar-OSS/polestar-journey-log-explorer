@@ -77,7 +77,6 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
         );
         const data = await response.json();
         
-        console.log('Fetched cities:', data); // Debug log
         
         // Store city data with country info
         const cityDataWithCountry = data.map(place => ({
@@ -88,7 +87,6 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
         
         // Options for autocomplete (just display names)
         const options = data.map(place => place.display_name);
-        console.log('City options:', options); // Debug log
         setCityOptions(options);
       } catch (error) {
         console.error('Error fetching cities:', error);
@@ -154,7 +152,6 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
 
   return (
     <Modal
-      zIndex={99999999999999}
       opened={opened}
       onClose={onClose}
       title="Charging Cost Calculator"
@@ -171,7 +168,6 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
             handleCitySelect(value);
             combobox.closeDropdown();
           }}
-          zIndex={999999999999999}
         >
           <Combobox.Target>
             <TextInput
@@ -250,7 +246,7 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
 
         <Divider label="Cost Breakdown" labelPosition="center" />
 
-        <Paper p="md" withBorder style={{ backgroundColor: 'var(--mantine-color-blue-0)' }}>
+        <Paper p="md" withBorder style={{ borderLeft: '3px solid var(--ps-accent)' }}>
           <Stack gap="xs">
             <Group justify="space-between">
               <Text size="sm" fw={500}>Home Charging ({homeChargingPercent}%)</Text>
@@ -263,7 +259,7 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
             <Divider />
             <Group justify="space-between">
               <Text size="lg" fw={700}>Total Cost</Text>
-              <Text size="lg" fw={700} c="blue">{symbol}{costs.totalCost}</Text>
+              <Text size="lg" fw={700} c="polestar">{symbol}{costs.totalCost}</Text>
             </Group>
           </Stack>
         </Paper>

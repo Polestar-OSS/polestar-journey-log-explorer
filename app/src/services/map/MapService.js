@@ -4,9 +4,12 @@ import VectorLayer from 'ol/layer/Vector';
 import Heatmap from 'ol/layer/Heatmap';
 import VectorSource from 'ol/source/Vector';
 import { fromLonLat } from 'ol/proj';
-import { defaults as defaultControls, ScaleLine, ZoomToExtent, FullScreen, MousePosition } from 'ol/control';
+import { defaults as defaultControls, ScaleLine, FullScreen, MousePosition } from 'ol/control';
 import { createStringXY } from 'ol/coordinate';
 import Overlay from 'ol/Overlay';
+
+const escapeHtml = (value) =>
+    String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /**
  * Service Class: Manages all map-related operations
@@ -36,16 +39,6 @@ export class MapService {
         // Create overlay for popups
         const overlayElement = document.createElement('div');
         overlayElement.className = 'ol-popup';
-        overlayElement.style.cssText = `
-      background: white;
-      padding: 12px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      min-width: 200px;
-      position: absolute;
-      bottom: 12px;
-      left: -100px;
-    `;
 
         this.overlay = new Overlay({
             element: overlayElement,
@@ -66,13 +59,8 @@ export class MapService {
                 maxZoom: 19,
                 minZoom: 3
             }),
-            controls: defaultControls().extend([
+            controls: defaultControls({ attributionOptions: { collapsible: true, collapsed: true } }).extend([
                 new ScaleLine({ units: this.distanceUnit === 'mi' ? 'imperial' : 'metric' }),
-                new ZoomToExtent({
-                    extent: fromLonLat([center[0] - 1, center[1] - 1]).concat(
-                        fromLonLat([center[0] + 1, center[1] + 1])
-                    )
-                }),
                 new FullScreen(),
                 new MousePosition({
                     coordinateFormat: createStringXY(4),
@@ -87,8 +75,9 @@ export class MapService {
         // Initialize heatmap layer
         this.heatmapLayer = new Heatmap({
             source: new VectorSource(),
-            blur: 15,
-            radius: 8,
+            blur: 18,
+            radius: 9,
+            gradient: ['#2a1a10', '#944612', '#d95a0f', '#f98f4f', '#ffd7b5'],
             weight: () => 1,
             visible: false
         });
@@ -144,30 +133,41 @@ export class MapService {
         const isEnd = type === 'end';
         const distLabel = this.distanceUnit === 'mi' ? 'mi' : 'km';
         const multiplier = this.distanceUnit === 'mi' ? 1.60934 : 1;
-        const effThreshold = Math.round(20 * multiplier);
+        const eff = parseFloat(trip.efficiency);
+        const band = eff < 15 * multiplier ? 'good' : eff < 20 * multiplier ? 'ok' : eff < 25 * multiplier ? 'poor' : 'bad';
+        const bandColor = { good: 'var(--ps-good)', ok: 'var(--ps-warning)', poor: 'var(--ps-serious)', bad: 'var(--ps-critical)' }[band];
+        const duration = trip.durationMin > 0 ? `${Math.floor(trip.durationMin / 60) ? `${Math.floor(trip.durationMin / 60)}h ` : ''}${trip.durationMin % 60}m` : null;
+
         return `
-      <div style="font-family: system-ui, -apple-system, sans-serif;">
-        <div style="font-weight: 700; margin-bottom: 8px;">${type === 'start' ? 'Trip Start' : 'Trip End'}</div>
-        <div style="font-size: 12px; margin-bottom: 4px;">${isEnd ? trip.endDate : trip.startDate}</div>
-        <div style="font-size: 12px; margin-bottom: 8px;">${isEnd ? trip.endAddress : trip.startAddress}</div>
-        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-          <span style="background: #228be6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
-            SOC: ${isEnd ? trip.socDestination : trip.socSource}%
-          </span>
-          ${isEnd ? `
-            <span style="background: ${trip.efficiency < effThreshold ? '#12b886' : '#fa5252'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
-              ${trip.efficiency} kWh/100${distLabel}
-            </span>
-          ` : ''}
-        </div>
-        ${isEnd ? `
-          <div style="font-size: 11px; margin-top: 8px; color: #868e96;">
-            Distance: ${trip.distanceKm} ${distLabel}<br/>
-            Consumption: ${trip.consumptionKwh} kWh
-          </div>
-        ` : ''}
+      <div class="ol-popup-title">${isEnd ? 'Trip end' : 'Trip start'}</div>
+      <div class="ol-popup-date">${escapeHtml(isEnd ? trip.endDate : trip.startDate)}</div>
+      <div class="ol-popup-address">${escapeHtml(isEnd ? trip.endAddress : trip.startAddress)}</div>
+      <div class="ol-popup-chips">
+        <span class="ol-popup-chip"><i style="background: var(--ps-accent)"></i>SOC ${isEnd ? trip.socDestination : trip.socSource}%</span>
+        ${isEnd ? `<span class="ol-popup-chip"><i style="background: ${bandColor}"></i>${escapeHtml(String(trip.efficiency))} kWh/100${distLabel}</span>` : ''}
       </div>
+      ${isEnd ? `
+        <div class="ol-popup-meta">
+          ${escapeHtml(String(trip.distanceKm))} ${distLabel} · ${escapeHtml(String(trip.consumptionKwh))} kWh${duration ? ` · ${duration}` : ''}${trip.avgSpeed ? ` · ${trip.avgSpeed} ${distLabel}/h` : ''}
+        </div>
+      ` : ''}
     `;
+    }
+
+    /**
+     * Zoom the view to the extent of the current features
+     * @param {Array} features - OpenLayers features
+     */
+    fitToFeatures(features, padding = 48) {
+        if (!this.map || !features || features.length === 0) return;
+        const source = new VectorSource({ features });
+        const extent = source.getExtent();
+        if (!extent || !isFinite(extent[0])) return;
+        this.map.getView().fit(extent, {
+            padding: [padding, padding, padding, padding],
+            duration: 400,
+            maxZoom: 15,
+        });
     }
 
     /**
@@ -229,8 +229,7 @@ export class MapService {
     updateView(center, zoom) {
         if (!this.map) return;
 
-        this.map.getView().setCenter(fromLonLat(center));
-        this.map.getView().setZoom(zoom);
+        this.map.getView().animate({ center: fromLonLat(center), zoom, duration: 400 });
     }
 
     /**

@@ -1,3 +1,5 @@
+import { parseJourneyDate } from '../../utils/journeyDate';
+
 /**
  * FilterService - Service for applying filters to trip data
  * Follows Single Responsibility Principle: Only handles data filtering logic
@@ -62,15 +64,12 @@ export class FilterService {
      * @returns {Array} Filtered data
      */
     filterByDateFrom(data, dateFrom) {
-        const filterDate = new Date(dateFrom);
+        const filterDate = parseJourneyDate(dateFrom);
+        if (!filterDate) return data;
         filterDate.setHours(0, 0, 0, 0);
+        const fromTs = filterDate.getTime();
 
-        return data.filter(trip => {
-            const tripDateStr = trip.startDate.split(',')[0].trim();
-            const tripDate = new Date(tripDateStr);
-            tripDate.setHours(0, 0, 0, 0);
-            return tripDate >= filterDate;
-        });
+        return data.filter(trip => trip.startTs !== null && trip.startTs >= fromTs);
     }
 
     /**
@@ -80,15 +79,12 @@ export class FilterService {
      * @returns {Array} Filtered data
      */
     filterByDateTo(data, dateTo) {
-        const filterDate = new Date(dateTo);
+        const filterDate = parseJourneyDate(dateTo);
+        if (!filterDate) return data;
         filterDate.setHours(23, 59, 59, 999);
+        const toTs = filterDate.getTime();
 
-        return data.filter(trip => {
-            const tripDateStr = trip.startDate.split(',')[0].trim();
-            const tripDate = new Date(tripDateStr);
-            tripDate.setHours(0, 0, 0, 0);
-            return tripDate <= filterDate;
-        });
+        return data.filter(trip => trip.startTs !== null && trip.startTs <= toTs);
     }
 
     /**
@@ -282,7 +278,8 @@ export class FilterMetadataService {
         }
 
         const dates = data
-            .map(trip => new Date(trip.startDate))
+            .filter(trip => trip.startTs !== null)
+            .map(trip => new Date(trip.startTs))
             .sort((a, b) => a - b);
 
         return {

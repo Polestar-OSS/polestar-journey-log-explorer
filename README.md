@@ -11,28 +11,40 @@ An interactive web-based dashboard for analyzing your Polestar journey log data.
 
 ## ✨ Features
 
-### 📊 Data Analysis & Visualization
-- **Interactive Charts** - Distance, consumption, and efficiency trends over time
-- **Statistics Dashboard** - 11+ key metrics including carbon savings and cost estimates
-- **Map View** - Routes plotted on interactive maps with trip linking
-- **Data Table** - Search, sort, filter, and export your trip data
+### 📊 Overview
+- **Hero figure + KPI tiles** - distance, trips, energy, efficiency, CO₂ avoided, time driving, longest trip, odometer span; sparklines on the trend tiles and deltas against the previous period whenever a date filter is active
+- **Distance / energy / trips over time** - calendar days, weeks or months with gaps kept
+- **Efficiency per trip with a rolling median** - robust to 1-km cold-start spikes
+- **Efficiency by month of year** - every year folded onto one calendar, worst month highlighted
+- **Distributions** - efficiency histogram, trip-length bands
+- **When you drive** - weekday × hour heatmap
+- **State of charge timeline** - battery level after each trip with inferred charging events
+- **Trip length vs efficiency** - log-scale scatter
+- Every chart has a table twin and reflects the single filter row above it
 
-### 🎨 User Experience
-- **Dark/Light Theme** - Toggle between themes for comfortable viewing
-- **Responsive Design** - Works seamlessly on desktop, tablet, and mobile
-- **Date Range Filtering** - Filter trips by date, distance, efficiency, SOC, and more
-- **Trip Annotations** - Add custom notes and tags to organize your trips
+### 💡 Insights
+- **Winter penalty** - Dec–Feb vs Jun–Aug efficiency, with estimated summer/winter range
+- **Usable battery estimate** - from energy used ÷ SOC consumed, matched to known Polestar packs
+- **Charging habits** - inferred sessions, typical plug-in and target SOC, cycles
+- **Places** - the handful of locations that account for most trips
+- **Short-hop share, log coverage vs odometer, driving rhythm, personal records**
 
-### 🔋 EV-Specific Features
-- **Carbon Savings Calculator** - See your environmental impact vs ICE vehicles
-- **Cost Calculator** - Estimate charging costs with global electricity rates
-- **Efficiency Analysis** - Track consumption patterns and optimize driving
-- **SOC Tracking** - Monitor battery state of charge across trips
+### 🗺️ Map & 📋 Trips
+- Routes coloured by efficiency on quiet CARTO dark/light basemaps (follows the theme), density heatmap, day chains, most-visited places, auto-fit to the shown trips
+- Sortable, paginated trip table with duration and average speed, efficiency badges, SOC bars, notes and tags (stored in your browser)
+- Charging cost calculator with per-country electricity rates
+- CSV export of the filtered trips
+
+### 🎨 Design
+- Polestar-inspired visual language: monochrome surfaces, one warm accent, sharp corners, light display type (Inter, bundled - no font CDN)
+- Dark and light themes; charts and map re-theme with the UI
+- Motion that respects `prefers-reduced-motion`; responsive down to phone widths
+- Categorical chart palette validated for colour-vision deficiency
 
 ### 🔒 Privacy First
 - **100% Client-Side** - All data processing happens in your browser
 - **No Backend** - Your data never leaves your device
-- **No Tracking** - No analytics or third-party services
+- **Sample dataset** - a synthetic year of driving is built in, so you can explore without uploading anything
 
 ## 🚀 Quick Start
 
@@ -84,10 +96,10 @@ Detailed documentation is available in the [`docs/`](./docs/) directory:
 - **React 18** - UI framework
 - **Vite** - Build tool and dev server
 - **Mantine UI** - Component library
-- **Leaflet** - Interactive maps
+- **OpenLayers** - Interactive maps (CARTO / OpenStreetMap tiles)
 - **Recharts** - Data visualization
-- **PapaParse** - CSV parsing
-- **DayJS** - Date handling
+- **PapaParse / ExcelJS** - CSV and XLSX parsing (ExcelJS is loaded on demand)
+- **Inter Variable** - Bundled typeface
 
 ## 📦 Data Format
 
