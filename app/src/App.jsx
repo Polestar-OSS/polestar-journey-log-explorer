@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Anchor, Box, Container, Divider, Group, Image, Modal, Stack, Text, useComputedColorScheme } from '@mantine/core';
+import { Anchor, Box, Container, Divider, Group, Image, Modal, Stack, Text } from '@mantine/core';
 import { IconBrandGithub } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import AppHeader from './components/layout/AppHeader';
-import { logoFor } from './theme/logo';
+import { LOGO_GREY } from './theme/logo';
 import Landing from './components/landing/Landing';
 import FileDropzone from './components/landing/FileDropzone';
 import Dashboard from './components/Dashboard';
@@ -42,14 +42,13 @@ const tableExporter = new TableExporter();
 const merger = new JourneyMerger();
 
 function Footer() {
-    const scheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
     return (
         <Box component="footer" mt={64} pt="xl" pb="xl" style={{ borderTop: '1px solid var(--ps-border)' }} className="ps-no-print">
             <Container size="xl" px={{ base: 'sm', sm: 'md' }}>
                 <Stack gap="md">
                     <Group justify="space-between" align="center" wrap="wrap" gap="md">
                         <Group gap="sm">
-                            <Image src={logoFor(scheme)} alt="Polestar OSS" h={24} w="auto" fit="contain" />
+                            <Image src={LOGO_GREY} alt="Polestar OSS" h={44} w="auto" fit="contain" />
                             <div>
                                 <Text size="sm" fw={500}>Polestar Journey Log Explorer</Text>
                                 <Text size="xs" c="dimmed">A community-driven project</Text>

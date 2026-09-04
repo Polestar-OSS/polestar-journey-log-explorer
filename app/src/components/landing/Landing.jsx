@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Anchor, Box, Button, Container, Grid, Group, List, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core';
+import { Anchor, Box, Button, Container, Grid, Group, Image, List, SimpleGrid, Stack, Text, ThemeIcon, Title, useComputedColorScheme } from '@mantine/core';
 import { IconChartLine, IconBatteryCharging, IconMapPin, IconShieldLock, IconSparkles, IconArrowRight } from '@tabler/icons-react';
 import FileDropzone from './FileDropzone';
 import HelpModal from '../HelpModal';
 import Eyebrow from '../ui/Eyebrow';
+import { logoFor } from '../../theme/logo';
 
 const FEATURES = [
     {
@@ -59,12 +60,14 @@ function RouteArt() {
 
 function Landing({ onSourcesLoaded, onLoadSample }) {
     const [helpOpened, setHelpOpened] = useState(false);
+    const scheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
 
     return (
         <Container size="xl" px={{ base: 'sm', sm: 'md' }} py={{ base: 'xl', sm: 48 }}>
             <Grid gutter={{ base: 'xl', md: 56 }} align="center">
                 <Grid.Col span={{ base: 12, md: 6 }}>
                     <Stack gap="lg" className="ps-rise">
+                        <Image src={logoFor(scheme)} alt="Polestar OSS" fit="contain" style={{ height: 'clamp(80px, 9vw, 120px)', width: 'auto', maxWidth: '60%', alignSelf: 'flex-start' }} />
                         <Eyebrow>Polestar Journey Log Explorer</Eyebrow>
                         <Title order={1} className="ps-display" fz={{ base: 40, sm: 56, lg: 64 }}>
                             Your journeys,

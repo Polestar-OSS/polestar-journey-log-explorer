@@ -12,9 +12,9 @@ function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp
 
     return (
         <Box component="header" className="ps-sticky-header">
-            <Container size="xl" px={{ base: 'sm', sm: 'md' }} h={{ base: 56, sm: 64 }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <Container size="xl" px={{ base: 'sm', sm: 'md' }} h={{ base: 60, sm: 68 }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-                    <Image src={logoFor(scheme)} alt="Polestar OSS" h={{ base: 26, sm: 30 }} w="auto" fit="contain" />
+                    <Image src={logoFor(scheme)} alt="Polestar OSS" h={{ base: 34, sm: 40 }} w="auto" fit="contain" />
                     <Box visibleFrom="xs" style={{ minWidth: 0 }}>
                         <Text fw={500} fz={{ base: 'sm', sm: 'md' }} lh={1.1} style={{ letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
                             Journey Log Explorer

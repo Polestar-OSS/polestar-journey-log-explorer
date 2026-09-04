@@ -1,6 +1,6 @@
 # Polestar Journey Log Explorer
 
-![Polestar Journey Log Explorer](./assets/white_transparent.png)
+<p align="center"><img src="./assets/with_padding.png" alt="Polestar OSS" width="360" /></p>
 
 [![Deploy to GitHub Pages](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/deploy.yml/badge.svg)](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/deploy.yml)
 [![Dependabot](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/Polestar-OSS/polestar-journey-log-explorer/actions/workflows/dependabot/dependabot-updates)

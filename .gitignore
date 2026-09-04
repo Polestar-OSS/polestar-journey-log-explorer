@@ -27,4 +27,5 @@ pnpm-debug.log*
 lerna-debug.log*
 *.csv
 *.xlsx
-screenshots/
+/screenshots/
+app/screenshots/
