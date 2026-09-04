@@ -61,5 +61,7 @@ Screenshots are not committed. Real exports must never be committed either;
 
 `.github/workflows/ci.yml` runs on pull requests and pushes to `main`:
 `make install`, `make lint`, `make test`, `make build` (artifact uploaded), and
-`make audit` (whole dependency tree, high and above) in a separate, non-blocking job. `deploy.yml` repeats lint, test
-and build before publishing to GitHub Pages.
+`make audit` (whole dependency tree, high and above) in a separate, non-blocking job. The audit target
+retries npm registry outages three times and then exits with a workflow warning instead of a failure, so
+only real findings turn the job red. `deploy.yml` repeats lint, test and build before publishing to GitHub
+Pages.

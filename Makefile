@@ -41,8 +41,20 @@ test-watch: ## Unit tests in watch mode
 coverage: ## Unit tests with coverage report
 	$(NPM) run test:coverage
 
-audit: ## Dependency vulnerability audit, high and above (whole tree: the --omit=dev path uses npm's retired "quick audit" endpoint and fails with 400)
-	$(NPM) audit --audit-level=high
+AUDIT_LOG := $(APP_DIR)/node_modules/.cache/audit.log
+
+audit: ## Dependency vulnerability audit, high and above; retries registry outages, fails only on findings
+	@mkdir -p $(dir $(AUDIT_LOG)); \
+	for attempt in 1 2 3; do \
+	  if $(NPM) audit --audit-level=high --fetch-retries=1 --fetch-retry-maxtimeout=15000 >$(AUDIT_LOG) 2>&1; then cat $(AUDIT_LOG); exit 0; fi; \
+	  if grep -qE "audit endpoint returned an error|ENOAUDIT|E5[0-9]{2}|ECONNRESET|ETIMEDOUT|EAI_AGAIN|Service Unavailable" $(AUDIT_LOG); then \
+	    echo "npm audit: registry unavailable (attempt $$attempt of 3)"; sleep $$((attempt * 15)); continue; \
+	  fi; \
+	  cat $(AUDIT_LOG); exit 1; \
+	done; \
+	cat $(AUDIT_LOG); \
+	echo "::warning title=Dependency audit skipped::npm audit endpoint unavailable after 3 attempts; no vulnerability verdict for this run. Dependabot alerts still cover the lockfile."; \
+	exit 0
 
 check: lint test build ## Everything CI runs on a pull request
 
