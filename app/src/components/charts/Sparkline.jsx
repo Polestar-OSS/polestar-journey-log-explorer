@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import { useTokens } from '../../theme/useTokens';
 
@@ -7,10 +8,11 @@ import { useTokens } from '../../theme/useTokens';
  */
 function Sparkline({ data, height = 36, accent = false }) {
     const t = useTokens();
+    // Gradient ids are document-global; several sparklines share a page
+    const id = `spark-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
     if (!data || data.length < 2) return <div style={{ height }} />;
     const color = accent ? t.accent : t.contextStrong;
     const last = data.length - 1;
-    const id = `spark-${accent ? 'a' : 'c'}`;
     return (
         <div style={{ height, width: '100%' }} aria-hidden>
             <ResponsiveContainer width="100%" height={height}>

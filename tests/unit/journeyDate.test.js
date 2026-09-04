@@ -18,11 +18,20 @@ describe('parseJourneyDate', () => {
         expect([d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()]).toEqual([2026, 8, 3, 22, 3]);
     });
 
-    it('accepts ISO strings, Date objects and epoch numbers', () => {
-        expect(parseJourneyDate('2026-01-05T08:30:00').getHours()).toBe(8);
+    it('accepts ISO strings (honouring their timezone), Date objects and epoch numbers', () => {
+        expect(parseJourneyDate('2026-01-05T08:30:00').getHours()).toBe(8); // no designator: local, as Date does
+        expect(parseJourneyDate('2026-01-05T08:30:00Z').getTime()).toBe(Date.UTC(2026, 0, 5, 8, 30));
+        expect(parseJourneyDate('2026-01-05T08:30:00+02:00').getTime()).toBe(Date.UTC(2026, 0, 5, 6, 30));
         const now = new Date(2025, 0, 1, 12);
         expect(parseJourneyDate(now)).toBe(now);
         expect(parseJourneyDate(now.getTime()).getTime()).toBe(now.getTime());
+    });
+
+    it('matches the export format only as a whole string', () => {
+        expect(parseJourneyDate('2026-09-03 22:03').getHours()).toBe(22); // space separator tolerated
+        expect(parseJourneyDate('2026-09-03, 22:03:15').getSeconds()).toBe(15);
+        expect(parseJourneyDate('2026-13-45, 10:00')).toBeNull(); // impossible date
+        expect(parseJourneyDate('trip on 2026-09-03, 22:03 was long')).toBeNull(); // substring
     });
 
     it('returns null for blanks and garbage', () => {
