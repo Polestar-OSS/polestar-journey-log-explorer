@@ -44,8 +44,8 @@
     "postcss": "^8.4.47",
     "postcss-preset-mantine": "^1.17.0",
     "postcss-simple-vars": "^7.0.1",
-    "vite": "^7.2.4",
-    "vitest": "^3.2.7"
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=20.19 <21 || >=22.12"
