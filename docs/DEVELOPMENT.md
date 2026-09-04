@@ -29,7 +29,7 @@ file needed.
 | `make coverage` | Vitest with v8 coverage over `services/` and `utils/` |
 | `make build` | Production build to `app/dist` |
 | `make preview` | Serve the production build on :4173 |
-| `make audit` | `npm audit` on production dependencies, high and above |
+| `make audit` | `npm audit` over the whole tree, high and above (the `--omit=dev` variant hits a retired registry endpoint) |
 | `make check` | lint + test + build: what a pull request must pass |
 
 All targets run from the repository root and delegate to `app/`.

@@ -61,5 +61,5 @@ Screenshots are not committed. Real exports must never be committed either;
 
 `.github/workflows/ci.yml` runs on pull requests and pushes to `main`:
 `make install`, `make lint`, `make test`, `make build` (artifact uploaded), and
-`make audit` in a separate, non-blocking job. `deploy.yml` repeats lint, test
+`make audit` (whole dependency tree, high and above) in a separate, non-blocking job. `deploy.yml` repeats lint, test
 and build before publishing to GitHub Pages.

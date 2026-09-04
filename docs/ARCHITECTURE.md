@@ -163,7 +163,7 @@ See [ADR-0005](./adr/0005-experience-levels.md).
 - `deploy.yml` builds on release (or manually) and publishes `app/dist` to
   GitHub Pages under `/polestar-journey-log-explorer/`.
 - `ci.yml` runs lint (zero warnings), the unit suite, the build and a
-  production dependency audit on every pull request and push to `main`.
+  dependency audit on every pull request and push to `main`.
 
 ## 9. Privacy and security posture
 
