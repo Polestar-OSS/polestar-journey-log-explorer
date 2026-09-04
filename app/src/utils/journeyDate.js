@@ -3,7 +3,10 @@
  * `new Date()` on that string is engine-dependent (V8 accepts it, Firefox and
  * Safari return Invalid Date), so every consumer must go through this parser.
  */
-const DATE_RE = /(\d{4})-(\d{1,2})-(\d{1,2})(?:[,T\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/;
+// Exactly the export format: "YYYY-MM-DD, HH:MM" (seconds optional, comma or
+// space separator). Anchored so ISO strings and substrings never match; those
+// fall through to Date, which honours their timezone designators.
+const EXPORT_RE = /^\s*(\d{4})-(\d{1,2})-(\d{1,2})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?\s*$/;
 
 export const parseJourneyDate = (value) => {
     if (value === null || value === undefined || value === '') return null;
@@ -12,9 +15,12 @@ export const parseJourneyDate = (value) => {
         const d = new Date(value);
         return isNaN(d.getTime()) ? null : d;
     }
-    const m = String(value).match(DATE_RE);
+    const m = String(value).match(EXPORT_RE);
     if (m) {
-        return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+        const d = new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+        // Reject impossible dates such as 2026-13-45 that Date would silently roll over
+        if (d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[3]) return null;
+        return d;
     }
     const d = new Date(value);
     return isNaN(d.getTime()) ? null : d;
