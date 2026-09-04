@@ -73,7 +73,7 @@ function InsightsView({ insights, statistics, distanceUnit = 'km', data }) {
 
     return (
         <Stack gap="md">
-            <Grid gutter="md">
+            <Grid gap="md">
                 <Grid.Col span={{ base: 12, md: 6 }}>
                     <InsightCard
                         icon={IconSnowflake}

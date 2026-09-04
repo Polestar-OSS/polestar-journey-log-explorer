@@ -102,7 +102,7 @@ function ChartsView({ data, distanceUnit = 'km', insights }) {
     const socMax = Math.max(0, ...soc.map((p) => p.charged));
 
     return (
-        <Grid gutter="md">
+        <Grid gap="md">
             {/* Distance / energy / trips over time */}
             <Grid.Col span={12}>
                 <ChartCard

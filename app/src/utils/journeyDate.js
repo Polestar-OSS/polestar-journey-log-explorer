@@ -37,6 +37,9 @@ export const formatJourneyDate = (date) => {
 export const dayKey = (date) =>
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
+/** Date → 'YYYY-MM-DD' for string-valued date inputs; null for anything else. */
+export const toDateString = (date) => (date instanceof Date && !isNaN(date) ? dayKey(date) : null);
+
 export const monthKey = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 
 /** ISO week key "YYYY-Www" (Monday-based). */

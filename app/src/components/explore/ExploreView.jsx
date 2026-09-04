@@ -151,7 +151,7 @@ function ExploreView({ data, distanceUnit = 'km', sources = [] }) {
             </ChartCard>
 
             {/* Consumption model */}
-            <Grid gutter="md">
+            <Grid gap="md">
                 <Grid.Col span={{ base: 12, lg: 7 }}>
                     <ChartCard
                         eyebrow="Consumption model"
@@ -209,7 +209,7 @@ function ExploreView({ data, distanceUnit = 'km', sources = [] }) {
             </Grid>
 
             {/* Efficiency drivers */}
-            <Grid gutter="md">
+            <Grid gap="md">
                 <Grid.Col span={{ base: 12, md: 4 }}>
                     <ChartCard eyebrow="Driver" title="Efficiency by average speed" description="Median per band; whiskers span the middle half of trips." className="ps-rise" style={{ '--i': 4 }}>
                         <ResponsiveContainer width="100%" height={220}>
@@ -254,7 +254,7 @@ function ExploreView({ data, distanceUnit = 'km', sources = [] }) {
             </Grid>
 
             {/* Battery + charging */}
-            <Grid gutter="md">
+            <Grid gap="md">
                 <Grid.Col span={{ base: 12, lg: 6 }}>
                     <ChartCard
                         eyebrow="Battery"
@@ -302,7 +302,7 @@ function ExploreView({ data, distanceUnit = 'km', sources = [] }) {
             </Grid>
 
             {/* Data quality */}
-            <Grid gutter="md">
+            <Grid gap="md">
                 <Grid.Col span={{ base: 12, lg: 7 }}>
                     <ChartCard
                         eyebrow="Data quality"

@@ -37,6 +37,13 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # eslint-plugin-react (7.37.x) declares peer support up to ESLint 9.
+      # Lift this once it supports 10, then bump eslint and @eslint/js together.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"

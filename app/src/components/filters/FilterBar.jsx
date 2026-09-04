@@ -4,7 +4,7 @@ import { DatePickerInput } from '@mantine/dates';
 import { IconAdjustmentsHorizontal, IconX, IconCalendar, IconTag } from '@tabler/icons-react';
 import { getAllTags, generateTripId, getTripAnnotation } from '../../utils/tripAnnotations';
 import { FilterService, FilterMetadataService } from '../../services/filters/FilterService';
-import { addDays, startOfDay } from '../../utils/journeyDate';
+import { addDays, startOfDay, parseJourneyDate, toDateString } from '../../utils/journeyDate';
 import Eyebrow from '../ui/Eyebrow';
 
 const EMPTY = {
@@ -117,10 +117,10 @@ function FilterBar({ data, distanceUnit = 'km', sources = [], onFilterChange }) 
                         size="xs"
                         radius="xs"
                         placeholder="Pick a range"
-                        value={[filters.dateFrom, filters.dateTo]}
-                        onChange={([from, to]) => setFilters((f) => ({ ...f, dateFrom: from, dateTo: to }))}
-                        minDate={dateRange.min || undefined}
-                        maxDate={dateRange.max || undefined}
+                        value={[toDateString(filters.dateFrom), toDateString(filters.dateTo)]}
+                        onChange={([from, to]) => setFilters((f) => ({ ...f, dateFrom: parseJourneyDate(from), dateTo: parseJourneyDate(to) }))}
+                        minDate={toDateString(dateRange.min) || undefined}
+                        maxDate={toDateString(dateRange.max) || undefined}
                         clearable
                         w={240}
                         valueFormat="MMM D, YYYY"
