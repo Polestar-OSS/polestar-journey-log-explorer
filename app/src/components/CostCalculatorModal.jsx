@@ -1,12 +1,17 @@
 import { Modal, Stack, NumberInput, Select, Text, Group, Button, Divider, Paper, SimpleGrid, Loader, TextInput, Combobox, useCombobox, ScrollArea } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { IconCurrencyDollar, IconBolt, IconHome, IconMapPin } from '@tabler/icons-react';
+import { getPreference, setPreference, CURRENCY_SYMBOLS } from '../utils/preferences';
 
 function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' }) {
   const combobox = useCombobox();
-  const [electricityRate, setElectricityRate] = useState(0.13);
-  const [currency, setCurrency] = useState('USD');
-  const [homeChargingPercent, setHomeChargingPercent] = useState(80);
+  const [electricityRate, setElectricityRateState] = useState(() => getPreference('electricityRate'));
+  const [currency, setCurrencyState] = useState(() => getPreference('currency'));
+  const [homeChargingPercent, setHomeChargingPercentState] = useState(() => getPreference('homeChargingPercent'));
+  // Persist so the plain-language story and future sessions use the same tariff
+  const setElectricityRate = (v) => { setElectricityRateState(v); if (typeof v === 'number') setPreference('electricityRate', v); };
+  const setCurrency = (v) => { setCurrencyState(v); if (v) setPreference('currency', v); };
+  const setHomeChargingPercent = (v) => { setHomeChargingPercentState(v); if (typeof v === 'number') setPreference('homeChargingPercent', v); };
   const [citySearch, setCitySearch] = useState('');
   const [cityOptions, setCityOptions] = useState([]);
   const [cityData, setCityData] = useState([]); // Store full city data with country info
@@ -23,9 +28,9 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
     'Italy': { rate: 0.31, currency: 'EUR' },
     'Netherlands': { rate: 0.33, currency: 'EUR' },
     'Belgium': { rate: 0.30, currency: 'EUR' },
-    'Sweden': { rate: 0.20, currency: 'EUR' },
-    'Norway': { rate: 0.17, currency: 'EUR' },
-    'Denmark': { rate: 0.36, currency: 'EUR' },
+    'Sweden': { rate: 2.1, currency: 'SEK' },
+    'Norway': { rate: 1.8, currency: 'NOK' },
+    'Denmark': { rate: 2.6, currency: 'DKK' },
     'Australia': { rate: 0.25, currency: 'AUD' },
     'New Zealand': { rate: 0.23, currency: 'AUD' },
     'Japan': { rate: 0.26, currency: 'USD' },
@@ -38,7 +43,7 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
     'Chile': { rate: 0.14, currency: 'USD' },
     'South Africa': { rate: 0.11, currency: 'USD' },
     'Israel': { rate: 0.17, currency: 'USD' },
-    'Switzerland': { rate: 0.21, currency: 'EUR' },
+    'Switzerland': { rate: 0.27, currency: 'CHF' },
     'Austria': { rate: 0.24, currency: 'EUR' },
     'Poland': { rate: 0.18, currency: 'EUR' },
     'Portugal': { rate: 0.27, currency: 'EUR' },
@@ -112,13 +117,7 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
     }
   };
 
-  const currencySymbols = {
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    CAD: 'C$',
-    AUD: 'A$',
-  };
+  const currencySymbols = CURRENCY_SYMBOLS;
 
   const calculateCosts = () => {
     if (!statistics) return { homeChargingCost: 0, publicChargingCost: 0, totalCost: 0, avgPerTrip: 0, avgPerKm: 0 };
@@ -148,7 +147,7 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
   };
 
   const costs = calculateCosts();
-  const symbol = currencySymbols[currency];
+  const symbol = currencySymbols[currency] ?? '';
 
   return (
     <Modal
@@ -230,6 +229,10 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
             { value: 'GBP', label: 'GBP - British Pound' },
             { value: 'CAD', label: 'CAD - Canadian Dollar' },
             { value: 'AUD', label: 'AUD - Australian Dollar' },
+            { value: 'SEK', label: 'SEK - Swedish Krona' },
+            { value: 'NOK', label: 'NOK - Norwegian Krone' },
+            { value: 'DKK', label: 'DKK - Danish Krone' },
+            { value: 'CHF', label: 'CHF - Swiss Franc' },
           ]}
         />
 

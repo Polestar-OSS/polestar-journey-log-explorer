@@ -16,7 +16,7 @@ const processor = new ChartDataProcessor();
  * Hero figure (total distance) plus a KPI row. Deltas compare the filtered
  * period with the period of equal length that precedes it.
  */
-function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel }) {
+function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel, compact = false }) {
     const [costModalOpened, setCostModalOpened] = useState(false);
     const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
 
@@ -65,7 +65,7 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
                 </Grid.Col>
 
                 <Grid.Col span={{ base: 12, md: 7, lg: 8 }}>
-                    <SimpleGrid cols={{ base: 2, sm: 2, lg: 4 }} spacing="md" h="100%">
+                    <SimpleGrid cols={{ base: 2, sm: 2, lg: compact ? 2 : 4 }} spacing="md" h="100%">
                         <StatTile
                             label="Trips"
                             value={statistics.totalTrips}
@@ -115,51 +115,61 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
                             className="ps-card ps-rise"
                             style={{ '--i': 4 }}
                         />
+                        {!compact && (
                         <StatTile
-                            label="Time driving"
-                            value={statistics.totalDurationMin > 0 ? formatDuration(statistics.totalDurationMin) : '–'}
-                            icon={IconClock}
-                            hint={statistics.avgSpeed ? `${statistics.avgSpeed} ${distLabel}/h average moving speed` : 'No timing data'}
-                            className="ps-card ps-rise"
-                            style={{ '--i': 5 }}
-                        />
+                                label="Time driving"
+                                value={statistics.totalDurationMin > 0 ? formatDuration(statistics.totalDurationMin) : '–'}
+                                icon={IconClock}
+                                hint={statistics.avgSpeed ? `${statistics.avgSpeed} ${distLabel}/h average moving speed` : 'No timing data'}
+                                className="ps-card ps-rise"
+                                style={{ '--i': 5 }}
+                            />
+                        )}
+                        {!compact && (
                         <StatTile
-                            label="Longest trip"
-                            value={statistics.longestTrip?.distanceKm ?? 0}
-                            unit={distLabel}
-                            icon={IconArrowsDiagonal}
-                            hint={statistics.longestTrip ? `${statistics.longestTrip.startDate} · ${statistics.longestTrip.consumptionKwh} kWh` : ''}
-                            className="ps-card ps-rise"
-                            style={{ '--i': 6 }}
-                        />
+                                label="Longest trip"
+                                value={statistics.longestTrip?.distanceKm ?? 0}
+                                unit={distLabel}
+                                icon={IconArrowsDiagonal}
+                                hint={statistics.longestTrip ? `${statistics.longestTrip.startDate} · ${statistics.longestTrip.consumptionKwh} kWh` : ''}
+                                className="ps-card ps-rise"
+                                style={{ '--i': 6 }}
+                            />
+                        )}
+                        {!compact && (
                         <StatTile
-                            label="Odometer span"
-                            value={statistics.odometerEnd - statistics.odometerStart}
-                            unit={distLabel}
-                            digits={0}
-                            icon={IconCalendarStats}
-                            hint={`${formatNumber(statistics.odometerStart, 0)} → ${formatNumber(statistics.odometerEnd, 0)} on the clock`}
-                            className="ps-card ps-rise"
-                            style={{ '--i': 7 }}
-                        />
+                                label="Odometer span"
+                                value={statistics.odometerEnd - statistics.odometerStart}
+                                unit={distLabel}
+                                digits={0}
+                                icon={IconCalendarStats}
+                                hint={`${formatNumber(statistics.odometerStart, 0)} → ${formatNumber(statistics.odometerEnd, 0)} on the clock`}
+                                className="ps-card ps-rise"
+                                style={{ '--i': 7 }}
+                            />
+                        )}
+                        {!compact && (
                         <StatTile
-                            label="Charging cost"
-                            value="Estimate"
-                            icon={IconCoin}
-                            hint="Open the calculator with your tariff"
-                            onClick={() => setCostModalOpened(true)}
-                            className="ps-card ps-rise ps-card-hover"
-                            style={{ '--i': 8 }}
-                        />
+                                label="Charging cost"
+                                value="Estimate"
+                                icon={IconCoin}
+                                hint="Open the calculator with your tariff"
+                                onClick={() => setCostModalOpened(true)}
+                                className="ps-card ps-rise ps-card-hover"
+                                style={{ '--i': 8 }}
+                            />
+                        )}
                     </SimpleGrid>
                 </Grid.Col>
             </Grid>
 
-            <Group justify="flex-end" mt={-4} className="ps-no-print">
-                <Button size="compact-xs" variant="subtle" color="gray" onClick={() => setCostModalOpened(true)}>
-                    Charging cost calculator
-                </Button>
-            </Group>
+            {!compact && (
+                <Group justify="flex-end" mt={-4} className="ps-no-print">
+                    <Button size="compact-xs" variant="subtle" color="gray" onClick={() => setCostModalOpened(true)}>
+                        Charging cost calculator
+                    </Button>
+                </Group>
+            )}
 
             <CostCalculatorModal opened={costModalOpened} onClose={() => setCostModalOpened(false)} statistics={statistics} distanceUnit={distanceUnit} />
         </>

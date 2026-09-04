@@ -2,10 +2,11 @@ import { ActionIcon, Box, Button, Container, Group, Image, Text, Tooltip, useMan
 import { IconSun, IconMoon, IconBrandGithub, IconDownload, IconHelp, IconFileUpload, IconPlus } from '@tabler/icons-react';
 import Eyebrow from '../ui/Eyebrow';
 import { logoFor } from '../../theme/logo';
+import LevelSwitch from './LevelSwitch';
 
 const REPO_URL = 'https://github.com/Polestar-OSS/polestar-journey-log-explorer';
 
-function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp }) {
+function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp, level, onChangeLevel }) {
     const { toggleColorScheme } = useMantineColorScheme();
     const scheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
 
@@ -25,6 +26,7 @@ function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp
                 <Group gap={6} wrap="nowrap">
                     {hasData && (
                         <>
+                            <LevelSwitch value={level} onChange={onChangeLevel} />
                             <Tooltip label="Export the filtered trips as CSV">
                                 <Button size="xs" variant="default" leftSection={<IconDownload size={14} />} onClick={onExport} visibleFrom="sm">
                                     Export {exportCount !== undefined ? `(${exportCount})` : ''}

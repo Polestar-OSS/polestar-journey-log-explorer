@@ -25,7 +25,7 @@ function SortableTh({ label, field, sortBy, sortOrder, onSort, align = 'right', 
     );
 }
 
-function TableView({ data, distanceUnit = 'km' }) {
+function TableView({ data, distanceUnit = 'km', expert = false }) {
     const [search, setSearch] = useState('');
     const [sortBy, setSortBy] = useState('startTs');
     const [sortOrder, setSortOrder] = useState('desc');
@@ -74,7 +74,7 @@ function TableView({ data, distanceUnit = 'km' }) {
                 </Group>
 
                 <ScrollArea type="auto" offsetScrollbars>
-                    <Table highlightOnHover withRowBorders verticalSpacing={8} horizontalSpacing="sm" fz="sm" style={{ minWidth: 980, borderColor: 'var(--ps-border)' }} className="ps-tabular">
+                    <Table highlightOnHover withRowBorders verticalSpacing={8} horizontalSpacing="sm" fz="sm" style={{ minWidth: expert ? 1400 : 980, borderColor: 'var(--ps-border)' }} className="ps-tabular">
                         <Table.Thead>
                             <Table.Tr>
                                 <SortableTh label="Date" field="startTs" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} align="left" />
@@ -85,6 +85,9 @@ function TableView({ data, distanceUnit = 'km' }) {
                                 <SortableTh label="kWh" field="consumptionKwh" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
                                 <SortableTh label={`kWh/100${unit}`} field="efficiency" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
                                 <SortableTh label="Battery" field="socDrop" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} align="left" width={150} />
+                                {expert && <SortableTh label="Odometer" field="startOdometer" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />}
+                                {expert && <Table.Th style={{ textAlign: 'left' }}><Eyebrow>Coordinates</Eyebrow></Table.Th>}
+                                {expert && <Table.Th style={{ textAlign: 'left' }}><Eyebrow>Type · Source</Eyebrow></Table.Th>}
                                 <Table.Th style={{ textAlign: 'right' }}><Eyebrow>Notes</Eyebrow></Table.Th>
                             </Table.Tr>
                         </Table.Thead>
@@ -124,6 +127,24 @@ function TableView({ data, distanceUnit = 'km' }) {
                                                 </Box>
                                             </Group>
                                         </Table.Td>
+                                        {expert && (
+                                            <Table.Td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                                <Text size="xs">{formatNumber(trip.startOdometer, 0)}</Text>
+                                                <Text size="xs" c="dimmed">→ {formatNumber(trip.endOdometer, 0)}</Text>
+                                            </Table.Td>
+                                        )}
+                                        {expert && (
+                                            <Table.Td style={{ whiteSpace: 'nowrap' }}>
+                                                <Text size="xs">{trip.startLat ? `${trip.startLat.toFixed(4)}, ${trip.startLng.toFixed(4)}` : '–'}</Text>
+                                                <Text size="xs" c="dimmed">{trip.endLat ? `${trip.endLat.toFixed(4)}, ${trip.endLng.toFixed(4)}` : '–'}</Text>
+                                            </Table.Td>
+                                        )}
+                                        {expert && (
+                                            <Table.Td style={{ maxWidth: 180 }}>
+                                                <Text size="xs">{trip.tripType}{trip.category && trip.category !== 'Uncategorized' ? ` · ${trip.category}` : ''}</Text>
+                                                <Text size="xs" c="dimmed" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={trip.sourceFile}>{trip.sourceFile || '–'}</Text>
+                                            </Table.Td>
+                                        )}
                                         <Table.Td style={{ textAlign: 'right' }}>
                                             <Group gap={4} justify="flex-end" wrap="nowrap">
                                                 {hasTags && (
