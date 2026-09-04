@@ -431,6 +431,43 @@ body {
   cursor: crosshair;
 }
 
+/* Map chrome ------------------------------------------------------------ */
+
+.ps-glass {
+  background: color-mix(in srgb, var(--ps-surface) 78%, transparent);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  backdrop-filter: saturate(160%) blur(14px);
+  border: 1px solid var(--ps-border-strong);
+  border-radius: 2px;
+  box-shadow: var(--ps-shadow-hover);
+  padding: 14px;
+}
+
+.ps-map-tooltip {
+  pointer-events: none;
+  background: var(--ps-ink);
+  color: var(--ps-page);
+  padding: 6px 9px;
+  border-radius: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ps-map-tooltip-date {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.ps-map-tooltip-row {
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
 /* OpenLayers chrome ---------------------------------------------------- */
 
 .ol-viewport {
@@ -460,19 +497,22 @@ body {
   outline: none;
 }
 
-.ol-zoom {
-  top: 10px;
-  left: 10px;
+/* ol.css loads with the lazy map chunk, after this file; the extra
+   ancestor selector keeps our positions winning regardless of order */
+.ps-card .ol-zoom {
+  top: 12px;
+  left: 314px;
 }
 
-.ol-zoomtoextent {
-  top: 78px;
-  left: 10px;
+.ps-card .ol-full-screen {
+  top: 12px;
+  right: 12px;
 }
 
-.ol-full-screen {
-  top: 10px;
-  right: 10px;
+@media (max-width: 48em) {
+  .ps-card .ol-zoom {
+    left: 12px;
+  }
 }
 
 .ol-scale-line {
@@ -627,10 +667,6 @@ body {
     width: 40px;
     height: 40px;
     font-size: 18px;
-  }
-
-  .ol-zoomtoextent {
-    top: 98px;
   }
 
   .ol-mouse-position,

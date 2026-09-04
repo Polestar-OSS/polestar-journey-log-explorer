@@ -4,6 +4,7 @@ import OSM from 'ol/source/OSM';
 
 const OSM_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors';
 const CARTO_ATTRIBUTION = `${OSM_ATTRIBUTION}, © <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>`;
+const ESRI_ATTRIBUTION = 'Imagery © <a href="https://www.esri.com/" target="_blank" rel="noreferrer">Esri</a>, Maxar, Earthstar Geographics, and the GIS User Community';
 
 /**
  * Strategy Pattern: Defines interface for tile layer creation
@@ -13,22 +14,19 @@ export class TileLayerStrategy {
     createLayer() {
         throw new Error('createLayer must be implemented by subclass');
     }
-}
 
-/**
- * Concrete Strategy: OpenStreetMap Standard
- */
-export class OSMStandardStrategy extends TileLayerStrategy {
-    createLayer() {
-        return new TileLayer({
-            source: new OSM(),
-        });
+    /** Whether the basemap is dark, so overlays can pick legible colours. */
+    isDark() {
+        return false;
     }
 }
 
-/**
- * Concrete Strategy: OpenStreetMap Humanitarian
- */
+export class OSMStandardStrategy extends TileLayerStrategy {
+    createLayer() {
+        return new TileLayer({ source: new OSM() });
+    }
+}
+
 export class OSMHumanitarianStrategy extends TileLayerStrategy {
     createLayer() {
         return new TileLayer({
@@ -42,13 +40,14 @@ export class OSMHumanitarianStrategy extends TileLayerStrategy {
 }
 
 /**
- * Concrete Strategy: CARTO basemaps - quiet, monochrome tiles that let the
- * efficiency-coloured routes carry the picture.
+ * CARTO basemaps - quiet, monochrome tiles that let the efficiency-coloured
+ * routes carry the picture.
  */
 class CartoStrategy extends TileLayerStrategy {
-    constructor(style) {
+    constructor(style, dark) {
         super();
         this.style = style;
+        this.dark = dark;
     }
 
     createLayer() {
@@ -60,29 +59,53 @@ class CartoStrategy extends TileLayerStrategy {
             }),
         });
     }
+
+    isDark() {
+        return this.dark;
+    }
 }
 
 export class CartoDarkStrategy extends CartoStrategy {
     constructor() {
-        super('dark_all');
+        super('dark_all', true);
     }
 }
 
 export class CartoLightStrategy extends CartoStrategy {
     constructor() {
-        super('light_all');
+        super('light_all', false);
+    }
+}
+
+/**
+ * Esri World Imagery - satellite photography, free for non-commercial use
+ * with attribution.
+ */
+export class SatelliteStrategy extends TileLayerStrategy {
+    createLayer() {
+        return new TileLayer({
+            source: new XYZ({
+                url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                attributions: ESRI_ATTRIBUTION,
+                maxZoom: 19,
+            }),
+        });
+    }
+
+    isDark() {
+        return true;
     }
 }
 
 /**
  * Factory: Creates appropriate tile layer strategy
- * Single Responsibility: Only responsible for creating tile layers
  */
 export class TileLayerFactory {
     constructor() {
         this.strategies = {
             'carto-dark': new CartoDarkStrategy(),
             'carto-light': new CartoLightStrategy(),
+            satellite: new SatelliteStrategy(),
             osm: new OSMStandardStrategy(),
             'osm-humanitarian': new OSMHumanitarianStrategy(),
         };
@@ -96,12 +119,17 @@ export class TileLayerFactory {
         return strategy.createLayer();
     }
 
+    isDark(layerType) {
+        return this.strategies[layerType]?.isDark() ?? false;
+    }
+
     getAvailableLayers() {
         return [
-            { value: 'carto-dark', label: 'Dark (CARTO)' },
-            { value: 'carto-light', label: 'Light (CARTO)' },
+            { value: 'carto-dark', label: 'Dark' },
+            { value: 'carto-light', label: 'Light' },
+            { value: 'satellite', label: 'Satellite' },
             { value: 'osm', label: 'OpenStreetMap' },
-            { value: 'osm-humanitarian', label: 'Humanitarian (HOT)' },
+            { value: 'osm-humanitarian', label: 'Humanitarian' },
         ];
     }
 

@@ -1,249 +1,439 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
-import { Box, Grid, Group, Select, Stack, Switch, Text, UnstyledButton, useComputedColorScheme } from '@mantine/core';
-import { IconMapPin, IconFocus2 } from '@tabler/icons-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActionIcon, Box, Button, Drawer, Group, Modal, Progress, ScrollArea, SegmentedControl, Select, Slider, Stack, Switch, Text, Tooltip, UnstyledButton, useComputedColorScheme } from '@mantine/core';
+import { useMediaQuery, useReducedMotion } from '@mantine/hooks';
+import { IconMapPin, IconFocus2, IconPlayerPlay, IconPlayerPause, IconPlayerSkipBack, IconAdjustments, IconRoute, IconFlame, IconBuildingCommunity, IconHistory, IconRoad } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { TileLayerFactory } from '../../strategies/map/LayerStrategy';
 import { MarkerFactory } from '../../strategies/map/MarkerStrategy';
 import { ColorCalculator } from '../../services/map/ColorCalculator';
 import { FeatureBuilder } from '../../services/map/FeatureBuilder';
 import { MapService } from '../../services/map/MapService';
+import { RouteSnapper } from '../../services/map/RouteSnapper';
+import { ReplayService } from '../../services/map/ReplayService';
+import { useTokens } from '../../theme/useTokens';
+import { formatNumber } from '../../utils/format';
 import Eyebrow from '../ui/Eyebrow';
 import 'ol/ol.css';
 
 const EFFICIENCY_BANDS = [
-    { key: 'good', label: '< 15', color: 'rgb(18, 184, 134)' },
-    { key: 'ok', label: '15–20', color: 'rgb(250, 176, 5)' },
-    { key: 'poor', label: '20–25', color: 'rgb(253, 126, 20)' },
-    { key: 'bad', label: '25+', color: 'rgb(250, 82, 82)' },
+    { key: 'good', label: '< 15', color: 'rgb(18, 184, 134)', name: 'efficient' },
+    { key: 'ok', label: '15–20', color: 'rgb(250, 176, 5)', name: 'typical' },
+    { key: 'poor', label: '20–25', color: 'rgb(253, 126, 20)', name: 'high' },
+    { key: 'bad', label: '25+', color: 'rgb(250, 82, 82)', name: 'very high' },
 ];
 
+const MODES = [
+    { value: 'routes', label: 'Routes', icon: IconRoute },
+    { value: 'heat', label: 'Heat', icon: IconFlame },
+    { value: 'places', label: 'Places', icon: IconBuildingCommunity },
+    { value: 'replay', label: 'Replay', icon: IconHistory },
+];
+
+const snapper = new RouteSnapper();
+const replayService = new ReplayService();
+
+function Glass({ children, style, ...props }) {
+    return (
+        <Box className="ps-glass" style={style} {...props}>
+            {children}
+        </Box>
+    );
+}
+
+/**
+ * The map. Four modes over one feature pipeline:
+ *  routes  - glow routes with directional flow, clustered pins, day chains
+ *  heat    - density of starts and ends
+ *  places  - bubbles for the most visited places
+ *  replay  - the journey replayed day by day with a scrubber
+ */
 function MapView({ data, distanceUnit = 'km', places }) {
     const mapRef = useRef(null);
     const mapServiceRef = useRef(null);
+    const t = useTokens();
     const scheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
+    const reducedMotion = useReducedMotion();
+    const isMobile = useMediaQuery('(max-width: 48em)');
     const unit = distanceUnit === 'mi' ? 'mi' : 'km';
     const multiplier = distanceUnit === 'mi' ? 1.60934 : 1;
 
+    const [mode, setMode] = useState('routes');
     const [selectedTrip, setSelectedTrip] = useState(null);
-    const [linkTripsByDay, setLinkTripsByDay] = useState(false);
-    const [tripsToShow, setTripsToShow] = useState('100');
-    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [tripsToShow, setTripsToShow] = useState('150');
     const [showMarkers, setShowMarkers] = useState(true);
+    const [linkTripsByDay, setLinkTripsByDay] = useState(false);
+    const [flow, setFlow] = useState(!reducedMotion);
+    const [snapRoads, setSnapRoads] = useState(false);
+    const [snapConsent, setSnapConsent] = useState(false);
+    const [snapProgress, setSnapProgress] = useState(null); // { done, total }
+    const [snapVersion, setSnapVersion] = useState(0);
+    const [drawerOpened, setDrawerOpened] = useState(false);
+    const [hoverTrip, setHoverTrip] = useState(null);
+    const [inView, setInView] = useState(null);
 
-    // Initialize services (Dependency Injection)
+    // Replay
+    const [cursor, setCursor] = useState(0);
+    const [playing, setPlaying] = useState(false);
+    const [speed, setSpeed] = useState('2');
+
+    // Services (Dependency Injection)
     const colorCalculator = useMemo(() => new ColorCalculator(distanceUnit), [distanceUnit]);
     const tileLayerFactory = useMemo(() => new TileLayerFactory(), []);
     const featureBuilder = useMemo(() => new FeatureBuilder(colorCalculator), [colorCalculator]);
     const markerFactory = useMemo(() => new MarkerFactory(colorCalculator), [colorCalculator]);
 
-    const [selectedTileLayer, setSelectedTileLayer] = useState(() => tileLayerFactory.defaultFor(scheme));
-    // Follow the UI theme unless the user has picked a basemap explicitly
-    const userPickedLayer = useRef(false);
+    const [basemap, setBasemap] = useState(() => tileLayerFactory.defaultFor(scheme));
+    const userPickedBasemap = useRef(false);
     useEffect(() => {
-        if (!userPickedLayer.current) setSelectedTileLayer(tileLayerFactory.defaultFor(scheme));
+        if (!userPickedBasemap.current) setBasemap(tileLayerFactory.defaultFor(scheme));
     }, [scheme, tileLayerFactory]);
-
-    const tileLayerOptions = tileLayerFactory.getAvailableLayers();
 
     const { center, allTrips, tripsByDay } = useMemo(() => {
         const validTrips = data.filter((trip) => trip.startLat !== 0 && trip.startLng !== 0 && trip.endLat !== 0 && trip.endLng !== 0);
-
-        if (validTrips.length === 0) {
-            return { center: [11.9746, 57.7089], allTrips: [], tripsByDay: {} }; // Gothenburg default (lon, lat)
-        }
-
-        const avgLat = validTrips.reduce((sum, trip) => sum + trip.startLat, 0) / validTrips.length;
-        const avgLng = validTrips.reduce((sum, trip) => sum + trip.startLng, 0) / validTrips.length;
-        const validCenter = [isFinite(avgLng) ? avgLng : 11.9746, isFinite(avgLat) ? avgLat : 57.7089];
-
+        if (validTrips.length === 0) return { center: [11.9746, 57.7089], allTrips: [], tripsByDay: {} };
+        const avgLat = validTrips.reduce((s, trip) => s + trip.startLat, 0) / validTrips.length;
+        const avgLng = validTrips.reduce((s, trip) => s + trip.startLng, 0) / validTrips.length;
         const grouped = validTrips.reduce((acc, trip) => {
             const day = trip.dayKey || trip.startDate.split(',')[0].trim();
-            if (!acc[day]) acc[day] = [];
-            acc[day].push(trip);
+            (acc[day] ||= []).push(trip);
             return acc;
         }, {});
-        Object.keys(grouped).forEach((day) => grouped[day].sort((a, b) => (a.startTs ?? 0) - (b.startTs ?? 0)));
-
-        // Newest first so "show 100" means the 100 most recent
+        Object.values(grouped).forEach((list) => list.sort((a, b) => (a.startTs ?? 0) - (b.startTs ?? 0)));
         const newestFirst = [...validTrips].sort((a, b) => (b.startTs ?? 0) - (a.startTs ?? 0));
-        return { center: validCenter, allTrips: newestFirst, tripsByDay: grouped };
+        return { center: [isFinite(avgLng) ? avgLng : 11.9746, isFinite(avgLat) ? avgLat : 57.7089], allTrips: newestFirst, tripsByDay: grouped };
     }, [data]);
 
+    const replay = useMemo(() => replayService.build([...allTrips].reverse()), [allTrips]);
+
     const tripOptions = useMemo(
-        () =>
-            allTrips.map((trip, idx) => ({
-                value: String(idx),
-                label: `${trip.startDate} · ${trip.startAddress.substring(0, 28)} → ${trip.endAddress.substring(0, 28)} · ${trip.distanceKm} ${unit}`,
-            })),
+        () => allTrips.map((trip, idx) => ({ value: String(idx), label: `${trip.startDate} · ${trip.startAddress.substring(0, 26)} → ${trip.endAddress.substring(0, 26)} · ${trip.distanceKm} ${unit}` })),
         [allTrips, unit]
     );
 
-    const tripsToShowOptions = [
-        { value: '25', label: 'Last 25 trips' },
-        { value: '50', label: 'Last 50 trips' },
-        { value: '100', label: 'Last 100 trips' },
-        { value: '250', label: 'Last 250 trips' },
-        { value: 'ALL', label: `All trips (${allTrips.length})` },
-    ];
+    const displayTrips = useMemo(() => {
+        if (selectedTrip !== null) return [allTrips[parseInt(selectedTrip)]].filter(Boolean);
+        if (mode === 'replay') return allTrips;
+        return tripsToShow === 'ALL' ? allTrips : allTrips.slice(0, parseInt(tripsToShow));
+    }, [allTrips, selectedTrip, tripsToShow, mode]);
 
-    const displayTrips = useMemo(
-        () => (selectedTrip !== null ? [allTrips[parseInt(selectedTrip)]].filter(Boolean) : tripsToShow === 'ALL' ? allTrips : allTrips.slice(0, parseInt(tripsToShow))),
-        [allTrips, selectedTrip, tripsToShow]
-    );
+    // ------------------------------------------------------------------
+    // Map lifecycle
+    // ------------------------------------------------------------------
 
-    // Initialize map service
     useEffect(() => {
         if (!mapRef.current || mapServiceRef.current) return undefined;
-
-        const mapService = new MapService(tileLayerFactory, featureBuilder, markerFactory);
-        mapService.setDistanceUnit(distanceUnit);
-        mapService.initializeMap(mapRef.current, center, selectedTileLayer);
-        mapServiceRef.current = mapService;
-
+        const service = new MapService(tileLayerFactory, featureBuilder, markerFactory);
+        service.setDistanceUnit(distanceUnit);
+        service.setReducedMotion(reducedMotion);
+        service.setTheme({ accent: t.accent, surface: t.surface, ink: t.ink, ink2: t.ink2, flow: scheme === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(16,16,16,0.7)' });
+        service.onHover = setHoverTrip;
+        service.initializeMap(mapRef.current, center, basemap);
+        service.onMoveEnd(() => setInView(service.tripsInView().length));
+        mapServiceRef.current = service;
         return () => {
-            if (mapServiceRef.current) {
-                mapServiceRef.current.destroy();
-                mapServiceRef.current = null;
-            }
+            service.destroy();
+            mapServiceRef.current = null;
         };
-        // The map is created once per mount; later changes go through the effects below
+        // Created once per mount; later changes flow through the effects below
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
-        mapServiceRef.current?.changeTileLayer(selectedTileLayer);
-    }, [selectedTileLayer]);
+        mapServiceRef.current?.changeTileLayer(basemap);
+        mapServiceRef.current?.setTheme({ flow: tileLayerFactory.isDark(basemap) ? 'rgba(255,255,255,0.8)' : 'rgba(16,16,16,0.7)' });
+    }, [basemap, tileLayerFactory]);
 
     useEffect(() => {
-        mapServiceRef.current?.setHeatmapVisibility(showHeatmap);
-    }, [showHeatmap]);
+        mapServiceRef.current?.setTheme({ accent: t.accent, surface: t.surface, ink: t.ink, ink2: t.ink2 });
+    }, [t]);
 
-    // Update features when data or options change
     useEffect(() => {
-        if (!mapServiceRef.current) return;
+        mapServiceRef.current?.setMode(mode);
+        mapServiceRef.current?.setFlowAnimation(mode === 'routes' && flow);
+    }, [mode, flow]);
 
-        const features = [];
-        const heatmapFeatures = [];
+    useEffect(() => {
+        mapServiceRef.current?.setReducedMotion(reducedMotion);
+    }, [reducedMotion]);
 
-        displayTrips.forEach((trip, tripIdx) => {
-            features.push(featureBuilder.createRouteLine(trip, tripIdx));
-            if (showMarkers) {
-                features.push(markerFactory.createMarker(trip, 'start', tripIdx), markerFactory.createMarker(trip, 'end', tripIdx));
-            }
-            heatmapFeatures.push(featureBuilder.createHeatmapPoint(trip.startLng, trip.startLat), featureBuilder.createHeatmapPoint(trip.endLng, trip.endLat));
-        });
+    // Build features for the current mode
+    useEffect(() => {
+        const service = mapServiceRef.current;
+        if (!service) return;
+        const pathFor = (trip) => (snapRoads ? snapper.cached(trip) : null);
 
-        if (linkTripsByDay && selectedTrip === null) {
-            const shown = new Set(displayTrips.map((t) => t.id));
-            Object.entries(tripsByDay).forEach(([, trips], dayIdx) => {
-                trips.forEach((trip, idx) => {
-                    const nextTrip = trips[idx + 1];
-                    if (nextTrip && shown.has(trip.id) && shown.has(nextTrip.id)) {
-                        features.push(featureBuilder.createDayConnectionLine(trip, nextTrip, dayIdx));
-                    }
-                });
-            });
+        if (mode === 'replay') {
+            const { current, recent, older, frame } = replayService.visibleAt(replay.frames, cursor, 10);
+            const routes = [
+                ...older.map((trip, i) => featureBuilder.createRouteLine(trip, i, { path: pathFor(trip), emphasis: 'dim' })),
+                ...recent.map((trip, i) => featureBuilder.createRouteLine(trip, 1000 + i, { path: pathFor(trip) })),
+                ...current.map((trip, i) => featureBuilder.createRouteLine(trip, 2000 + i, { path: pathFor(trip), emphasis: 'current' })),
+            ];
+            service.updateRoutes(routes);
+            service.updateFlow([]);
+            service.updateChains([]);
+            service.updateMarkers(current.flatMap((trip, i) => [markerFactory.createMarker(trip, 'start', i), markerFactory.createMarker(trip, 'end', i)]));
+            const last = current[current.length - 1];
+            service.setPulse(last ? featureBuilder.createPulse(last.endLng, last.endLat) : null);
+            if (frame && cursor === 0) service.fitToFeatures(routes.length ? routes : []);
+            return;
         }
 
-        mapServiceRef.current.updateFeatures(features, heatmapFeatures);
-        mapServiceRef.current.fitToFeatures(features);
-    }, [displayTrips, linkTripsByDay, selectedTrip, tripsByDay, showMarkers, featureBuilder, markerFactory]);
+        const routes = displayTrips.map((trip, i) => featureBuilder.createRouteLine(trip, i, { path: pathFor(trip) }));
+        service.updateRoutes(routes);
+        service.updateFlow(mode === 'routes' && flow ? displayTrips.slice(0, 250).map((trip) => featureBuilder.createFlowLine(trip, pathFor(trip))) : []);
+        service.updateMarkers(mode === 'routes' && showMarkers ? displayTrips.flatMap((trip, i) => [markerFactory.createMarker(trip, 'start', i), markerFactory.createMarker(trip, 'end', i)]) : []);
+        service.updateHeat(displayTrips.flatMap((trip) => [featureBuilder.createHeatmapPoint(trip.startLng, trip.startLat), featureBuilder.createHeatmapPoint(trip.endLng, trip.endLat)]));
+        service.setPulse(null);
+
+        if (mode === 'routes' && linkTripsByDay && selectedTrip === null) {
+            const shown = new Set(displayTrips.map((x) => x.id));
+            const chains = [];
+            Object.values(tripsByDay).forEach((trips, dayIdx) => {
+                trips.forEach((trip, idx) => {
+                    const next = trips[idx + 1];
+                    if (next && shown.has(trip.id) && shown.has(next.id)) chains.push(featureBuilder.createDayConnectionLine(trip, next, dayIdx));
+                });
+            });
+            service.updateChains(chains);
+        } else {
+            service.updateChains([]);
+        }
+
+        if (mode === 'places') {
+            const ranked = places?.ranked ?? places?.top ?? [];
+            const max = ranked[0]?.visits ?? 1;
+            service.updatePlaces(ranked.slice(0, 30).map((p, rank) => featureBuilder.createPlaceBubble(p, rank, max, { accent: t.accent, ink: tileLayerFactory.isDark(basemap) ? '#f5f5f3' : '#101010', surface: tileLayerFactory.isDark(basemap) ? '#0b0b0b' : '#ffffff', labelColor: tileLayerFactory.isDark(basemap) ? '#f5f5f3' : '#101010' })));
+        }
+
+        // fitToFeatures ends in a moveend, which refreshes the in-view count
+        service.fitToFeatures(routes, isMobile ? [40, 24, 140, 24] : [56, 56, 56, 320]);
+    }, [displayTrips, mode, flow, showMarkers, linkTripsByDay, selectedTrip, tripsByDay, featureBuilder, markerFactory, places, t.accent, basemap, tileLayerFactory, snapRoads, snapVersion, replay, cursor, isMobile]);
+
+    // Replay playback
+    useEffect(() => {
+        if (!playing) return undefined;
+        const step = Math.max(120, 700 / parseInt(speed));
+        const id = setInterval(() => {
+            setCursor((c) => {
+                if (c >= replay.totalDays - 1) {
+                    setPlaying(false);
+                    return c;
+                }
+                return c + 1;
+            });
+        }, step);
+        return () => clearInterval(id);
+    }, [playing, speed, replay.totalDays]);
+
+    // Road snapping
+    const startSnapping = useCallback(async () => {
+        setSnapRoads(true);
+        const controller = new AbortController();
+        setSnapProgress({ done: 0, total: 0 });
+        const stats = await snapper.snapAll(allTrips, { onProgress: (done, total) => setSnapProgress({ done, total }), signal: controller.signal });
+        setSnapProgress(null);
+        setSnapVersion((v) => v + 1);
+        if (stats.failed && !stats.fetched) {
+            notifications.show({ title: 'Router unavailable', message: 'The public OSRM server did not answer. Straight lines are shown; try again later.', color: 'yellow' });
+        } else if (stats.fetched) {
+            notifications.show({ title: 'Routes snapped to roads', message: `${stats.fetched} new road paths fetched, ${stats.cached} already cached${stats.failed ? `, ${stats.failed} without a route` : ''}.`, color: 'polestar' });
+        }
+    }, [allTrips]);
+
+    const toggleSnap = (checked) => {
+        if (!checked) {
+            setSnapRoads(false);
+            return;
+        }
+        if (snapper.cacheSize() > 0 && RouteSnapper.uniquePairs(allTrips).every((p) => snapper.cached(p.trip))) {
+            setSnapRoads(true);
+            return;
+        }
+        setSnapConsent(true);
+    };
 
     const focusPlace = (place) => {
         setSelectedTrip(null);
         mapServiceRef.current?.updateView([place.lng, place.lat], 14);
     };
 
-    return (
-        <Grid gutter="md">
-            <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
-                <Stack gap="md">
-                    <Box className="ps-card ps-rise" p="md" style={{ position: 'relative', zIndex: 5 }}>
-                        <Stack gap="sm">
-                            <Eyebrow>What to show</Eyebrow>
-                            <Select
-                                size="xs"
-                                label="Single trip"
-                                placeholder="All recent trips"
-                                data={tripOptions}
-                                value={selectedTrip}
-                                onChange={setSelectedTrip}
-                                searchable
-                                clearable
-                                maxDropdownHeight={320}
-                                nothingFoundMessage="No trip matches"
-                            />
-                            <Select size="xs" label="Trips on the map" value={tripsToShow} onChange={setTripsToShow} data={tripsToShowOptions} disabled={selectedTrip !== null} />
-                            <Select
-                                size="xs"
-                                label="Basemap"
-                                value={selectedTileLayer}
-                                onChange={(v) => {
-                                    userPickedLayer.current = true;
-                                    setSelectedTileLayer(v);
-                                }}
-                                data={tileLayerOptions}
-                            />
-                            <Switch size="sm" color="polestar" label="Link trips by day" description="Dashed chains between consecutive trips" checked={linkTripsByDay} onChange={(e) => setLinkTripsByDay(e.currentTarget.checked)} disabled={selectedTrip !== null} />
-                            <Switch size="sm" color="polestar" label="Density heatmap" checked={showHeatmap} onChange={(e) => setShowHeatmap(e.currentTarget.checked)} />
-                            <Switch size="sm" color="polestar" label="Start / end pins" checked={showMarkers} onChange={(e) => setShowMarkers(e.currentTarget.checked)} />
-                        </Stack>
-                    </Box>
+    const frame = replay.frames[Math.min(cursor, Math.max(0, replay.totalDays - 1))];
+    const shownCount = mode === 'replay' ? (frame?.cumulative.trips ?? 0) : displayTrips.length;
+    const shownDistance = mode === 'replay' ? (frame?.cumulative.distance ?? 0) : displayTrips.reduce((s, x) => s + x.distanceKm, 0);
 
-                    <Box className="ps-card ps-rise" p="md" style={{ '--i': 1 }}>
-                        <Eyebrow>Route colour · kWh/100{unit}</Eyebrow>
-                        <Stack gap={6} mt="sm">
-                            {EFFICIENCY_BANDS.map((b) => (
-                                <Group key={b.key} gap="sm" wrap="nowrap">
-                                    <Box style={{ width: 22, height: 3, background: b.color, borderRadius: 2, flexShrink: 0 }} />
-                                    <Text size="xs" className="ps-tabular">
-                                        {b.label.replace(/(\d+)/g, (n) => Math.round(parseInt(n) * multiplier))}
-                                    </Text>
-                                    <Text size="xs" c="dimmed" ml="auto" tt="capitalize">{b.key === 'ok' ? 'typical' : b.key}</Text>
-                                </Group>
+    const panel = (
+        <Stack gap="md">
+            <div>
+                <Eyebrow>Mode</Eyebrow>
+                <SegmentedControl
+                    fullWidth
+                    mt={6}
+                    size="xs"
+                    radius="xs"
+                    value={mode}
+                    onChange={(m) => {
+                        setMode(m);
+                        setPlaying(false);
+                        if (m === 'replay') {
+                            setSelectedTrip(null);
+                            setCursor(0);
+                        }
+                    }}
+                    data={MODES.map((m) => ({ value: m.value, label: (<Group gap={4} wrap="nowrap" justify="center"><m.icon size={13} /><span>{m.label}</span></Group>) }))}
+                />
+            </div>
+
+            {mode !== 'replay' && (
+                <>
+                    <Select size="xs" label="Single trip" placeholder="All recent trips" data={tripOptions} value={selectedTrip} onChange={setSelectedTrip} searchable clearable maxDropdownHeight={280} nothingFoundMessage="No trip matches" />
+                    <Select size="xs" label="Trips on the map" value={tripsToShow} onChange={setTripsToShow} disabled={selectedTrip !== null} data={[{ value: '50', label: 'Last 50 trips' }, { value: '150', label: 'Last 150 trips' }, { value: '400', label: 'Last 400 trips' }, { value: 'ALL', label: `All trips (${allTrips.length})` }]} />
+                </>
+            )}
+
+            <Select size="xs" label="Basemap" value={basemap} onChange={(v) => { userPickedBasemap.current = true; setBasemap(v); }} data={tileLayerFactory.getAvailableLayers()} />
+
+            {mode === 'routes' && (
+                <Stack gap={8}>
+                    <Switch size="sm" color="polestar" label="Direction of travel" description="Animated flow along each route" checked={flow} onChange={(e) => setFlow(e.currentTarget.checked)} disabled={reducedMotion} />
+                    <Switch size="sm" color="polestar" label="Start / end pins" description="Clustered when they crowd" checked={showMarkers} onChange={(e) => setShowMarkers(e.currentTarget.checked)} />
+                    <Switch size="sm" color="polestar" label="Link trips by day" description="Dotted chains between consecutive trips" checked={linkTripsByDay} onChange={(e) => setLinkTripsByDay(e.currentTarget.checked)} disabled={selectedTrip !== null} />
+                </Stack>
+            )}
+
+            <Stack gap={6}>
+                <Switch size="sm" color="polestar" label="Snap routes to roads" description="Uses the public OSRM router; sends start/end coordinates only" checked={snapRoads} onChange={(e) => toggleSnap(e.currentTarget.checked)} thumbIcon={<IconRoad size={10} />} />
+                {snapProgress && (
+                    <Progress value={snapProgress.total ? (snapProgress.done / snapProgress.total) * 100 : 100} size="xs" color="polestar" animated aria-label="Snapping progress" />
+                )}
+                {snapProgress && <Text size="xs" c="dimmed" className="ps-tabular">{snapProgress.total ? `${snapProgress.done} of ${snapProgress.total} unique routes` : 'Checking cache…'}</Text>}
+            </Stack>
+
+            {mode === 'places' && places?.ranked?.length > 0 && (
+                <div>
+                    <Eyebrow>Most visited</Eyebrow>
+                    <ScrollArea.Autosize mah={220} mt={6} type="auto">
+                        <Stack gap={2}>
+                            {places.ranked.slice(0, 12).map((p, idx) => (
+                                <UnstyledButton key={`${p.lat},${p.lng}`} onClick={() => focusPlace(p)}>
+                                    <Group gap="sm" wrap="nowrap" py={3}>
+                                        <IconMapPin size={13} style={{ color: idx === 0 ? 'var(--ps-accent)' : 'var(--ps-muted)', flexShrink: 0 }} />
+                                        <Text size="xs" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.address}>{p.address}</Text>
+                                        <Text size="xs" c="dimmed" className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>{p.visits}</Text>
+                                        <IconFocus2 size={12} style={{ color: 'var(--ps-muted)', flexShrink: 0 }} />
+                                    </Group>
+                                </UnstyledButton>
                             ))}
                         </Stack>
-                    </Box>
+                    </ScrollArea.Autosize>
+                </div>
+            )}
+        </Stack>
+    );
 
-                    {places?.top?.length > 0 && (
-                        <Box className="ps-card ps-rise" p="md" style={{ '--i': 2 }}>
-                            <Eyebrow>Most visited</Eyebrow>
-                            <Stack gap={4} mt="sm">
-                                {places.top.slice(0, 5).map((p, idx) => (
-                                    <UnstyledButton key={`${p.lat},${p.lng}`} onClick={() => focusPlace(p)} style={{ borderRadius: 2 }} className="ps-place-row">
-                                        <Group gap="sm" wrap="nowrap" py={4}>
-                                            <IconMapPin size={14} style={{ color: idx === 0 ? 'var(--ps-accent)' : 'var(--ps-muted)', flexShrink: 0 }} />
-                                            <Text size="xs" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.address}>
-                                                {p.address}
-                                            </Text>
-                                            <Text size="xs" c="dimmed" className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>{p.visits}</Text>
-                                            <IconFocus2 size={12} style={{ color: 'var(--ps-muted)', flexShrink: 0 }} />
-                                        </Group>
-                                    </UnstyledButton>
-                                ))}
-                            </Stack>
-                        </Box>
-                    )}
+    return (
+        <Box className="ps-card ps-rise" style={{ position: 'relative', overflow: 'hidden', height: 'min(78vh, 860px)', minHeight: 480 }}>
+            {allTrips.length > 0 ? (
+                <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+            ) : (
+                <Stack align="center" justify="center" h="100%" gap="xs">
+                    <IconMapPin size={28} stroke={1.5} style={{ color: 'var(--ps-muted)' }} />
+                    <Text c="dimmed" ta="center">No trips with coordinates in this selection.</Text>
                 </Stack>
-            </Grid.Col>
+            )}
 
-            <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
-                <Box className="ps-card ps-rise" style={{ '--i': 1, height: 'min(72vh, 720px)', minHeight: 420, position: 'relative', overflow: 'hidden', zIndex: 1 }}>
-                    {allTrips.length > 0 ? (
-                        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+            {/* Floating controls: panel on desktop, drawer on mobile */}
+            {!isMobile && (
+                <Glass style={{ position: 'absolute', top: 12, left: 12, width: 290, maxHeight: 'calc(100% - 24px)', overflow: 'auto', zIndex: 5 }} className="ps-glass ps-no-print">
+                    {panel}
+                </Glass>
+            )}
+            {isMobile && (
+                <>
+                    <Button size="xs" variant="default" leftSection={<IconAdjustments size={14} />} onClick={() => setDrawerOpened(true)} style={{ position: 'absolute', top: 12, left: 56, zIndex: 5 }} className="ps-no-print">
+                        {MODES.find((m) => m.value === mode)?.label}
+                    </Button>
+                    <Drawer opened={drawerOpened} onClose={() => setDrawerOpened(false)} position="bottom" size="70%" title="Map" radius={0}>
+                        {panel}
+                    </Drawer>
+                </>
+            )}
+
+            {/* Stats chip */}
+            <Glass style={isMobile ? { position: 'absolute', right: 12, bottom: mode === 'replay' ? 92 : 36, zIndex: 5, padding: '6px 10px' } : { position: 'absolute', top: 12, right: 52, zIndex: 5, padding: '6px 10px' }} className="ps-glass ps-no-print">
+                <Text size="xs" className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>
+                    {hoverTrip ? (
+                        <>{hoverTrip.startDate} · {formatNumber(hoverTrip.distanceKm, 1)} {unit}</>
+                    ) : isMobile ? (
+                        <>{shownCount.toLocaleString()}/{allTrips.length.toLocaleString()} · {formatNumber(shownDistance, 0)} {unit}</>
                     ) : (
-                        <Stack align="center" justify="center" h="100%" gap="xs">
-                            <IconMapPin size={28} stroke={1.5} style={{ color: 'var(--ps-muted)' }} />
-                            <Text c="dimmed" ta="center">No trips with coordinates in this selection.</Text>
-                        </Stack>
+                        <>
+                            {shownCount.toLocaleString()} of {allTrips.length.toLocaleString()} trips · {formatNumber(shownDistance, 0)} {unit}
+                            {inView !== null && mode !== 'replay' && inView < displayTrips.length ? ` · ${inView} in view` : ''}
+                        </>
                     )}
-                    <Box style={{ position: 'absolute', top: 10, right: 52, zIndex: 2 }} className="ps-no-print">
-                        <Text size="xs" c="dimmed" style={{ background: 'color-mix(in srgb, var(--ps-surface) 85%, transparent)', padding: '3px 8px', borderRadius: 2, border: '1px solid var(--ps-border)' }} className="ps-tabular">
-                            {displayTrips.length} of {allTrips.length} trips
-                        </Text>
-                    </Box>
-                </Box>
-            </Grid.Col>
-        </Grid>
+                </Text>
+            </Glass>
+
+            {/* Legend */}
+            {!(isMobile && mode === 'replay') && (
+            <Glass style={{ position: 'absolute', left: 12, bottom: mode === 'replay' ? 92 : 36, zIndex: 5, padding: '8px 10px' }} className="ps-glass ps-no-print">
+                <Eyebrow style={{ fontSize: 10 }}>kWh/100{unit}</Eyebrow>
+                <Group gap={10} mt={4} wrap="nowrap">
+                    {EFFICIENCY_BANDS.map((b) => (
+                        <Group key={b.key} gap={4} wrap="nowrap">
+                            <Box style={{ width: 14, height: 3, background: b.color, borderRadius: 2 }} />
+                            <Text size="10px" className="ps-tabular">{b.label.replace(/(\d+)/g, (n) => Math.round(parseInt(n) * multiplier))}</Text>
+                        </Group>
+                    ))}
+                </Group>
+            </Glass>
+            )}
+
+            {/* Replay bar */}
+            {mode === 'replay' && replay.totalDays > 0 && (
+                <Glass style={{ position: 'absolute', left: 12, right: 12, bottom: 12, zIndex: 6, padding: '10px 14px' }} className="ps-glass ps-no-print">
+                    <Group gap="sm" wrap="nowrap" align="center">
+                        <Tooltip label="Restart">
+                            <ActionIcon variant="subtle" color="gray" size="md" onClick={() => { setCursor(0); setPlaying(false); }} aria-label="Restart replay">
+                                <IconPlayerSkipBack size={16} />
+                            </ActionIcon>
+                        </Tooltip>
+                        <ActionIcon variant="filled" color="polestar" size="lg" radius="xl" onClick={() => { if (cursor >= replay.totalDays - 1) setCursor(0); setPlaying((p) => !p); }} aria-label={playing ? 'Pause' : 'Play'}>
+                            {playing ? <IconPlayerPause size={18} /> : <IconPlayerPlay size={18} />}
+                        </ActionIcon>
+                        <SegmentedControl size="xs" radius="xs" value={speed} onChange={setSpeed} data={[{ value: '1', label: '1×' }, { value: '2', label: '2×' }, { value: '4', label: '4×' }, { value: '8', label: '8×' }]} />
+                        <Box style={{ flex: 1, minWidth: 80 }}>
+                            <Slider size="sm" color="polestar" min={0} max={Math.max(0, replay.totalDays - 1)} value={cursor} onChange={(v) => { setPlaying(false); setCursor(v); }} label={(v) => replay.frames[v]?.label ?? ''} />
+                        </Box>
+                        <Box style={{ minWidth: isMobile ? 90 : 220, textAlign: 'right' }}>
+                            <Text size="sm" fw={500} className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>{frame?.label ?? ''}</Text>
+                            {!isMobile && (
+                                <Text size="xs" c="dimmed" className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>
+                                    day {cursor + 1} of {replay.totalDays} · {frame?.cumulative.trips ?? 0} trips · {formatNumber(frame?.cumulative.distance ?? 0, 0)} {unit} · {formatNumber(frame?.cumulative.energy ?? 0, 0)} kWh
+                                </Text>
+                            )}
+                        </Box>
+                    </Group>
+                </Glass>
+            )}
+
+            {/* Snap consent */}
+            <Modal opened={snapConsent} onClose={() => setSnapConsent(false)} title="Snap routes to roads" size="md">
+                <Stack gap="sm">
+                    <Text size="sm">
+                        Routes are drawn as straight lines because the export only has a start and an end. Snapping asks the public <b>OSRM</b> router (router.project-osrm.org) for the road path between each unique start/end pair.
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                        What leaves your browser: the rounded coordinates of each unique pair ({RouteSnapper.uniquePairs(allTrips).length} pairs for this selection). Never addresses, dates, energy or battery figures. Results are cached in this browser so each pair is fetched once. The demo router is shared and rate-limited; large files can take a minute.
+                    </Text>
+                    <Group justify="flex-end" mt="xs">
+                        <Button variant="subtle" color="gray" onClick={() => setSnapConsent(false)}>Keep straight lines</Button>
+                        <Button onClick={() => { setSnapConsent(false); startSnapping(); }}>Snap to roads</Button>
+                    </Group>
+                </Stack>
+            </Modal>
+        </Box>
     );
 }
 
