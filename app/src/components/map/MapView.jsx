@@ -10,6 +10,7 @@ import { FeatureBuilder } from '../../services/map/FeatureBuilder';
 import { MapService } from '../../services/map/MapService';
 import { RouteSnapper } from '../../services/map/RouteSnapper';
 import { ReplayService } from '../../services/map/ReplayService';
+import { MapDataProcessor } from '../../services/map/MapDataProcessor';
 import { useTokens } from '../../theme/useTokens';
 import { formatNumber } from '../../utils/format';
 import Eyebrow from '../ui/Eyebrow';
@@ -31,6 +32,7 @@ const MODES = [
 
 const snapper = new RouteSnapper();
 const replayService = new ReplayService();
+const mapDataProcessor = new MapDataProcessor();
 
 function Glass({ children, style, ...props }) {
     return (
@@ -88,20 +90,7 @@ function MapView({ data, distanceUnit = 'km', places }) {
         if (!userPickedBasemap.current) setBasemap(tileLayerFactory.defaultFor(scheme));
     }, [scheme, tileLayerFactory]);
 
-    const { center, allTrips, tripsByDay } = useMemo(() => {
-        const validTrips = data.filter((trip) => trip.startLat !== 0 && trip.startLng !== 0 && trip.endLat !== 0 && trip.endLng !== 0);
-        if (validTrips.length === 0) return { center: [11.9746, 57.7089], allTrips: [], tripsByDay: {} };
-        const avgLat = validTrips.reduce((s, trip) => s + trip.startLat, 0) / validTrips.length;
-        const avgLng = validTrips.reduce((s, trip) => s + trip.startLng, 0) / validTrips.length;
-        const grouped = validTrips.reduce((acc, trip) => {
-            const day = trip.dayKey || trip.startDate.split(',')[0].trim();
-            (acc[day] ||= []).push(trip);
-            return acc;
-        }, {});
-        Object.values(grouped).forEach((list) => list.sort((a, b) => (a.startTs ?? 0) - (b.startTs ?? 0)));
-        const newestFirst = [...validTrips].sort((a, b) => (b.startTs ?? 0) - (a.startTs ?? 0));
-        return { center: [isFinite(avgLng) ? avgLng : 11.9746, isFinite(avgLat) ? avgLat : 57.7089], allTrips: newestFirst, tripsByDay: grouped };
-    }, [data]);
+    const { center, allTrips, tripsByDay } = useMemo(() => mapDataProcessor.prepare(data), [data]);
 
     const replay = useMemo(() => replayService.build([...allTrips].reverse()), [allTrips]);
 

@@ -3,7 +3,7 @@
 ```mermaid
 flowchart LR
     subgraph PR["Pull request / push to main — ci.yml"]
-        I1[make install] --> L[make lint<br/>--max-warnings=0] --> T[make test<br/>88 vitest cases] --> B[make build] --> Art[upload app/dist artifact]
+        I1[make install] --> L[make lint<br/>--max-warnings=0] --> T[make test<br/>vitest unit suite] --> B[make build] --> Art[upload app/dist artifact]
         I1 --> Au[make audit<br/>whole tree, non-blocking]
     end
     subgraph Release["Release published / manual — deploy.yml"]

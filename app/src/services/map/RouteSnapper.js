@@ -8,6 +8,8 @@
  * Single Responsibility: fetching and caching snapped geometries. Drawing
  * stays in FeatureBuilder; deciding when to snap stays in the view.
  */
+import { hasCoordinates } from '../../utils/geo';
+
 const CACHE_KEY = 'polestar-route-cache:v1';
 const DEFAULT_ENDPOINT = 'https://router.project-osrm.org/route/v1/driving';
 const MAX_CACHE_ENTRIES = 2000;
@@ -34,7 +36,7 @@ export class RouteSnapper {
     static uniquePairs(trips) {
         const seen = new Map();
         trips.forEach((t) => {
-            if (!t.startLat || !t.endLat) return;
+            if (!hasCoordinates(t)) return;
             const key = RouteSnapper.pairKey(t);
             if (!seen.has(key)) seen.set(key, t);
         });
