@@ -11,6 +11,7 @@ import HelpModal from './components/HelpModal';
 import { TableExporter } from './services/table/TableDataProcessor';
 import { JourneyMerger } from './services/ingest/JourneyMerger';
 import { buildSampleJourneyLog } from './utils/sampleData';
+import { useExperienceLevel } from './hooks/usePreferences';
 
 const REPO_URL = 'https://github.com/Polestar-OSS/polestar-journey-log-explorer';
 
@@ -84,6 +85,7 @@ function App() {
     const [filteredData, setFilteredData] = useState(null);
     const [helpOpened, setHelpOpened] = useState(false);
     const [addOpened, setAddOpened] = useState(false);
+    const [level, setLevel] = useExperienceLevel();
 
     const journey = useMemo(() => (sources.length ? merger.merge(sources) : null), [sources]);
 
@@ -142,6 +144,8 @@ function App() {
                 onAddFiles={() => setAddOpened(true)}
                 exportCount={filteredData?.length}
                 onHelp={() => setHelpOpened(true)}
+                level={level}
+                onChangeLevel={setLevel}
             />
 
             <Box component="main" style={{ flex: 1 }}>
@@ -157,6 +161,8 @@ function App() {
                             duplicatesRemoved={journey.duplicatesRemoved}
                             onFilteredChange={setFilteredData}
                             onAddFiles={() => setAddOpened(true)}
+                            level={level}
+                            onChangeLevel={setLevel}
                         />
                     </Container>
                 )}

@@ -1,9 +1,11 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import { Box, Center, Loader, Stack, Tabs, Text } from '@mantine/core';
-import { IconChartBar, IconMap, IconList, IconBook, IconBulb } from '@tabler/icons-react';
+import { IconChartBar, IconMap, IconList, IconBook, IconBulb, IconSparkles, IconTelescope } from '@tabler/icons-react';
 import StatsCards from './stats/StatsCards';
 import ChartsView from './charts/ChartsView';
 import InsightsView from './insights/InsightsView';
+import StoryView from './story/StoryView';
+import ExploreView from './explore/ExploreView';
 import TableView from './table/TableView';
 import DataGuide from './DataGuide';
 import FilterBar from './filters/FilterBar';
@@ -32,8 +34,16 @@ function TabLoader() {
     );
 }
 
-function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, onFilteredChange, onAddFiles }) {
-    const [activeTab, setActiveTab] = useState('overview');
+const TABS_BY_LEVEL = {
+    simple: ['story', 'map', 'trips', 'guide'],
+    detailed: ['overview', 'insights', 'map', 'trips', 'guide'],
+    expert: ['overview', 'insights', 'explore', 'map', 'trips', 'guide'],
+};
+
+function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, onFilteredChange, onAddFiles, level = 'detailed', onChangeLevel }) {
+    const tabs = TABS_BY_LEVEL[level] ?? TABS_BY_LEVEL.detailed;
+    const [requestedTab, setActiveTab] = useState(null);
+    const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : tabs[0];
     const [filterState, setFilterState] = useState({ filtered: data, range: null, isFiltered: false });
     const { filtered: filteredData, range, isFiltered } = filterState;
 
@@ -68,24 +78,42 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
                 </Box>
             ) : (
                 <>
-                    <StatsCards statistics={statistics} data={filteredData} distanceUnit={distanceUnit} deltas={deltas} periodLabel={periodLabel} />
+                    <StatsCards statistics={statistics} data={filteredData} distanceUnit={distanceUnit} deltas={deltas} periodLabel={periodLabel} compact={level === 'simple'} />
 
                     <Tabs value={activeTab} onChange={setActiveTab} keepMounted={false}>
                         <Tabs.List className="ps-no-print">
-                            <Tabs.Tab value="overview" leftSection={<IconChartBar size={16} />}>Overview</Tabs.Tab>
-                            <Tabs.Tab value="insights" leftSection={<IconBulb size={16} />}>Insights</Tabs.Tab>
+                            {tabs.includes('story') && <Tabs.Tab value="story" leftSection={<IconSparkles size={16} />}>Your driving</Tabs.Tab>}
+                            {tabs.includes('overview') && <Tabs.Tab value="overview" leftSection={<IconChartBar size={16} />}>Overview</Tabs.Tab>}
+                            {tabs.includes('insights') && <Tabs.Tab value="insights" leftSection={<IconBulb size={16} />}>Insights</Tabs.Tab>}
+                            {tabs.includes('explore') && <Tabs.Tab value="explore" leftSection={<IconTelescope size={16} />}>Explore</Tabs.Tab>}
                             <Tabs.Tab value="map" leftSection={<IconMap size={16} />}>Map</Tabs.Tab>
                             <Tabs.Tab value="trips" leftSection={<IconList size={16} />}>Trips</Tabs.Tab>
                             <Tabs.Tab value="guide" leftSection={<IconBook size={16} />}>Guide</Tabs.Tab>
                         </Tabs.List>
 
-                        <Tabs.Panel value="overview" pt="lg">
-                            <ChartsView data={filteredData} distanceUnit={distanceUnit} insights={insights} />
-                        </Tabs.Panel>
+                        {tabs.includes('story') && (
+                            <Tabs.Panel value="story" pt="lg">
+                                <StoryView statistics={statistics} insights={insights} data={filteredData} distanceUnit={distanceUnit} onOpenTab={setActiveTab} onChangeLevel={onChangeLevel} />
+                            </Tabs.Panel>
+                        )}
 
-                        <Tabs.Panel value="insights" pt="lg">
-                            <InsightsView insights={insights} statistics={statistics} distanceUnit={distanceUnit} data={filteredData} />
-                        </Tabs.Panel>
+                        {tabs.includes('overview') && (
+                            <Tabs.Panel value="overview" pt="lg">
+                                <ChartsView data={filteredData} distanceUnit={distanceUnit} insights={insights} />
+                            </Tabs.Panel>
+                        )}
+
+                        {tabs.includes('insights') && (
+                            <Tabs.Panel value="insights" pt="lg">
+                                <InsightsView insights={insights} statistics={statistics} distanceUnit={distanceUnit} data={filteredData} />
+                            </Tabs.Panel>
+                        )}
+
+                        {tabs.includes('explore') && (
+                            <Tabs.Panel value="explore" pt="lg">
+                                <ExploreView data={filteredData} distanceUnit={distanceUnit} sources={sources} />
+                            </Tabs.Panel>
+                        )}
 
                         <Tabs.Panel value="map" pt="lg">
                             <Suspense fallback={<TabLoader />}>
@@ -94,7 +122,7 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
                         </Tabs.Panel>
 
                         <Tabs.Panel value="trips" pt="lg">
-                            <TableView data={filteredData} distanceUnit={distanceUnit} />
+                            <TableView data={filteredData} distanceUnit={distanceUnit} expert={level === 'expert'} />
                         </Tabs.Panel>
 
                         <Tabs.Panel value="guide" pt="lg">
