@@ -1,410 +1,187 @@
-# Polestar Journey Log Explorer - Architecture Documentation
+# Architecture
 
-**Author**: Kinn Coelho Juliao  
-**Date**: November 21, 2025
+Polestar Journey Log Explorer is a single-page web application that turns the
+CSV/XLSX export of the Polestar Journey Log app into a dashboard. Everything
+runs in the browser. There is no backend, no account, no telemetry beyond the
+site-level analytics declared in `index.html`, and the user's file never leaves
+their machine.
 
-## Overview
+This document describes the system as it is. Decisions and their reasoning are
+recorded separately in [`docs/adr/`](./adr/README.md).
 
-The Polestar Journey Log Explorer is a client-side web application designed to provide comprehensive analysis and visualization of electric vehicle journey data. Built with modern web technologies, it offers an intuitive interface for EV owners to understand their driving patterns, energy consumption, and trip efficiency.
+## 1. Repository as a BusinessRepo
 
-## Architecture Philosophy
+The repository owns the whole capability end to end: application, tests,
+infrastructure (GitHub Pages via Actions), CI, and documentation.
 
-This application follows a pure client-side architecture, ensuring:
-- **Privacy**: All data processing happens in the browser - no data is sent to servers
-- **Simplicity**: No backend infrastructure required
-- **Portability**: Can be hosted on any static file server or CDN
-- **Performance**: Direct file parsing and in-memory data processing
-
-## Technology Stack
-
-### Core Framework
-- **React 18.3.1**: Modern UI framework with hooks for state management
-- **Vite 5.4.9**: Next-generation build tool providing fast HMR and optimized builds
-
-### UI Components
-- **Mantine UI 7.13.2**: Comprehensive component library
-  - `@mantine/core`: Core components (buttons, inputs, layouts)
-  - `@mantine/hooks`: Useful React hooks
-  - `@mantine/charts`: Chart wrapper components
-  - `@mantine/notifications`: Toast notifications
-  - `@mantine/dropzone`: File upload component
-- **Tabler Icons**: Icon library for consistent UI elements
-
-### Data Processing
-- **PapaParse 5.4.1**: CSV parsing with streaming support
-- **XLSX 0.18.5**: Excel file parsing (both .xls and .xlsx)
-- **DayJS 1.11.13**: Date manipulation and formatting
-
-### Visualization
-- **Recharts 2.12.7**: Composable charting library
-  - Line charts for time series data
-  - Bar charts for distribution analysis
-  - Pie charts for categorical data
-- **OpenLayers (ol)**: Interactive map library with multiple tile layer support
-- **ol-ext**: OpenLayers extensions for additional controls
-
-## System Architecture
-
-```mermaid
-graph TB
-    subgraph Browser["🌐 Browser Environment"]
-        subgraph UI["React Application"]
-            App[App Component<br/>State Management]
-            
-            subgraph Upload["📁 Upload Layer"]
-                FileUpload[FileUploader Component<br/>Drag & Drop Interface]
-            end
-            
-            subgraph Processing["⚙️ Data Processing"]
-                Parser[Data Parser<br/>CSV/XLSX Processing]
-                Stats[Statistics Calculator<br/>Metrics & Analytics]
-            end
-            
-            subgraph Visualization["📊 Visualization Layer"]
-                Dashboard[Dashboard Component<br/>Tab Navigation]
-                StatsCards[Statistics Cards<br/>Key Metrics Display]
-                Charts[Charts View<br/>Recharts Integration]
-                Map[Map View<br/>OpenLayers Maps]
-                Table[Table View<br/>Data Grid]
-            end
-        end
-        
-        subgraph Storage["💾 Storage"]
-            State[React State<br/>In-Memory Data]
-            LocalFile[User's Local Files<br/>CSV/XLSX]
-            LocalStorage[localStorage<br/>Trip Annotations]
-        end
-    end
-    
-    subgraph External["🌍 External Services"]
-        OSM[OpenStreetMap<br/>Map Tiles]
-        Stadia[Stadia Maps<br/>Retina Tiles]
-        CDN[CDN Resources<br/>Icons & Fonts]
-        Nominatim[Nominatim API<br/>City Autocomplete]
-    end
-    
-    LocalFile -->|User Upload| FileUpload
-    FileUpload -->|File Object| Parser
-    Parser -->|Parsed Data| Stats
-    Parser -->|Journey Records| State
-    Stats -->|Calculated Metrics| State
-    State -->|Data Flow| Dashboard
-    Dashboard --> StatsCards
-    Dashboard --> Charts
-    Dashboard --> Map
-    Dashboard --> Table
-    Map -.->|Fetch Tiles| OSM
-    Map -.->|Fetch Tiles| Stadia
-    StatsCards -.->|City Search| Nominatim
-    Table <-.->|Read/Write| LocalStorage
+```
+polestar-journey-log-explorer/
+├── app/                 # React application (Vite)
+│   ├── src/
+│   │   ├── components/  # Presentation only
+│   │   ├── services/    # Pure domain logic, unit-tested
+│   │   ├── utils/       # Parsing, dates, formatting, preferences
+│   │   ├── hooks/       # React glue over utils/services
+│   │   └── theme/       # Design tokens, Mantine theme, global CSS
+│   ├── public/          # Static assets (logos)
+│   └── vitest.config.js
+├── tests/
+│   ├── unit/            # Vitest suites over app/src/services and app/src/utils
+│   └── fixtures/        # Synthetic export rows (no real data)
+├── docs/                # This directory; ADRs under docs/adr
+├── .github/workflows/   # ci.yml (lint · test · build · audit), deploy.yml (Pages)
+├── .github/dependabot.yml
+└── Makefile             # Every entry point CI and contributors use
 ```
 
-## Component Architecture
+Rules that follow from this layout:
 
-### 1. App Component (Root)
-- **Responsibility**: Application shell and state management
-- **State**: Journey data and upload status
-- **Layout**: Mantine AppShell with header and main content area
+- CI never calls `npm` directly. It calls `make install`, `make lint`,
+  `make test`, `make build`, `make audit`. A contributor runs the same targets.
+- Tests live outside `app/` so the application package does not ship them and
+  so the test layer can later grow e2e suites without touching the app.
+- Documentation is versioned with the code. A change to a formula changes
+  [`ANALYTICS.md`](./ANALYTICS.md) in the same pull request.
 
-### 2. FileUploader Component
-- **Responsibility**: File input and parsing
-- **Features**:
-  - Drag-and-drop interface
-  - CSV and XLSX support
-  - File validation
-  - Error handling with user feedback
-- **Output**: Parsed and processed journey data
+## 2. Layers
 
-### 3. Dashboard Component
-- **Responsibility**: Main data visualization container
-- **Features**:
-  - Tab-based navigation
-  - Statistics overview
-  - Sub-component orchestration
-- **Children**: StatsCards, ChartsView, MapView, TableView
-
-### 4. StatsCards Component
-- **Responsibility**: Display key metrics
-- **Metrics Displayed**:
-  - Total trips
-  - Total distance
-  - Total consumption
-  - Average/Best/Worst efficiency
-  - Average trip distance
-  - Odometer range
-
-### 5. ChartsView Component
-- **Responsibility**: Data visualization through charts
-- **Charts**:
-  - Daily distance and consumption (line chart)
-  - Trip distance distribution (pie chart)
-  - Efficiency per trip (bar chart)
-  - Battery SOC changes (line chart)
-  - Daily trip count (bar chart)
-
-### 6. MapView Component
-- **Responsibility**: Geographic visualization
-- **Features**:
-  - Interactive map with trip routes
-  - Multiple tile layer options (OpenStreetMap, Stadia Maps, Vector Tiles)
-  - Start/end markers with popups (circles for start, stars for end)
-  - Color-coded efficiency indicators
-  - Advanced controls (scale line, zoom to extent, fullscreen, mouse position)
-  - Day linking with dashed connection lines
-  - Trip count selector
-  - Performance optimization with vector layers
-
-### 7. TableView Component
-- **Responsibility**: Tabular data display
-- **Features**:
-  - Searchable data
-  - Sortable columns
-  - Filterable results
-  - Color-coded efficiency badges
-
-## Data Flow
-
-```mermaid
-flowchart TD
-    Start([User Opens App]) --> Upload{File Uploaded?}
-    
-    Upload -->|No| ShowUploader[Display File Uploader]
-    ShowUploader --> WaitFile[Wait for File]
-    WaitFile --> Upload
-    
-    Upload -->|Yes| DetectType{File Type?}
-    
-    DetectType -->|CSV| ParseCSV[PapaParse<br/>Parse CSV]
-    DetectType -->|XLSX| ParseXLSX[XLSX.js<br/>Parse Excel]
-    
-    ParseCSV --> RawData[Raw JSON Data]
-    ParseXLSX --> RawData
-    
-    RawData --> Process[Data Processing]
-    
-    Process --> Validate[Validate Records<br/>- Filter zero distance<br/>- Check required fields]
-    Validate --> Transform[Transform Data<br/>- Parse dates<br/>- Convert types<br/>- Calculate efficiency]
-    Transform --> Enrich[Enrich Data<br/>- Add calculated fields<br/>- Generate IDs<br/>- Carbon calculations]
-    
-    Enrich --> CalcStats[Calculate Statistics<br/>- Total trips<br/>- Total distance<br/>- Efficiency metrics<br/>- Carbon savings]
-    
-    CalcStats --> UpdateState[Update React State]
-    
-    UpdateState --> RenderDash[Render Dashboard]
-    
-    RenderDash --> ShowStats[Display Stats Cards]
-    RenderDash --> ShowCharts[Display Charts View]
-    RenderDash --> ShowMap[Display Map View]
-    RenderDash --> ShowTable[Display Table View]
-    
-    ShowStats --> UserInteract{User Action?}
-    ShowCharts --> UserInteract
-    ShowMap --> UserInteract
-    ShowTable --> UserInteract
-    
-    UserInteract -->|Switch Tab| RenderDash
-    UserInteract -->|Sort/Filter| ShowTable
-    UserInteract -->|Select Trip| ShowMap
-    UserInteract -->|Upload New| Upload
-    UserInteract -->|Add Notes/Tags| ShowTable
-    UserInteract -->|Calculate Cost| ShowStats
-    
-    style Start fill:#4caf50
-    style Upload fill:#2196f3
-    style DetectType fill:#ff9800
-    style RenderDash fill:#9c27b0
+```
+┌────────────────────────────────────────────────────────────────┐
+│  Presentation   components/*  (React + Mantine + Recharts + OL) │
+│  - owns state that is only about the UI (tabs, toggles)         │
+│  - never computes a metric                                      │
+├────────────────────────────────────────────────────────────────┤
+│  Application    hooks/*, App.jsx, Dashboard.jsx                 │
+│  - composes services, holds the loaded sources and filters      │
+├────────────────────────────────────────────────────────────────┤
+│  Domain         services/*  (pure classes and functions)        │
+│  - ingest, merge, statistics, insights, charts, story, pivot    │
+│  - unit-aware (km / mi), no React, no DOM                       │
+├────────────────────────────────────────────────────────────────┤
+│  Data           utils/dataParser.js, utils/journeyDate.js       │
+│  - file → trip model; strict date parsing; derived fields       │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-## Data Model
+Dependencies point downward only. A component may import a service; a service
+never imports a component or a hook. This is what makes the domain layer
+testable in Node with no browser.
 
-### Journey Record Structure
+## 3. The trip model
 
-```javascript
-{
-  id: number,                  // Unique identifier
-  startDate: string,           // "YYYY-MM-DD, HH:mm"
-  endDate: string,             // "YYYY-MM-DD, HH:mm"
-  startAddress: string,        // Full address
-  endAddress: string,          // Full address
-  distanceKm: number,          // Distance in kilometers
-  consumptionKwh: number,      // Energy consumption in kWh
-  category: string,            // Trip category
-  startLat: number,            // Start latitude
-  startLng: number,            // Start longitude
-  endLat: number,              // End latitude
-  endLng: number,              // End longitude
-  startOdometer: number,       // Odometer reading at start
-  endOdometer: number,         // Odometer reading at end
-  tripType: string,            // "SINGLE", etc.
-  socSource: number,           // Battery % at start
-  socDestination: number,      // Battery % at end
-  comments: string,            // User comments
-  efficiency: number,          // Calculated: kWh/100km
-  socDrop: number              // Calculated: SOC difference
-}
+`utils/dataParser.js` turns each export row into one `Trip`. Zero-distance rows
+are dropped. Rows are re-ordered chronologically (the app exports newest
+first) and given a sequential `id`.
+
+| Field | Source | Notes |
+|---|---|---|
+| `startDate`, `endDate` | as exported | canonical string `YYYY-MM-DD, HH:MM` |
+| `startTs`, `endTs` | parsed | epoch ms, `null` if the date failed to parse |
+| `distanceKm` | `Distance in KM` or `Distance in Mile` | in the file's unit despite the name |
+| `consumptionKwh` | `Consumption in Kwh` | |
+| `efficiency` | derived | kWh per 100 units, number, 2 dp |
+| `socSource`, `socDestination`, `socDrop` | `SOC Source/Destination` | percent |
+| `durationMin`, `avgSpeed` | derived | `null` when timestamps are missing |
+| `hour`, `weekday`, `dayKey`, `weekKey`, `monthKey` | derived | weekday is Monday-based (0..6) |
+| `startLat/Lng`, `endLat/Lng`, `startOdometer`, `endOdometer`, `tripType`, `category`, `comments` | as exported | |
+| `sourceFile`, `sourceIndex` | merger | which upload the trip came from |
+
+The full table with types is in [`DATA_MODEL.md`](./DATA_MODEL.md).
+
+## 4. Services
+
+Each service has one job, takes plain data, and returns plain data.
+
+| Service | Responsibility |
+|---|---|
+| `ingest/JourneyMerger` | Set-union of several exports keyed on start time, end time and rounded distance; km↔mi normalisation; per-file added/duplicate/conflict counts |
+| `filters/FilterService` | Apply date, range, category and tag filters; state manager; metadata (ranges, categories, date span) |
+| `stats` (in `dataParser.calculateStatistics`) | Headline totals, averages, carbon and fuel equivalents, odometer span, active days, longest trip |
+| `charts/ChartDataProcessor` | Chart-ready series: calendar-filled aggregates, rolling-median efficiency trend, histograms, weekday×hour grid, SOC timeline, scatter, sparklines |
+| `insights/InsightsCalculator` | Narrative findings: seasonality, places (clustered), charging sessions, battery estimate, odometer coverage, short trips, rhythm, records, period deltas |
+| `analytics/StatsService` | Expert layer: percentiles, consumption model (OLS), efficiency drivers, battery fit, charge histogram, data quality |
+| `analytics/PivotService` | Group-by/aggregate over registered dimensions and metrics; CSV |
+| `story/StoryBuilder` | Plain-language cards for the Simple level |
+| `table/TableDataProcessor` | Search, sort, paginate, format, export |
+| `map/*` and `strategies/map/*` | OpenLayers feature building, colour scales, tile layer and marker strategies |
+
+Every formula these services implement is written down in
+[`ANALYTICS.md`](./ANALYTICS.md).
+
+## 5. Data flow
+
+```
+ files ──▶ parseJourneyFile ──▶ [sources] ──▶ JourneyMerger.merge ──▶ journey.data
+                                                                          │
+                                   FilterBar (one row, scopes everything) │
+                                                                          ▼
+                        filteredData ──┬─▶ calculateStatistics ──▶ StatsCards
+                                       ├─▶ InsightsCalculator  ──▶ InsightsView, StoryView
+                                       ├─▶ ChartDataProcessor  ──▶ ChartsView
+                                       ├─▶ StatsService, PivotService ──▶ ExploreView
+                                       ├─▶ MapService          ──▶ MapView (lazy)
+                                       └─▶ TableDataProcessor  ──▶ TableView
 ```
 
-### Statistics Model
+- `App` owns `sources` (the parsed files). `journey` is a memo of the merge.
+- `Dashboard` owns the filter result and computes statistics and insights
+  once per filter change; every tab reads the same objects.
+- Period deltas compare the filtered range with the equally long range before
+  it, taken from the unfiltered journey.
 
-```javascript
-{
-  totalTrips: number,
-  totalDistance: number,        // km
-  totalConsumption: number,     // kWh
-  avgEfficiency: number,        // kWh/100km
-  bestEfficiency: number,       // kWh/100km
-  worstEfficiency: number,      // kWh/100km
-  avgTripDistance: number,      // km
-  odometerStart: number,        // km
-  odometerEnd: number          // km
-}
-```
+## 6. Experience levels
 
-## Build and Deployment
+The header carries a persisted **Simple / Detailed / Expert** switch. It does
+not change the data; it changes which tabs and how many tiles render.
 
-### Development Build
-```bash
-npm run dev
-```
-- Starts Vite dev server with HMR
-- Accessible at `http://localhost:5173`
+| Level | Tabs | Tiles |
+|---|---|---|
+| Simple | Your driving (story), Map, Trips, Guide | Hero + 4 |
+| Detailed | Overview, Insights, Map, Trips, Guide | Hero + 8 |
+| Expert | Overview, Insights, Explore, Map, Trips (extra columns), Guide | Hero + 8 |
 
-### Production Build
-```bash
-npm run build
-```
-- Minifies and bundles application
-- Optimizes assets
-- Generates static files in `dist/`
+See [ADR-0005](./adr/0005-experience-levels.md).
 
-### Deployment Options
+## 7. Presentation
 
-#### 1. GitHub Pages (via GitHub Actions)
-- Automatic deployment on push to main branch
-- Uses GitHub Actions workflow
-- No manual deployment needed
+- **Design system**: tokens in `theme/tokens.js` mirrored by CSS custom
+  properties in `theme/global.css`; a Mantine theme in `theme/mantineTheme.js`.
+  Charts and the map read the JS tokens through `useTokens()`. See
+  [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md).
+- **Charts**: Recharts, styled by the dataviz rules in the design system
+  (single axis, thin marks, hairline grid, table twin for every chart).
+- **Map**: OpenLayers, loaded lazily on first open. CARTO light/dark basemaps
+  follow the theme; OSM variants remain available.
+- **Motion**: CSS keyframes and a count-up hook, all gated on
+  `prefers-reduced-motion`.
 
-#### 2. Manual GitHub Pages Deployment
-```bash
-npm run deploy
-```
-- Uses `gh-pages` package
-- Pushes build to `gh-pages` branch
+## 8. Build and deployment
 
-#### 3. Any Static Host
-- Deploy `dist/` folder to:
-  - Netlify
-  - Vercel
-  - AWS S3 + CloudFront
-  - Azure Static Web Apps
-  - Google Cloud Storage
+- Vite 7, React 18, Node ≥ 20.19 / ≥ 22.12 (`engines` in `app/package.json`).
+- ExcelJS and the map chunk are dynamic imports; the main bundle stays under
+  1.2 MB minified (≈ 340 kB gzipped).
+- `deploy.yml` builds on release (or manually) and publishes `app/dist` to
+  GitHub Pages under `/polestar-journey-log-explorer/`.
+- `ci.yml` runs lint (zero warnings), the unit suite, the build and a
+  production dependency audit on every pull request and push to `main`.
 
-## Performance Considerations
+## 9. Privacy and security posture
 
-### File Processing
-- Large files (>1000 trips) are processed in chunks
-- Web Workers could be added for better performance
-- Currently handles 100+ trips smoothly
+- No network calls with user data. The only outbound requests are tile
+  images, the optional Nominatim city lookup in the cost calculator (a typed
+  city name, never trip data), Google Analytics and the cookie-consent script.
+- Popup HTML on the map is built with an escaping helper; every other user
+  string is rendered through React text nodes.
+- Notes, tags and preferences live in `localStorage` only.
+- Dependencies are audited in CI and by Dependabot (npm and GitHub Actions).
 
-### Map Rendering
-- Limits displayed trips to 50 by default
-- Allows selection of individual trips
-- Uses lightweight markers and polylines
+## 10. Extension points
 
-### Data Caching
-- Parsed data kept in React state
-- Statistics calculated with `useMemo`
-- Chart data memoized to prevent recalculation
-
-### Bundle Size Optimization
-- Tree-shaking enabled via Vite
-- Code splitting for routes (if added)
-- Lazy loading for heavy components
-
-## Security Considerations
-
-### Client-Side Only
-- No data transmission to servers
-- No API keys or credentials needed
-- User data never leaves their device
-
-### Input Validation
-- File type validation
-- Data format validation
-- Error handling for malformed data
-
-### XSS Prevention
-- React automatically escapes content
-- No `dangerouslySetInnerHTML` usage
-- Sanitized user inputs
-
-## Browser Compatibility
-
-### Minimum Requirements
-- Modern browsers (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
-- JavaScript enabled
-- localStorage support (for future features)
-
-### Progressive Enhancement
-- Graceful degradation for older browsers
-- Fallback UI for unsupported features
-- Clear error messages
-
-## Future Enhancements
-
-### Planned Features
-1. **Data Export**: Export analyzed data and reports
-2. **Comparison Mode**: Compare multiple log files
-3. **Advanced Filters**: Time range, efficiency range, location filters
-4. **Heatmaps**: Density maps for frequently visited areas
-5. **Route Optimization**: Suggest more efficient routes
-6. **Carbon Footprint**: Compare with gas vehicles
-7. **Custom Categories**: User-defined trip categories
-8. **Data Persistence**: Save analysis in browser storage
-
-### Technical Improvements
-1. **Web Workers**: Offload parsing to background threads
-2. **Virtual Scrolling**: Handle thousands of trips efficiently
-3. **PWA Support**: Offline functionality
-4. **Export to PDF**: Generate reports
-5. **Internationalization**: Multi-language support
-
-## Maintenance and Updates
-
-### Dependency Management
-- Regular updates for security patches
-- Semantic versioning for stable releases
-- Lock file committed for reproducible builds
-
-### Testing Strategy
-- Component unit tests (to be added)
-- Integration tests for data flow
-- End-to-end tests for user workflows
-
-### Monitoring
-- Error boundary for graceful error handling
-- Analytics (optional, privacy-respecting)
-- Performance monitoring
-
-## Contributing Guidelines
-
-### Code Style
-- ESLint for JavaScript linting
-- Prettier for code formatting
-- Consistent component structure
-
-### Git Workflow
-1. Fork the repository
-2. Create feature branch
-3. Commit with descriptive messages
-4. Submit pull request
-5. Code review and merge
-
-## License
-
-GNU Affero General Public License v3.0 (AGPLv3) - Open source and free to use
-
----
-
-**Kinn Coelho Juliao**  
-Building tools for better EV ownership experience
+| Want to… | Do this |
+|---|---|
+| Add a pivot dimension or metric | Add an entry in `PivotService.buildDimensions` / `buildMetrics`; add a test |
+| Add an insight card | Add a method to `InsightsCalculator`, wire it in `compute`, render in `InsightsView` |
+| Add a story card | Push a card object in `StoryBuilder.build`; keep one idea per card |
+| Add a chart | Compute the series in `ChartDataProcessor`, render inside `ChartCard` with a table twin |
+| Add a basemap | Register a strategy in `strategies/map/LayerStrategy.js` |
+| Support a new column in the export | Extend `buildMapping` in `dataParser.js` and the fixture in `tests/fixtures/rows.js` |

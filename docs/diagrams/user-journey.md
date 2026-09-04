@@ -1,48 +1,39 @@
-# User Journey - Polestar Journey Log Explorer
-
-This diagram illustrates the typical user journey through the application.
+# User journey
 
 ```mermaid
 journey
-    title User Journey: Analyzing EV Trip Data
-    section Initial Access
-      Open Application: 5: User
-      See Upload Screen: 5: User
-      Read Instructions: 4: User
-    section Upload Data
-      Prepare File: 4: User
-      Drag File to Upload: 5: User
-      Wait for Processing: 3: User
-      See Success Message: 5: User
-    section Explore Statistics
-      View Stats Cards: 5: User
-      Understand Metrics: 4: User
-      Note Key Numbers: 4: User
-    section Analyze Charts
-      Switch to Charts Tab: 5: User
-      View Distance Trends: 5: User
-      Check Efficiency Graph: 4: User
-      Examine SOC Changes: 4: User
-      Identify Patterns: 4: User
-    section Explore Map
-      Switch to Map Tab: 5: User
-      View All Routes: 5: User
-      Select Specific Trip: 5: User
-      Click Markers: 4: User
-      Read Trip Details: 4: User
-    section Review Data Table
-      Switch to Table Tab: 5: User
-      Search for Trips: 4: User
-      Sort by Efficiency: 5: User
-      Find Best Routes: 5: User
-      Note Improvement Areas: 4: User
-    section Take Action
-      Identify Inefficiencies: 4: User
-      Plan Route Changes: 4: User
-      Upload New Data Later: 5: User
+    title From export to understanding
+    section Get the file
+      Install Journey Log app in the car: 3: Driver
+      Drive for a while: 5: Driver
+      Export a date range, receive email: 4: Driver
+    section Load
+      Drop one or more files (or try the sample): 5: Driver
+      Read the sources bar (files · trips · duplicates): 4: Driver
+    section Simple
+      Read the story: how far, energy, cost, range, winter: 5: Driver
+      Follow one of three tips: 4: Driver
+    section Detailed
+      Filter to last 90 days, read deltas: 4: Enthusiast
+      Overview charts and Insights cards: 5: Enthusiast
+      Map, notes and tags on trips: 4: Enthusiast
+    section Expert
+      Pivot any dimension × metric, export CSV: 5: Analyst
+      Read the consumption model and battery fit: 5: Analyst
+      Check data quality, unlogged km: 4: Analyst
 ```
 
----
-
-**Author**: Kinn Coelho Juliao  
-**Last Updated**: November 21, 2025
+```mermaid
+stateDiagram-v2
+    [*] --> Landing
+    Landing --> Dashboard : drop files / sample
+    Dashboard --> Dashboard : add files (merge)
+    Dashboard --> Dashboard : filter · switch level · switch tab
+    Dashboard --> Landing : start over
+    state Dashboard {
+        [*] --> Simple
+        Simple --> Detailed
+        Detailed --> Expert
+        Expert --> Simple
+    }
+```

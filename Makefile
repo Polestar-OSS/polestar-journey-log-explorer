@@ -46,8 +46,8 @@ audit: ## Dependency vulnerability audit (production deps, high and above)
 
 check: lint test build ## Everything CI runs on a pull request
 
-screenshots: ## Render every view with Playwright (needs `make build` first)
-	node tests/e2e/screenshots.mjs
+screenshots: ## Render every view with Playwright against a running `make preview` (FILES=a.xlsx,b.csv OUT=dir)
+	cd $(APP_DIR) && node ../tests/e2e/screenshots.mjs "$(FILES)" "$(or $(OUT),../screenshots)"
 
 clean: ## Remove build output and caches
 	rm -rf $(APP_DIR)/dist $(APP_DIR)/node_modules/.vite $(APP_DIR)/coverage
