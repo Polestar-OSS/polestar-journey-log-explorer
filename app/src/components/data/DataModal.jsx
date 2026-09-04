@@ -62,8 +62,8 @@ function DataModal({ opened, onClose, journey, saved, onExportJourney, onExportS
                     <Box>
                         <Eyebrow>Export</Eyebrow>
                         <Group mt={8} gap="sm" wrap="wrap">
-                            <Button size="xs" variant="default" leftSection={<IconFileSpreadsheet size={14} />} onClick={onExportJourney} disabled={!journey}>
-                                Journey as CSV{journey ? ` · ${journey.data.length.toLocaleString()} trips` : ''}
+                            <Button size="xs" variant="default" leftSection={<IconFileSpreadsheet size={14} />} onClick={onExportJourney} disabled={!journey && !saved}>
+                                Journey as CSV{journey ? ` · ${journey.data.length.toLocaleString()} trips` : saved ? ` · ${saved.trips.toLocaleString()} saved trips` : ''}
                             </Button>
                             <Button size="xs" variant="default" leftSection={<IconSettings size={14} />} onClick={onExportSettings}>Settings as JSON</Button>
                             <FileButton onChange={onImportSettings} accept="application/json,.json">

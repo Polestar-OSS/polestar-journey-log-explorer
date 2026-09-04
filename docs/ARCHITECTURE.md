@@ -69,7 +69,10 @@ testable in Node with no browser.
 
 ## 3. The trip model
 
-`utils/dataParser.js` turns each export row into one `Trip`. Zero-distance rows
+`utils/dataParser.js` turns each export row into one `Trip`. Headers are matched
+case-insensitively against `COLUMN_ALIASES` (the app's names first, then the
+labels of the explorer's older table export); a file with no distance column
+is rejected with a message rather than silently emptied. Zero-distance rows
 are dropped. Rows are re-ordered chronologically (the app exports newest
 first) and given a sequential `id`.
 

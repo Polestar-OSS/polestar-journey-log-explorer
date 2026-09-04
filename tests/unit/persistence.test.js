@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { JourneyLogWriter, exportHeaders } from '../../app/src/services/export/JourneyLogWriter.js';
 import { JourneyStore } from '../../app/src/services/persistence/JourneyStore.js';
 import { MemoryJourneyStorage, LocalStorageJourneyStorage, LEGACY_LOCAL_KEY } from '../../app/src/services/persistence/JourneyStorage.js';
-import { processRawRows } from '../../app/src/utils/dataParser.js';
+import { processRawRows, parseCSV } from '../../app/src/utils/dataParser.js';
 import { HEADERS_KM, SMALL_EXPORT } from '../fixtures/rows.js';
 
 const { data } = processRawRows(SMALL_EXPORT, HEADERS_KM);
@@ -17,6 +17,17 @@ describe('JourneyLogWriter', () => {
         const again = processRawRows(rows, exportHeaders('km')).data;
         expect(again).toHaveLength(data.length);
         expect(again.map((t) => [t.startTs, t.distanceKm, t.consumptionKwh, t.socSource])).toEqual(data.map((t) => [t.startTs, t.distanceKm, t.consumptionKwh, t.socSource]));
+    });
+
+    it('writes CSV text that the CSV parser reads back as the same trips', async () => {
+        // The header Export and the data dialog both use this path, so a file the explorer
+        // made (ten imports merged into one) must load again like the app's own export
+        const csv = new JourneyLogWriter().toCSV(data, 'km');
+        const again = await parseCSV(csv);
+        expect(again.distanceUnit).toBe('km');
+        expect(again.data).toHaveLength(data.length);
+        expect(again.data.map((t) => [t.startDate, t.distanceKm, t.consumptionKwh, t.startLat, t.endOdometer]))
+            .toEqual(data.map((t) => [t.startDate, t.distanceKm, t.consumptionKwh, t.startLat, t.endOdometer]));
     });
 
     it('labels the distance column by unit and writes CSV', () => {

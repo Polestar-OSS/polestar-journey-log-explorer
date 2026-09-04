@@ -223,9 +223,13 @@ petrol. Figures are combined-cycle and tailpipe-only. To add a make, see
 
 ## Exporting
 
-**Export** in the header downloads the currently filtered trips as CSV with
-the derived columns (duration, speed, efficiency, source file). The pivot
-builder has its own CSV button.
+**Export** in the header downloads the currently filtered trips as CSV in the
+Journey Log format: the same seventeen columns the car app emails, with the
+unit in the distance header. The file re-imports into the explorer and opens
+anywhere the original does. The data dialog's **Export journey** writes the
+whole de-duplicated journey the same way. Derived columns (duration, speed,
+efficiency) are not in the file; the explorer recomputes them on import. The
+pivot builder has its own CSV button for analysis tables.
 
 ## Privacy
 
@@ -238,9 +242,13 @@ dialog also clears that choice.
 
 ## Troubleshooting
 
-- **"No trips with a distance above zero"**: the file has only zero-length
-  rows or the distance column is missing. The header must contain
-  `Distance in KM` or `Distance in Mile`.
+- **"not a Journey Log export"**: the header has no `Distance in KM` or
+  `Distance in Mile` column. Export from the Journey Log app, or from this
+  explorer; a pivot CSV or a spreadsheet you edited by hand will not load.
+  Files from the explorer's older table export (`Distance (km)`, `SOC Start`)
+  still import.
+- **"every row has a distance of zero"**: the file was read, but no trip
+  moved. Check the export's date range.
 - **Dates look wrong**: the export writes `YYYY-MM-DD, HH:MM` in the car's
   local time; the explorer keeps that. Nothing is converted.
 - **The map is empty**: trips without coordinates are hidden on the map; the

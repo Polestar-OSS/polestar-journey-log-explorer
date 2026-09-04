@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { processRawRows, calculateStatistics, parseCSV } from '../../app/src/utils/dataParser.js';
+import { processRawRows, calculateStatistics, parseCSV, detectDistanceColumn } from '../../app/src/utils/dataParser.js';
 import { HEADERS_KM, HEADERS_MI, SMALL_EXPORT, row } from '../fixtures/rows.js';
 
 describe('processRawRows', () => {
@@ -29,6 +29,29 @@ describe('processRawRows', () => {
         expect(first.dayKey).toBe('2026-01-12');
         expect(first.monthKey).toBe('2026-01');
         expect(first.socDrop).toBe(2);
+    });
+
+    it('accepts the labels of the older explorer table export, case-insensitively', () => {
+        const legacy = SMALL_EXPORT.map((r) => ({
+            'Start Date': r['Start Date'], 'End Date': r['End Date'], 'Start Address': r['Start Address'], 'End Address': r['End Address'],
+            'Distance (km)': r['Distance in KM'], 'Consumption (kWh)': r['Consumption in Kwh'], 'Efficiency (kWh/100km)': 0, 'Duration (min)': 0,
+            'category': r.Category, 'SOC Start': r['SOC Source'], 'SOC End': r['SOC Destination'], 'Start Odometer': r['Start Odometer'], 'End Odometer': r['End Odometer'], 'Source File': 'x.csv',
+        }));
+        const headers = Object.keys(legacy[0]);
+        expect(detectDistanceColumn(headers)).toEqual({ distanceColumn: 'Distance (km)', distanceUnit: 'km' });
+        const { data: legacyData, distanceUnit } = processRawRows(legacy, headers);
+        expect(distanceUnit).toBe('km');
+        expect(legacyData).toHaveLength(8);
+        expect(legacyData[0].consumptionKwh).toBe(1.8);
+        expect(legacyData[0].socSource).toBe(80);
+        expect(legacyData[0].category).toBe('Uncategorized');
+        expect(legacyData[0].startLat).toBe(0); // the table export carried no coordinates
+        expect(detectDistanceColumn(['Distance (mi)'])).toEqual({ distanceColumn: 'Distance (mi)', distanceUnit: 'mi' });
+    });
+
+    it('rejects a file with no distance column instead of silently emptying it', () => {
+        expect(detectDistanceColumn(['Month', 'Trips', 'Distance'])).toBeNull();
+        expect(() => processRawRows([{ Month: 'Jan', Trips: 3 }], ['Month', 'Trips'])).toThrow(/not a Journey Log export/);
     });
 
     it('detects miles from the alternate header', () => {

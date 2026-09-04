@@ -28,29 +28,6 @@ import { convertJourney, distanceUnitFor } from './services/units/UnitSystem';
 
 const REPO_URL = 'https://github.com/Polestar-OSS/polestar-journey-log-explorer';
 
-// Build columns for CSV export based on distance unit
-const getColumns = (distanceUnit) => {
-    const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
-    return [
-        { key: 'startDate', label: 'Start Date' },
-        { key: 'endDate', label: 'End Date' },
-        { key: 'startAddress', label: 'Start Address' },
-        { key: 'endAddress', label: 'End Address' },
-        { key: 'distanceKm', label: `Distance (${distLabel})` },
-        { key: 'consumptionKwh', label: 'Consumption (kWh)' },
-        { key: 'efficiency', label: `Efficiency (kWh/100${distLabel})` },
-        { key: 'durationMin', label: 'Duration (min)' },
-        { key: 'avgSpeed', label: `Avg Speed (${distLabel}/h)` },
-        { key: 'category', label: 'Category' },
-        { key: 'socSource', label: 'SOC Start' },
-        { key: 'socDestination', label: 'SOC End' },
-        { key: 'socDrop', label: 'SOC Drop' },
-        { key: 'startOdometer', label: 'Start Odometer' },
-        { key: 'endOdometer', label: 'End Odometer' },
-        { key: 'sourceFile', label: 'Source File' },
-    ];
-};
-
 const tableExporter = new TableExporter();
 const merger = new JourneyMerger();
 const writer = new JourneyLogWriter();
@@ -202,12 +179,15 @@ function App() {
         loadSavedSource().then((savedSource) => { if (savedSource) setSources([savedSource]); });
     }, []);
 
-    const handleExportJourney = useCallback(() => {
-        if (!journey) return;
-        const csv = writer.toCSV(journey.data, journey.distanceUnit);
+    const handleExportJourney = useCallback(async () => {
+        // The loaded journey when there is one; otherwise straight from the browser store, so the saved
+        // trips can be taken out without opening them first
+        const source = journey ?? await loadSavedSource();
+        if (!source) return;
+        const csv = writer.toCSV(source.data, source.distanceUnit);
         const filename = `Journey_Log_deduplicated_${new Date().toISOString().slice(0, 10)}.csv`;
         tableExporter.downloadFile(csv, filename, 'text/csv;charset=utf-8;');
-        notifications.show({ title: 'Journey exported', message: `${journey.data.length.toLocaleString()} trips in the Journey Log format (${journey.distanceUnit})`, color: 'polestar' });
+        notifications.show({ title: 'Journey exported', message: `${source.data.length.toLocaleString()} trips in the Journey Log format (${source.distanceUnit})`, color: 'polestar' });
     }, [journey]);
 
     const handleExportSettings = useCallback(() => {
@@ -235,10 +215,11 @@ function App() {
 
     const handleExport = useCallback(() => {
         if (!journey || !filteredData) return;
-        const csvContent = tableExporter.exportToCSV(filteredData, getColumns(journey.distanceUnit));
+        // Journey Log format, so the file re-imports here and opens anywhere the app's own export does
+        const csvContent = writer.toCSV(filteredData, journey.distanceUnit);
         const filename = `polestar-journey-export-${new Date().toISOString().slice(0, 10)}.csv`;
         tableExporter.downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
-        notifications.show({ title: 'Export ready', message: `${filteredData.length} trips written to ${filename}`, color: 'polestar' });
+        notifications.show({ title: 'Export ready', message: `${filteredData.length} trips written to ${filename} in the Journey Log format (${journey.distanceUnit})`, color: 'polestar' });
     }, [journey, filteredData]);
 
     return (

@@ -35,7 +35,7 @@ function FileDropzone({ onSourcesLoaded, compact = false }) {
                 setProgress(accepted.length > 1 ? `Reading ${i + 1} of ${accepted.length}: ${file.name}` : `Reading ${file.name}…`);
                 try {
                     const parsed = await parseJourneyFile(file);
-                    if (parsed.data.length === 0) failures.push(`${file.name}: no trips with a distance above zero`);
+                    if (parsed.data.length === 0) failures.push(`${file.name}: every row has a distance of zero`);
                     else sources.push(parsed);
                 } catch (error) {
                     failures.push(`${file.name}: ${error.message}`);

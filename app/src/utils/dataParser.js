@@ -3,53 +3,74 @@ import { parseJourneyDate, formatJourneyDate, dayKey, monthKey, weekKey, mondayI
 
 
 /**
- * Detect the distance column name from CSV/XLSX headers
- * @param {Array} headers - Column header names
- * @returns {{ distanceColumn: string, distanceUnit: 'km'|'mi' }}
+ * Accepted header names per field. The first entry is the Journey Log app's
+ * own column; the rest are the labels older explorer table exports used, so
+ * a file this app produced before it wrote the Journey Log format still
+ * imports. Case and surrounding whitespace are ignored.
  */
-const detectDistanceColumn = (headers) => {
-    if (headers.includes('Distance in Mile')) {
-        return { distanceColumn: 'Distance in Mile', distanceUnit: 'mi' };
-    }
-    if (headers.includes('Distance in KM')) {
-        return { distanceColumn: 'Distance in KM', distanceUnit: 'km' };
-    }
-    // Fallback to KM if neither is found
-    return { distanceColumn: 'Distance in KM', distanceUnit: 'km' };
+export const COLUMN_ALIASES = {
+    distanceKm: ['Distance in KM', 'Distance (km)'],
+    distanceMi: ['Distance in Mile', 'Distance (mi)'],
+    startDate: ['Start Date'],
+    endDate: ['End Date'],
+    startAddress: ['Start Address'],
+    endAddress: ['End Address'],
+    consumptionKwh: ['Consumption in Kwh', 'Consumption (kWh)'],
+    category: ['Category'],
+    startLat: ['Start Latitude'],
+    startLng: ['Start Longitude'],
+    endLat: ['End Latitude'],
+    endLng: ['End Longitude'],
+    startOdometer: ['Start Odometer'],
+    endOdometer: ['End Odometer'],
+    tripType: ['Trip Type'],
+    socSource: ['SOC Source', 'SOC Start'],
+    socDestination: ['SOC Destination', 'SOC End'],
+    comments: ['Comments'],
+};
+
+const normalise = (h) => String(h ?? '').trim().toLowerCase();
+
+/** The header actually present in the file for a field, or undefined. */
+const findHeader = (headers, candidates) => {
+    const byNorm = new Map(headers.map((h) => [normalise(h), h]));
+    for (const c of candidates) { const hit = byNorm.get(normalise(c)); if (hit !== undefined) return hit; }
+    return undefined;
 };
 
 /**
- * Build column mapping based on detected headers
- * @param {string} distanceColumn - The detected distance column name
- * @returns {Object} Column mapping
+ * Detect the distance column and its unit from the file's headers.
+ * @returns {{ distanceColumn: string, distanceUnit: 'km'|'mi' } | null} null when no known distance column exists
  */
-const buildMapping = (distanceColumn) => ({
-    distanceKm: distanceColumn,
-    startDate: 'Start Date',
-    endDate: 'End Date',
-    startAddress: 'Start Address',
-    endAddress: 'End Address',
-    consumptionKwh: 'Consumption in Kwh',
-    category: 'Category',
-    startLat: 'Start Latitude',
-    startLng: 'Start Longitude',
-    endLat: 'End Latitude',
-    endLng: 'End Longitude',
-    startOdometer: 'Start Odometer',
-    endOdometer: 'End Odometer',
-    tripType: 'Trip Type',
-    socSource: 'SOC Source',
-    socDestination: 'SOC Destination',
-    comments: 'Comments',
-});
+export const detectDistanceColumn = (headers) => {
+    const mi = findHeader(headers, COLUMN_ALIASES.distanceMi);
+    if (mi) return { distanceColumn: mi, distanceUnit: 'mi' };
+    const km = findHeader(headers, COLUMN_ALIASES.distanceKm);
+    if (km) return { distanceColumn: km, distanceUnit: 'km' };
+    return null;
+};
+
+/** Field -> header name for this file (unknown fields map to their canonical name and read as empty). */
+const buildMapping = (headers, distanceColumn) => {
+    const mapping = { distanceKm: distanceColumn };
+    for (const [field, candidates] of Object.entries(COLUMN_ALIASES)) {
+        if (field === 'distanceKm' || field === 'distanceMi') continue;
+        mapping[field] = findHeader(headers, candidates) ?? candidates[0];
+    }
+    return mapping;
+};
 
 /**
  * Turn raw header/row objects (as exported by the Journey Log app) into the
  * internal trip model. Shared by CSV, XLSX and the built-in sample dataset.
  */
 export const processRawRows = (rows, headers) => {
-    const { distanceColumn, distanceUnit } = detectDistanceColumn(headers);
-    const mapping = buildMapping(distanceColumn);
+    const detected = detectDistanceColumn(headers);
+    if (!detected) {
+        throw new Error('no "Distance in KM" or "Distance in Mile" column, so this is not a Journey Log export. Export from the Journey Log app, or from this explorer.');
+    }
+    const { distanceColumn, distanceUnit } = detected;
+    const mapping = buildMapping(headers, distanceColumn);
     return { data: processJourneyData(rows, mapping), distanceUnit };
 };
 
@@ -157,8 +178,7 @@ const toDateString = (value) => {
 };
 
 const processJourneyData = (rawData, mapping) => {
-    // Use provided mapping, fallback to defaults if not specified
-    const m = mapping || buildMapping('Distance in KM');
+    const m = mapping || buildMapping(COLUMN_ALIASES.distanceKm, COLUMN_ALIASES.distanceKm[0]);
     const trips = rawData
         .filter((row) => parseFloat(row[m.distanceKm]) > 0) // Filter out zero-distance entries
         .map((row) => {
