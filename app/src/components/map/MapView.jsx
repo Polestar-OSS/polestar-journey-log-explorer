@@ -1,297 +1,250 @@
-import { useEffect, useRef, useMemo, useState } from "react";
-import { Paper, Select, Text, Group, Stack, Switch } from "@mantine/core";
-import { TileLayerFactory } from "../../strategies/map/LayerStrategy";
-import { MarkerFactory } from "../../strategies/map/MarkerStrategy";
-import { ColorCalculator } from "../../services/map/ColorCalculator";
-import { FeatureBuilder } from "../../services/map/FeatureBuilder";
-import { MapService } from "../../services/map/MapService";
-import "ol/ol.css";
+import { useEffect, useRef, useMemo, useState } from 'react';
+import { Box, Grid, Group, Select, Stack, Switch, Text, UnstyledButton, useComputedColorScheme } from '@mantine/core';
+import { IconMapPin, IconFocus2 } from '@tabler/icons-react';
+import { TileLayerFactory } from '../../strategies/map/LayerStrategy';
+import { MarkerFactory } from '../../strategies/map/MarkerStrategy';
+import { ColorCalculator } from '../../services/map/ColorCalculator';
+import { FeatureBuilder } from '../../services/map/FeatureBuilder';
+import { MapService } from '../../services/map/MapService';
+import Eyebrow from '../ui/Eyebrow';
+import 'ol/ol.css';
 
-function MapView({ data, distanceUnit = 'km' }) {
-  const mapRef = useRef(null);
-  const mapServiceRef = useRef(null);
+const EFFICIENCY_BANDS = [
+    { key: 'good', label: '< 15', color: 'rgb(18, 184, 134)' },
+    { key: 'ok', label: '15–20', color: 'rgb(250, 176, 5)' },
+    { key: 'poor', label: '20–25', color: 'rgb(253, 126, 20)' },
+    { key: 'bad', label: '25+', color: 'rgb(250, 82, 82)' },
+];
 
-  const [selectedTrip, setSelectedTrip] = useState(null);
-  const [linkTripsByDay, setLinkTripsByDay] = useState(false);
-  const [tripsToShow, setTripsToShow] = useState("100");
-  const [selectedTileLayer, setSelectedTileLayer] = useState("osm");
-  const [showHeatmap, setShowHeatmap] = useState(false);
-  const [showMarkers, setShowMarkers] = useState(true);
+function MapView({ data, distanceUnit = 'km', places }) {
+    const mapRef = useRef(null);
+    const mapServiceRef = useRef(null);
+    const scheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
+    const unit = distanceUnit === 'mi' ? 'mi' : 'km';
+    const multiplier = distanceUnit === 'mi' ? 1.60934 : 1;
 
-  // Initialize services (Dependency Injection)
-  const colorCalculator = useMemo(() => new ColorCalculator(distanceUnit), [distanceUnit]);
-  const tileLayerFactory = useMemo(() => new TileLayerFactory(), []);
-  const featureBuilder = useMemo(
-    () => new FeatureBuilder(colorCalculator),
-    [colorCalculator]
-  );
-  const markerFactory = useMemo(
-    () => new MarkerFactory(colorCalculator),
-    [colorCalculator]
-  );
+    const [selectedTrip, setSelectedTrip] = useState(null);
+    const [linkTripsByDay, setLinkTripsByDay] = useState(false);
+    const [tripsToShow, setTripsToShow] = useState('100');
+    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [showMarkers, setShowMarkers] = useState(true);
 
-  const tileLayerOptions = tileLayerFactory.getAvailableLayers();
+    // Initialize services (Dependency Injection)
+    const colorCalculator = useMemo(() => new ColorCalculator(distanceUnit), [distanceUnit]);
+    const tileLayerFactory = useMemo(() => new TileLayerFactory(), []);
+    const featureBuilder = useMemo(() => new FeatureBuilder(colorCalculator), [colorCalculator]);
+    const markerFactory = useMemo(() => new MarkerFactory(colorCalculator), [colorCalculator]);
 
-  const { center, allTrips, tripsByDay } = useMemo(() => {
-    const validTrips = data.filter(
-      (trip) =>
-        trip.startLat !== 0 &&
-        trip.startLng !== 0 &&
-        trip.endLat !== 0 &&
-        trip.endLng !== 0
+    const [selectedTileLayer, setSelectedTileLayer] = useState(() => tileLayerFactory.defaultFor(scheme));
+    // Follow the UI theme unless the user has picked a basemap explicitly
+    const userPickedLayer = useRef(false);
+    useEffect(() => {
+        if (!userPickedLayer.current) setSelectedTileLayer(tileLayerFactory.defaultFor(scheme));
+    }, [scheme, tileLayerFactory]);
+
+    const tileLayerOptions = tileLayerFactory.getAvailableLayers();
+
+    const { center, allTrips, tripsByDay } = useMemo(() => {
+        const validTrips = data.filter((trip) => trip.startLat !== 0 && trip.startLng !== 0 && trip.endLat !== 0 && trip.endLng !== 0);
+
+        if (validTrips.length === 0) {
+            return { center: [11.9746, 57.7089], allTrips: [], tripsByDay: {} }; // Gothenburg default (lon, lat)
+        }
+
+        const avgLat = validTrips.reduce((sum, trip) => sum + trip.startLat, 0) / validTrips.length;
+        const avgLng = validTrips.reduce((sum, trip) => sum + trip.startLng, 0) / validTrips.length;
+        const validCenter = [isFinite(avgLng) ? avgLng : 11.9746, isFinite(avgLat) ? avgLat : 57.7089];
+
+        const grouped = validTrips.reduce((acc, trip) => {
+            const day = trip.dayKey || trip.startDate.split(',')[0].trim();
+            if (!acc[day]) acc[day] = [];
+            acc[day].push(trip);
+            return acc;
+        }, {});
+        Object.keys(grouped).forEach((day) => grouped[day].sort((a, b) => (a.startTs ?? 0) - (b.startTs ?? 0)));
+
+        // Newest first so "show 100" means the 100 most recent
+        const newestFirst = [...validTrips].sort((a, b) => (b.startTs ?? 0) - (a.startTs ?? 0));
+        return { center: validCenter, allTrips: newestFirst, tripsByDay: grouped };
+    }, [data]);
+
+    const tripOptions = useMemo(
+        () =>
+            allTrips.map((trip, idx) => ({
+                value: String(idx),
+                label: `${trip.startDate} · ${trip.startAddress.substring(0, 28)} → ${trip.endAddress.substring(0, 28)} · ${trip.distanceKm} ${unit}`,
+            })),
+        [allTrips, unit]
     );
 
-    if (validTrips.length === 0) {
-      return { center: [-75.6972, 45.4215], allTrips: [], tripsByDay: {} }; // Ottawa default (lon, lat)
-    }
-
-    const avgLat =
-      validTrips.reduce((sum, trip) => sum + trip.startLat, 0) /
-      validTrips.length;
-    const avgLng =
-      validTrips.reduce((sum, trip) => sum + trip.startLng, 0) /
-      validTrips.length;
-
-    const validCenter = [
-      isFinite(avgLng) ? avgLng : -75.6972,
-      isFinite(avgLat) ? avgLat : 45.4215,
+    const tripsToShowOptions = [
+        { value: '25', label: 'Last 25 trips' },
+        { value: '50', label: 'Last 50 trips' },
+        { value: '100', label: 'Last 100 trips' },
+        { value: '250', label: 'Last 250 trips' },
+        { value: 'ALL', label: `All trips (${allTrips.length})` },
     ];
 
-    const grouped = validTrips.reduce((acc, trip) => {
-      const day = trip.startDate.split(",")[0].trim();
-      if (!acc[day]) acc[day] = [];
-      acc[day].push(trip);
-      return acc;
-    }, {});
-
-    Object.keys(grouped).forEach((day) => {
-      grouped[day].sort(
-        (a, b) => new Date(a.startDate) - new Date(b.startDate)
-      );
-    });
-
-    return {
-      center: validCenter,
-      allTrips: validTrips,
-      tripsByDay: grouped,
-    };
-  }, [data]);
-
-  const tripOptions = allTrips.map((trip, idx) => ({
-    value: String(idx),
-    label: `${trip.startDate} - ${trip.startAddress.substring(
-      0,
-      30
-    )}... → ${trip.endAddress.substring(0, 30)}...`,
-  }));
-
-  const tripsToShowOptions = [
-    { value: "10", label: "10 trips" },
-    { value: "20", label: "20 trips" },
-    { value: "30", label: "30 trips" },
-    { value: "40", label: "40 trips" },
-    { value: "50", label: "50 trips" },
-    { value: "60", label: "60 trips" },
-    { value: "70", label: "70 trips" },
-    { value: "80", label: "80 trips" },
-    { value: "90", label: "90 trips" },
-    { value: "100", label: "100 trips" },
-    { value: "ALL", label: `All trips (${allTrips.length})` },
-  ];
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const displayTrips =
-    selectedTrip !== null
-      ? [allTrips[parseInt(selectedTrip)]]
-      : tripsToShow === "ALL"
-      ? allTrips
-      : allTrips.slice(0, parseInt(tripsToShow));
-
-  // Initialize map service
-  useEffect(() => {
-    if (!mapRef.current || mapServiceRef.current) return;
-
-    const mapService = new MapService(
-      tileLayerFactory,
-      featureBuilder,
-      markerFactory
+    const displayTrips = useMemo(
+        () => (selectedTrip !== null ? [allTrips[parseInt(selectedTrip)]].filter(Boolean) : tripsToShow === 'ALL' ? allTrips : allTrips.slice(0, parseInt(tripsToShow))),
+        [allTrips, selectedTrip, tripsToShow]
     );
-    mapService.setDistanceUnit(distanceUnit);
-    mapService.initializeMap(mapRef.current, center, selectedTileLayer);
-    mapServiceRef.current = mapService;
 
-    return () => {
-      if (mapServiceRef.current) {
-        mapServiceRef.current.destroy();
-        mapServiceRef.current = null;
-      }
-    };
-  }, [
-    center,
-    distanceUnit,
-    featureBuilder,
-    markerFactory,
-    selectedTileLayer,
-    tileLayerFactory,
-  ]);
+    // Initialize map service
+    useEffect(() => {
+        if (!mapRef.current || mapServiceRef.current) return undefined;
 
-  // Handle tile layer changes
-  useEffect(() => {
-    if (!mapServiceRef.current) return;
-    mapServiceRef.current.changeTileLayer(selectedTileLayer);
-  }, [selectedTileLayer]);
+        const mapService = new MapService(tileLayerFactory, featureBuilder, markerFactory);
+        mapService.setDistanceUnit(distanceUnit);
+        mapService.initializeMap(mapRef.current, center, selectedTileLayer);
+        mapServiceRef.current = mapService;
 
-  // Handle heatmap visibility
-  useEffect(() => {
-    if (!mapServiceRef.current) return;
-    mapServiceRef.current.setHeatmapVisibility(showHeatmap);
-  }, [showHeatmap]);
+        return () => {
+            if (mapServiceRef.current) {
+                mapServiceRef.current.destroy();
+                mapServiceRef.current = null;
+            }
+        };
+        // The map is created once per mount; later changes go through the effects below
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-  // Update map view and features when data changes
-  useEffect(() => {
-    if (!mapServiceRef.current) return;
+    useEffect(() => {
+        mapServiceRef.current?.changeTileLayer(selectedTileLayer);
+    }, [selectedTileLayer]);
 
-    const features = [];
-    const heatmapFeatures = [];
+    useEffect(() => {
+        mapServiceRef.current?.setHeatmapVisibility(showHeatmap);
+    }, [showHeatmap]);
 
-    // Generate trip features using FeatureBuilder and MarkerFactory
-    displayTrips.forEach((trip, tripIdx) => {
-      // Route line
-      const routeLine = featureBuilder.createRouteLine(trip, tripIdx);
-      features.push(routeLine);
+    // Update features when data or options change
+    useEffect(() => {
+        if (!mapServiceRef.current) return;
 
-      // Add markers if enabled
-      if (showMarkers) {
-        const startMarker = markerFactory.createMarker(trip, "start", tripIdx);
-        const endMarker = markerFactory.createMarker(trip, "end", tripIdx);
-        features.push(startMarker, endMarker);
-      }
+        const features = [];
+        const heatmapFeatures = [];
 
-      // Heatmap points
-      heatmapFeatures.push(
-        featureBuilder.createHeatmapPoint(trip.startLng, trip.startLat),
-        featureBuilder.createHeatmapPoint(trip.endLng, trip.endLat)
-      );
-    });
-
-    // Add day connection lines if enabled
-    if (linkTripsByDay) {
-      Object.entries(tripsByDay).forEach(([_day, trips], dayIdx) => {
-        trips.forEach((trip, idx) => {
-          if (idx < trips.length - 1) {
-            const nextTrip = trips[idx + 1];
-            const connectionLine = featureBuilder.createDayConnectionLine(
-              trip,
-              nextTrip,
-              dayIdx
-            );
-            features.push(connectionLine);
-          }
+        displayTrips.forEach((trip, tripIdx) => {
+            features.push(featureBuilder.createRouteLine(trip, tripIdx));
+            if (showMarkers) {
+                features.push(markerFactory.createMarker(trip, 'start', tripIdx), markerFactory.createMarker(trip, 'end', tripIdx));
+            }
+            heatmapFeatures.push(featureBuilder.createHeatmapPoint(trip.startLng, trip.startLat), featureBuilder.createHeatmapPoint(trip.endLng, trip.endLat));
         });
-      });
-    }
 
-    // Update map view and features
-    mapServiceRef.current.updateView(center, selectedTrip !== null ? 12 : 11);
-    mapServiceRef.current.updateFeatures(features, heatmapFeatures);
-  }, [
-    displayTrips,
-    linkTripsByDay,
-    center,
-    selectedTrip,
-    tripsByDay,
-    showMarkers,
-    featureBuilder,
-    markerFactory,
-  ]);
+        if (linkTripsByDay && selectedTrip === null) {
+            const shown = new Set(displayTrips.map((t) => t.id));
+            Object.entries(tripsByDay).forEach(([, trips], dayIdx) => {
+                trips.forEach((trip, idx) => {
+                    const nextTrip = trips[idx + 1];
+                    if (nextTrip && shown.has(trip.id) && shown.has(nextTrip.id)) {
+                        features.push(featureBuilder.createDayConnectionLine(trip, nextTrip, dayIdx));
+                    }
+                });
+            });
+        }
 
-  return (
-    <Stack gap="md">
-      <Paper
-        p={{ base: "xs", sm: "md" }}
-        withBorder
-        style={{ position: "relative", zIndex: 1000 }}
-      >
-        <Stack gap="md">
-          <Select
-            label="Select a specific trip (or leave empty to show all recent trips)"
-            placeholder="Show all trips"
-            data={tripOptions}
-            value={selectedTrip}
-            onChange={setSelectedTrip}
-            searchable
-            clearable
-            maxDropdownHeight={400}
-            size="sm"
-          />
+        mapServiceRef.current.updateFeatures(features, heatmapFeatures);
+        mapServiceRef.current.fitToFeatures(features);
+    }, [displayTrips, linkTripsByDay, selectedTrip, tripsByDay, showMarkers, featureBuilder, markerFactory]);
 
-          <Group grow align="flex-start" wrap="wrap">
-            <Select
-              label="How many trips to show"
-              value={tripsToShow}
-              onChange={setTripsToShow}
-              data={tripsToShowOptions}
-              disabled={selectedTrip !== null}
-              size="sm"
-              style={{ minWidth: "150px" }}
-            />
+    const focusPlace = (place) => {
+        setSelectedTrip(null);
+        mapServiceRef.current?.updateView([place.lng, place.lat], 14);
+    };
 
-            <Select
-              label="Map tile layer"
-              value={selectedTileLayer}
-              onChange={setSelectedTileLayer}
-              data={tileLayerOptions}
-              size="sm"
-              style={{ minWidth: "150px" }}
-            />
-          </Group>
+    return (
+        <Grid gutter="md">
+            <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
+                <Stack gap="md">
+                    <Box className="ps-card ps-rise" p="md" style={{ position: 'relative', zIndex: 5 }}>
+                        <Stack gap="sm">
+                            <Eyebrow>What to show</Eyebrow>
+                            <Select
+                                size="xs"
+                                label="Single trip"
+                                placeholder="All recent trips"
+                                data={tripOptions}
+                                value={selectedTrip}
+                                onChange={setSelectedTrip}
+                                searchable
+                                clearable
+                                maxDropdownHeight={320}
+                                nothingFoundMessage="No trip matches"
+                            />
+                            <Select size="xs" label="Trips on the map" value={tripsToShow} onChange={setTripsToShow} data={tripsToShowOptions} disabled={selectedTrip !== null} />
+                            <Select
+                                size="xs"
+                                label="Basemap"
+                                value={selectedTileLayer}
+                                onChange={(v) => {
+                                    userPickedLayer.current = true;
+                                    setSelectedTileLayer(v);
+                                }}
+                                data={tileLayerOptions}
+                            />
+                            <Switch size="sm" color="polestar" label="Link trips by day" description="Dashed chains between consecutive trips" checked={linkTripsByDay} onChange={(e) => setLinkTripsByDay(e.currentTarget.checked)} disabled={selectedTrip !== null} />
+                            <Switch size="sm" color="polestar" label="Density heatmap" checked={showHeatmap} onChange={(e) => setShowHeatmap(e.currentTarget.checked)} />
+                            <Switch size="sm" color="polestar" label="Start / end pins" checked={showMarkers} onChange={(e) => setShowMarkers(e.currentTarget.checked)} />
+                        </Stack>
+                    </Box>
 
-          <Stack gap="sm">
-            <Switch
-              label="Link trips by day"
-              description="Shows daily journey chains"
-              checked={linkTripsByDay}
-              onChange={(event) =>
-                setLinkTripsByDay(event.currentTarget.checked)
-              }
-              disabled={selectedTrip !== null}
-              size="sm"
-            />
+                    <Box className="ps-card ps-rise" p="md" style={{ '--i': 1 }}>
+                        <Eyebrow>Route colour · kWh/100{unit}</Eyebrow>
+                        <Stack gap={6} mt="sm">
+                            {EFFICIENCY_BANDS.map((b) => (
+                                <Group key={b.key} gap="sm" wrap="nowrap">
+                                    <Box style={{ width: 22, height: 3, background: b.color, borderRadius: 2, flexShrink: 0 }} />
+                                    <Text size="xs" className="ps-tabular">
+                                        {b.label.replace(/(\d+)/g, (n) => Math.round(parseInt(n) * multiplier))}
+                                    </Text>
+                                    <Text size="xs" c="dimmed" ml="auto" tt="capitalize">{b.key === 'ok' ? 'typical' : b.key}</Text>
+                                </Group>
+                            ))}
+                        </Stack>
+                    </Box>
 
-            <Switch
-              label="Show heatmap"
-              description="Display density heatmap"
-              checked={showHeatmap}
-              onChange={(event) => setShowHeatmap(event.currentTarget.checked)}
-              size="sm"
-            />
+                    {places?.top?.length > 0 && (
+                        <Box className="ps-card ps-rise" p="md" style={{ '--i': 2 }}>
+                            <Eyebrow>Most visited</Eyebrow>
+                            <Stack gap={4} mt="sm">
+                                {places.top.slice(0, 5).map((p, idx) => (
+                                    <UnstyledButton key={`${p.lat},${p.lng}`} onClick={() => focusPlace(p)} style={{ borderRadius: 2 }} className="ps-place-row">
+                                        <Group gap="sm" wrap="nowrap" py={4}>
+                                            <IconMapPin size={14} style={{ color: idx === 0 ? 'var(--ps-accent)' : 'var(--ps-muted)', flexShrink: 0 }} />
+                                            <Text size="xs" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.address}>
+                                                {p.address}
+                                            </Text>
+                                            <Text size="xs" c="dimmed" className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>{p.visits}</Text>
+                                            <IconFocus2 size={12} style={{ color: 'var(--ps-muted)', flexShrink: 0 }} />
+                                        </Group>
+                                    </UnstyledButton>
+                                ))}
+                            </Stack>
+                        </Box>
+                    )}
+                </Stack>
+            </Grid.Col>
 
-            <Switch
-              label="Show markers"
-              description="Display trip start/end pins"
-              checked={showMarkers}
-              onChange={(event) => setShowMarkers(event.currentTarget.checked)}
-              size="sm"
-            />
-          </Stack>
-        </Stack>
-      </Paper>
-
-      <Paper
-        p={{ base: "xs", sm: "md" }}
-        withBorder
-        style={{ height: "600px", position: "relative", zIndex: 1 }}
-      >
-        {allTrips.length > 0 ? (
-          <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
-        ) : (
-          <Text c="dimmed" ta="center" p="xl">
-            No valid trip data to display on map
-          </Text>
-        )}
-      </Paper>
-    </Stack>
-  );
+            <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+                <Box className="ps-card ps-rise" style={{ '--i': 1, height: 'min(72vh, 720px)', minHeight: 420, position: 'relative', overflow: 'hidden', zIndex: 1 }}>
+                    {allTrips.length > 0 ? (
+                        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+                    ) : (
+                        <Stack align="center" justify="center" h="100%" gap="xs">
+                            <IconMapPin size={28} stroke={1.5} style={{ color: 'var(--ps-muted)' }} />
+                            <Text c="dimmed" ta="center">No trips with coordinates in this selection.</Text>
+                        </Stack>
+                    )}
+                    <Box style={{ position: 'absolute', top: 10, right: 52, zIndex: 2 }} className="ps-no-print">
+                        <Text size="xs" c="dimmed" style={{ background: 'color-mix(in srgb, var(--ps-surface) 85%, transparent)', padding: '3px 8px', borderRadius: 2, border: '1px solid var(--ps-border)' }} className="ps-tabular">
+                            {displayTrips.length} of {allTrips.length} trips
+                        </Text>
+                    </Box>
+                </Box>
+            </Grid.Col>
+        </Grid>
+    );
 }
 
 export default MapView;

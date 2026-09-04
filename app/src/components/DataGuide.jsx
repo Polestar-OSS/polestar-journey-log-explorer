@@ -71,7 +71,6 @@ function DataGuide({ distanceUnit = 'km' }) {
 
   // Distance range examples
   const shortTrips = `0-${Math.round(20 / multiplier)} ${dist}`;
-  const longTrips = `${Math.round(100 / multiplier)}+ ${dist}`;
 
   return (
     <Stack gap="lg">
@@ -130,7 +129,7 @@ function DataGuide({ distanceUnit = 'km' }) {
                   Your average energy consumption expressed as kWh per 100 {isMi ? 'miles' : 'kilometers'} ({effUnit}). 
                   This is the key metric for understanding your vehicle's efficiency.
                 </Text>
-                <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="blue-6">
+                <BorderedPaper p="sm" withBorder borderColor="blue-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
                     Average Efficiency = (Total Energy / Total Distance) × 100
@@ -158,7 +157,7 @@ function DataGuide({ distanceUnit = 'km' }) {
                   The estimated carbon dioxide emissions you avoided by driving an electric vehicle 
                   instead of a comparable internal combustion engine (ICE) vehicle.
                 </Text>
-                <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="green-6">
+                <BorderedPaper p="sm" withBorder borderColor="green-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
                     {co2Formula}
@@ -191,7 +190,7 @@ function DataGuide({ distanceUnit = 'km' }) {
                   An estimate of money saved by using electricity instead of gasoline, comparing 
                   your EV's energy costs to a comparable ICE vehicle's fuel costs.
                 </Text>
-                <BorderedPaper p="sm" withBorder bg="gray.0" borderColor="teal-6">
+                <BorderedPaper p="sm" withBorder borderColor="teal-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
                     {`EV Cost = Total Energy (kWh) × Electricity Rate\nICE Cost = (Total Distance / 100) × Fuel Efficiency × Gas Price\nSavings = ICE Cost - EV Cost\n\n${costDefaults}`}
@@ -213,124 +212,119 @@ function DataGuide({ distanceUnit = 'km' }) {
         {/* Charts Section */}
         <Accordion.Item value="charts">
           <Accordion.Control icon={<IconChartBar size={20} />}>
-            Understanding the Charts
+            Understanding the Overview charts
           </Accordion.Control>
           <Accordion.Panel>
             <Stack gap="md">
+              <Text size="sm" c="dimmed">
+                Every chart reflects the filter bar above it, and every chart has a table twin (the ⊞ button) so
+                no value is locked behind a hover.
+              </Text>
+
               <div>
-                <Text fw={600} mb="xs">📊 Distance & Consumption Over Time</Text>
-                <Text size="sm" c="dimmed" mb="xs">
-                  A line chart showing your daily driving patterns over the selected time period.
-                </Text>
+                <Text fw={600} mb="xs">Distance, energy or trips per day / week / month</Text>
                 <List size="sm">
-                  <List.Item>
-                    <strong>Blue line (Distance):</strong> Shows {isMi ? 'miles' : 'kilometers'} driven each day. Peaks indicate 
-                    days with longer trips.
-                  </List.Item>
-                  <List.Item>
-                    <strong>Green line (Consumption):</strong> Shows kWh consumed each day. Should generally 
-                    correlate with distance.
-                  </List.Item>
-                  <List.Item>
-                    <strong>What to look for:</strong> If consumption is high relative to distance, it may 
-                    indicate inefficient driving conditions (cold weather, highway speeds, aggressive acceleration).
-                  </List.Item>
+                  <List.Item>Calendar periods with gaps kept, so a quiet month shows as a quiet month.</List.Item>
+                  <List.Item>Switch the metric ({dist}, kWh or trips) and the granularity from the card header.</List.Item>
+                  <List.Item>Hover a bar for distance, energy, trips and the period's efficiency together.</List.Item>
                 </List>
               </div>
 
               <Divider />
 
               <div>
-                <Text fw={600} mb="xs">🎯 Efficiency Distribution</Text>
-                <Text size="sm" c="dimmed" mb="xs">
-                  A pie chart breaking down your trips into efficiency categories.
-                </Text>
+                <Text fw={600} mb="xs">Every trip, and the rolling median</Text>
                 <List size="sm">
-                  <List.Item>
-                    <Badge color="green" size="sm">Excellent</Badge> {effExcellent} - Ideal conditions, 
-                    gentle driving, optimal temperature
-                  </List.Item>
-                  <List.Item>
-                    <Badge color="blue" size="sm">Good</Badge> {effGood} - Normal efficient driving
-                  </List.Item>
-                  <List.Item>
-                    <Badge color="yellow" size="sm">Average</Badge> {effAverage} - Mixed conditions or 
-                    moderate highway speeds
-                  </List.Item>
-                  <List.Item>
-                    <Badge color="red" size="sm">High</Badge> {effHigh} - High speeds, cold weather, 
-                    aggressive driving, or heavy climate control use
-                  </List.Item>
+                  <List.Item>Each dot is one trip's efficiency; the line is the median of the last 10 trips.</List.Item>
+                  <List.Item>A median is used instead of a mean because a 1-{dist} hop can read 100+ {effUnit} and would otherwise drag the line around.</List.Item>
+                  <List.Item>Trips above {Math.round(60 * (isMi ? 1.60934 : 1))} {effUnit} are hidden from this chart (they still count in the tiles).</List.Item>
                 </List>
               </div>
 
               <Divider />
 
               <div>
-                <Text fw={600} mb="xs">📏 Distance Range Distribution</Text>
-                <Text size="sm" c="dimmed" mb="xs">
-                  A bar chart showing how your trips are distributed by distance.
-                </Text>
+                <Text fw={600} mb="xs">Efficiency by month of year</Text>
                 <List size="sm">
-                  <List.Item>
-                    Helps you understand your typical trip patterns (short city trips vs. longer journeys)
-                  </List.Item>
-                  <List.Item>
-                    Most EV owners have a high percentage of short trips ({shortTrips}), which is ideal for EVs
-                  </List.Item>
-                  <List.Item>
-                    Long trips ({longTrips}) may require charging planning
-                  </List.Item>
+                  <List.Item>All years in the file folded onto one January–December calendar.</List.Item>
+                  <List.Item>The worst month is highlighted; the footer states the cost of winter versus your best month.</List.Item>
                 </List>
               </div>
 
               <Divider />
 
               <div>
-                <Text fw={600} mb="xs">🔋 State of Charge (SOC) Analysis</Text>
-                <Text size="sm" c="dimmed" mb="xs">
-                  A bar chart showing the most common starting battery charge levels.
-                </Text>
+                <Text fw={600} mb="xs">Distributions</Text>
                 <List size="sm">
-                  <List.Item>
-                    <strong>High SOC starts (80-100%):</strong> You typically charge to full - good for 
-                    maximizing range but may reduce battery longevity if done daily
-                  </List.Item>
-                  <List.Item>
-                    <strong>Mid SOC starts (40-80%):</strong> Optimal for daily driving and battery health
-                  </List.Item>
-                  <List.Item>
-                    <strong>Low SOC starts (0-40%):</strong> May indicate range anxiety or insufficient 
-                    charging opportunities
-                  </List.Item>
+                  <List.Item><strong>How efficient is a typical trip?</strong> Histogram of per-trip efficiency; the footer names the median.</List.Item>
+                  <List.Item><strong>How long are your trips?</strong> Share of trips per distance band. Most EV owners have a high share of short trips ({shortTrips}).</List.Item>
                 </List>
               </div>
 
               <Divider />
 
               <div>
-                <Text fw={600} mb="xs">🕐 Consumption by Time of Day</Text>
-                <Text size="sm" c="dimmed" mb="xs">
-                  A composed chart showing when you drive and how much energy you consume.
-                </Text>
+                <Text fw={600} mb="xs">When you drive</Text>
                 <List size="sm">
-                  <List.Item>
-                    <strong>Bars (Trips):</strong> Number of trips started during each hour
-                  </List.Item>
-                  <List.Item>
-                    <strong>Line (Energy):</strong> Average energy consumed per trip during that hour
-                  </List.Item>
-                  <List.Item>
-                    <strong>Insights:</strong> Morning/evening peaks indicate commuting patterns. Higher 
-                    consumption at certain times may correlate with temperature (cold mornings) or traffic conditions.
-                  </List.Item>
+                  <List.Item>A weekday × hour grid. Darker cells mean more trips (or more {dist}) in that hour.</List.Item>
+                  <List.Item>Hover or focus a cell to read its exact value; the legend on the right gives the scale.</List.Item>
+                </List>
+              </div>
+
+              <Divider />
+
+              <div>
+                <Text fw={600} mb="xs">State of charge, last 40 trips</Text>
+                <List size="sm">
+                  <List.Item>The line is the battery level after each trip, in chronological order.</List.Item>
+                  <List.Item>Bars show charge added before a trip, inferred from the level rising between two consecutive trips.</List.Item>
+                </List>
+              </div>
+
+              <Divider />
+
+              <div>
+                <Text fw={600} mb="xs">Trip length vs efficiency</Text>
+                <List size="sm">
+                  <List.Item>Log scale on distance so short and long trips share the plot.</List.Item>
+                  <List.Item>Expect a cloud that falls and narrows to the right: short trips pay for cabin and battery warm-up, long trips converge on the car's real number.</List.Item>
+                </List>
+              </div>
+
+              <Divider />
+
+              <div>
+                <Text fw={600} mb="xs">Efficiency colour bands ({effUnit})</Text>
+                <List size="sm">
+                  <List.Item><Badge color="green" size="sm">Efficient</Badge> {effExcellent}</List.Item>
+                  <List.Item><Badge color="yellow" size="sm">Typical</Badge> {effGood}</List.Item>
+                  <List.Item><Badge color="orange" size="sm">High</Badge> {effAverage}</List.Item>
+                  <List.Item><Badge color="red" size="sm">Very high</Badge> {effHigh}</List.Item>
                 </List>
               </div>
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>
 
-        {/* Map Section */}
+        {/* Insights Section */}
+        <Accordion.Item value="insights">
+          <Accordion.Control icon={<IconInfoCircle size={20} />}>
+            Where the Insights come from
+          </Accordion.Control>
+          <Accordion.Panel>
+            <Stack gap="sm">
+              <List size="sm" spacing="xs">
+                <List.Item><strong>Winter penalty:</strong> energy ÷ distance for Dec–Feb trips compared with Jun–Aug trips. Needs at least five trips in each.</List.Item>
+                <List.Item><strong>Usable battery:</strong> total kWh used ÷ total SOC % used, across trips that consumed 5 % or more. Matched against known Polestar packs for a label; it is an estimate, not a reading.</List.Item>
+                <List.Item><strong>Charging:</strong> a session is inferred whenever SOC at the start of a trip is higher than SOC at the end of the previous one. Sessions of 10 % or more drive the "plug in at / stop at" medians.</List.Item>
+                <List.Item><strong>Home:</strong> trip endpoints clustered on a ~100 m grid; the busiest cluster is called home.</List.Item>
+                <List.Item><strong>Coverage:</strong> logged distance compared with the odometer difference between the first and last trip. The gap is driving done while the app was not recording.</List.Item>
+                <List.Item><strong>Deltas on the tiles:</strong> shown when a date filter is active, comparing the period with the equally long period before it.</List.Item>
+              </List>
+            </Stack>
+          </Accordion.Panel>
+        </Accordion.Item>
+
         <Accordion.Item value="map">
           <Accordion.Control icon={<IconMap size={20} />}>
             Understanding the Map

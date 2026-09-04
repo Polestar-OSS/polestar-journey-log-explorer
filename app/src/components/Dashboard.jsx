@@ -1,179 +1,106 @@
-import { useMemo, useState } from "react";
-import {
-  Button,
-  Stack,
-  Tabs,
-  Group,
-  ActionIcon,
-  Tooltip,
-  Text,
-} from "@mantine/core";
-import {
-  IconArrowLeft,
-  IconChartBar,
-  IconMap,
-  IconList,
-  IconDownload,
-  IconHelp,
-  IconBook,
-} from "@tabler/icons-react";
-import { notifications } from "@mantine/notifications";
-import StatsCards from "./stats/StatsCards";
-import ChartsView from "./charts/ChartsView";
-import MapView from "./map/MapView";
-import TableView from "./table/TableView";
-import DataGuide from "./DataGuide";
-import Filters from "./filters/Filters";
-import { calculateStatistics } from "../utils/dataParser";
-import { TableExporter } from "../services/table/TableDataProcessor";
-import HelpModal from "./HelpModal";
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import { Box, Center, Loader, Stack, Tabs, Text } from '@mantine/core';
+import { IconChartBar, IconMap, IconList, IconBook, IconBulb } from '@tabler/icons-react';
+import StatsCards from './stats/StatsCards';
+import ChartsView from './charts/ChartsView';
+import InsightsView from './insights/InsightsView';
+import TableView from './table/TableView';
+import DataGuide from './DataGuide';
+import FilterBar from './filters/FilterBar';
+import { calculateStatistics } from '../utils/dataParser';
+import { InsightsCalculator } from '../services/insights/InsightsCalculator';
 
-// Build columns for CSV export based on distance unit
-const getColumns = (distanceUnit) => {
-  const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
-  return [
-    { key: "startDate", label: "Start Date" },
-    { key: "endDate", label: "End Date" },
-    { key: "startAddress", label: "Start Address" },
-    { key: "endAddress", label: "End Address" },
-    { key: "distanceKm", label: `Distance (${distLabel})` },
-    { key: "consumptionKwh", label: "Consumption (kWh)" },
-    { key: "efficiency", label: `Efficiency (kWh/100${distLabel})` },
-    { key: "category", label: "Category" },
-    { key: "socSource", label: "SOC Start" },
-    { key: "socDestination", label: "SOC End" },
-    { key: "socDrop", label: "SOC Drop" },
-    { key: "startOdometer", label: "Start Odometer" },
-    { key: "endOdometer", label: "End Odometer" },
-  ];
+// OpenLayers is ~600 kB; only fetch it when the map tab is opened
+const MapView = lazy(() => import('./map/MapView'));
+
+const periodLabelFor = (range) => {
+    if (!range?.fromTs || !range?.toTs) return null;
+    const days = Math.round((range.toTs - range.fromTs) / 86400000);
+    if (days <= 1) return 'day';
+    if (days <= 7) return `${days} days`;
+    if (days <= 100) return `${days} days`;
+    const months = Math.round(days / 30.4);
+    return months <= 24 ? `${months} months` : `${Math.round(days / 365)} years`;
 };
 
-// Initialize the stateless TableExporter once outside the component
-const tableExporter = new TableExporter();
+function TabLoader() {
+    return (
+        <Center py={80}>
+            <Loader color="polestar" type="dots" />
+        </Center>
+    );
+}
 
-function Dashboard({ data, distanceUnit = 'km', onReset }) {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [filteredData, setFilteredData] = useState(data);
-  const [helpOpened, setHelpOpened] = useState(false);
+function Dashboard({ data, distanceUnit = 'km', onFilteredChange }) {
+    const [activeTab, setActiveTab] = useState('overview');
+    const [filterState, setFilterState] = useState({ filtered: data, range: null, isFiltered: false });
+    const { filtered: filteredData, range, isFiltered } = filterState;
 
-  const statistics = useMemo(
-    () => calculateStatistics(filteredData, distanceUnit),
-    [filteredData, distanceUnit]
-  );
+    const handleFilterChange = useCallback((next) => {
+        setFilterState(next);
+        onFilteredChange?.(next.filtered);
+    }, [onFilteredChange]);
 
-  const handleFilterChange = (filtered) => {
-    setFilteredData(filtered);
-  };
+    const statistics = useMemo(() => calculateStatistics(filteredData, distanceUnit), [filteredData, distanceUnit]);
 
-  const exportToCSV = () => {
-    const csvContent = tableExporter.exportToCSV(filteredData, getColumns(distanceUnit));
-    const filename = `polestar-journey-export-${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
+    const insights = useMemo(() => new InsightsCalculator(distanceUnit).compute(filteredData), [filteredData, distanceUnit]);
 
-    tableExporter.downloadFile(csvContent, filename, "text/csv;charset=utf-8;");
+    const deltas = useMemo(() => {
+        if (!range?.fromTs || !range?.toTs || !isFiltered) return null;
+        const previous = InsightsCalculator.previousPeriod(data, range.fromTs, range.toTs);
+        return InsightsCalculator.comparePeriods(filteredData, previous);
+    }, [data, filteredData, range, isFiltered]);
 
-    notifications.show({
-      title: "Export successful",
-      message: `Exported ${filteredData.length} trips to CSV`,
-      color: "green",
-    });
-  };
+    const periodLabel = isFiltered ? periodLabelFor(range) : null;
 
-  return (
-    <Stack gap="md">
-      <Stack gap="xs">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Button
-            leftSection={<IconArrowLeft size={16} />}
-            variant="subtle"
-            onClick={onReset}
-            size="sm"
-          >
-            Upload New File
-          </Button>
-          <Group gap="xs">
-            <Button
-              leftSection={<IconDownload size={16} />}
-              variant="light"
-              onClick={exportToCSV}
-              size="sm"
-            >
-              <Text visibleFrom="sm">
-                Export to CSV ({filteredData.length} trips)
-              </Text>
-              <Text hiddenFrom="sm">Export ({filteredData.length})</Text>
-            </Button>
-            <Tooltip label="How to get your journey data">
-              <ActionIcon
-                variant="light"
-                size="lg"
-                onClick={() => setHelpOpened(true)}
-              >
-                <IconHelp size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        </Group>
-      </Stack>
+    return (
+        <Stack gap="lg">
+            <FilterBar data={data} distanceUnit={distanceUnit} onFilterChange={handleFilterChange} />
 
-      <Filters data={data} distanceUnit={distanceUnit} onFilterChange={handleFilterChange} />
+            {filteredData.length === 0 ? (
+                <Box className="ps-card" p="xl">
+                    <Text fw={500}>No trips match these filters.</Text>
+                    <Text size="sm" c="dimmed">Widen the date range or clear the filters to see your data again.</Text>
+                </Box>
+            ) : (
+                <>
+                    <StatsCards statistics={statistics} data={filteredData} distanceUnit={distanceUnit} deltas={deltas} periodLabel={periodLabel} />
 
-      <StatsCards statistics={statistics} distanceUnit={distanceUnit} />
+                    <Tabs value={activeTab} onChange={setActiveTab} keepMounted={false}>
+                        <Tabs.List className="ps-no-print">
+                            <Tabs.Tab value="overview" leftSection={<IconChartBar size={16} />}>Overview</Tabs.Tab>
+                            <Tabs.Tab value="insights" leftSection={<IconBulb size={16} />}>Insights</Tabs.Tab>
+                            <Tabs.Tab value="map" leftSection={<IconMap size={16} />}>Map</Tabs.Tab>
+                            <Tabs.Tab value="trips" leftSection={<IconList size={16} />}>Trips</Tabs.Tab>
+                            <Tabs.Tab value="guide" leftSection={<IconBook size={16} />}>Guide</Tabs.Tab>
+                        </Tabs.List>
 
-      <Tabs
-        value={activeTab}
-        onChange={setActiveTab}
-        orientation={{ base: "horizontal", sm: "horizontal" }}
-        keepMounted={false}
-      >
-        <Tabs.List grow={{ base: true, sm: false }}>
-          <Tabs.Tab value="overview" leftSection={<IconChartBar size={16} />}>
-            <Text visibleFrom="sm">Charts</Text>
-            <Text hiddenFrom="sm" size="xs">
-              Charts
-            </Text>
-          </Tabs.Tab>
-          <Tabs.Tab value="map" leftSection={<IconMap size={16} />}>
-            <Text visibleFrom="sm">Map</Text>
-            <Text hiddenFrom="sm" size="xs">
-              Map
-            </Text>
-          </Tabs.Tab>
-          <Tabs.Tab value="table" leftSection={<IconList size={16} />}>
-            <Text visibleFrom="sm">Data Table</Text>
-            <Text hiddenFrom="sm" size="xs">
-              Table
-            </Text>
-          </Tabs.Tab>
-          <Tabs.Tab value="guide" leftSection={<IconBook size={16} />}>
-            <Text visibleFrom="sm">Understand your data</Text>
-            <Text hiddenFrom="sm" size="xs">
-              Guide
-            </Text>
-          </Tabs.Tab>
-        </Tabs.List>
+                        <Tabs.Panel value="overview" pt="lg">
+                            <ChartsView data={filteredData} distanceUnit={distanceUnit} insights={insights} />
+                        </Tabs.Panel>
 
-        <Tabs.Panel value="overview" pt="md">
-          <ChartsView data={filteredData} distanceUnit={distanceUnit} />
-        </Tabs.Panel>
+                        <Tabs.Panel value="insights" pt="lg">
+                            <InsightsView insights={insights} statistics={statistics} distanceUnit={distanceUnit} data={filteredData} />
+                        </Tabs.Panel>
 
-        <Tabs.Panel value="map" pt="md">
-          <MapView data={filteredData} distanceUnit={distanceUnit} />
-        </Tabs.Panel>
+                        <Tabs.Panel value="map" pt="lg">
+                            <Suspense fallback={<TabLoader />}>
+                                <MapView data={filteredData} distanceUnit={distanceUnit} places={insights?.places} />
+                            </Suspense>
+                        </Tabs.Panel>
 
-        <Tabs.Panel value="table" pt="md">
-          <TableView data={filteredData} distanceUnit={distanceUnit} />
-        </Tabs.Panel>
+                        <Tabs.Panel value="trips" pt="lg">
+                            <TableView data={filteredData} distanceUnit={distanceUnit} />
+                        </Tabs.Panel>
 
-        <Tabs.Panel value="guide" pt="md">
-          <DataGuide distanceUnit={distanceUnit} />
-        </Tabs.Panel>
-      </Tabs>
-
-      <HelpModal opened={helpOpened} onClose={() => setHelpOpened(false)} />
-    </Stack>
-  );
+                        <Tabs.Panel value="guide" pt="lg">
+                            <DataGuide distanceUnit={distanceUnit} />
+                        </Tabs.Panel>
+                    </Tabs>
+                </>
+            )}
+        </Stack>
+    );
 }
 
 export default Dashboard;
