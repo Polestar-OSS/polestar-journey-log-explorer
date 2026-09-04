@@ -101,8 +101,9 @@ Each service has one job, takes plain data, and returns plain data.
 | `insights/InsightsCalculator` | Narrative findings: seasonality, places (clustered), charging sessions, battery estimate, odometer coverage, short trips, rhythm, records, period deltas |
 | `analytics/StatsService` | Expert layer: percentiles, consumption model (OLS), efficiency drivers, battery fit, charge histogram, data quality |
 | `analytics/PivotService` | Group-by/aggregate over registered dimensions and metrics; CSV |
+| `consent/ConsentService` | The visitor's analytics decision in `localStorage`, pushed to Google Consent Mode; injected storage and gtag |
 | `export/JourneyLogWriter` | Trips back to the Journey Log export columns (rows and CSV), unit in the distance header |
-| `persistence/JourneyStore` | The de-duplicated journey in `localStorage` as export-format rows; injected storage, quota-safe |
+| `persistence/JourneyStore`, `persistence/JourneyStorage` | The de-duplicated journey as export-format rows in IndexedDB (localStorage fallback and migration); async, injected adapter, quota-safe |
 | `persistence/SettingsPort` | Settings and trip notes as a JSON file, out and in, with validation |
 | `units/UnitSystem` | Metric/imperial: distance and fuel-price conversion, cents helpers, and `convertJourney`, applied once at the App boundary so nothing below knows about the preference |
 | `comparison/Vehicles` | Loads and validates the per-make vehicle files under `src/data/vehicles` (EPA provenance required) |
@@ -189,8 +190,9 @@ See [ADR-0005](./adr/0005-experience-levels.md).
 ## 9. Privacy and security posture
 
 - No network calls with user data by default. The outbound requests are tile
-  images, Google Analytics and the cookie-consent script. Tariff presets are
-  bundled JSON and searched locally.
+  images and, only after the visitor accepts, Google Analytics (Consent
+  Mode v2, analytics storage denied until then; [ADR-0014](./adr/0014-first-party-consent.md)).
+  Tariff presets are bundled JSON and searched locally.
 - Road snapping on the map is opt-in behind an explicit consent dialog. It
   sends start/end coordinates rounded to four decimals to the public OSRM
   demo server, one request per unique pair, and caches responses in
@@ -199,8 +201,8 @@ See [ADR-0005](./adr/0005-experience-levels.md).
   browser ([ADR-0009](./adr/0009-tariff-model.md)).
 - Popup HTML on the map is built with an escaping helper; every other user
   string is rendered through React text nodes.
-- Notes, tags, preferences and (by default) the de-duplicated journey live
-  in `localStorage` only; the user can switch the journey saving off, export
+- Notes, tags and preferences live in `localStorage`; the de-duplicated
+  journey (by default) in IndexedDB; the user can switch the journey saving off, export
   everything, or delete it ([ADR-0013](./adr/0013-journey-persistence.md)).
 - Dependencies are audited in CI and by Dependabot (npm and GitHub Actions).
 

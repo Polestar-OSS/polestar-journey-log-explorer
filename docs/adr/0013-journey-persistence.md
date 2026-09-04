@@ -12,8 +12,11 @@ wipe it. Nothing may leave the browser ([ADR-0001](./0001-client-only-processing
 ## Decision
 
 - A `persistJourney` preference, on by default, keeps the merged,
-  de-duplicated journey in `localStorage` after every merge. The synthetic
-  sample is never saved.
+  de-duplicated journey in IndexedDB after every merge, behind an async
+  storage adapter with a localStorage fallback (and a one-time migration
+  from it). IndexedDB was chosen for capacity: browsers allow hundreds of
+  megabytes there against about five in localStorage, and the owner asked
+  for whichever holds the most. The synthetic sample is never saved.
 - The stored payload is the Journey Log export format itself: the same
   headers and rows `JourneyLogWriter` produces. Loading runs the normal
   parser, so the saved data and an uploaded file are indistinguishable to
@@ -31,14 +34,16 @@ wipe it. Nothing may leave the browser ([ADR-0001](./0001-client-only-processing
 
 - A returning user lands in the dashboard with their history; the landing
   page shows what is saved and offers to open, extend or delete it.
-- Storage is bounded by the browser (about 5 MB); a year of driving is
-  well under 1 MB. On quota failure the data stays loaded for the visit and
-  a notice says it was not saved.
+- Capacity is a browser-managed quota in the hundreds of megabytes; a year
+  of driving is well under 1 MB. On failure the data stays loaded for the
+  visit and a notice says it was not saved. Reading is asynchronous, so the
+  app shows a one-line "opening your saved journey" state on start.
 - Anyone sharing a browser profile shares the journey; the switch and the
   delete are there for that.
 
 ## Alternatives considered
 
-- **IndexedDB**: more room, more code; not needed at this size.
+- **localStorage only**: simpler and synchronous, but capped at about
+  5 MB; kept as the fallback.
 - **Store the parsed trip model**: ties the store to the parser's shape;
   the export format is stable and re-importable.

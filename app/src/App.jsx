@@ -9,6 +9,9 @@ import FileDropzone from './components/landing/FileDropzone';
 import Dashboard from './components/Dashboard';
 import HelpModal from './components/HelpModal';
 import DataModal from './components/data/DataModal';
+import ConsentBanner from './components/consent/ConsentBanner';
+import { useConsent } from './hooks/useConsent';
+import { CONSENT_STORAGE_KEY, PRIVACY_POLICY_URL, COOKIE_POLICY_URL } from './services/consent/ConsentService';
 import { TableExporter } from './services/table/TableDataProcessor';
 import { JourneyMerger } from './services/ingest/JourneyMerger';
 import { buildSampleJourneyLog } from './utils/sampleData';
@@ -56,9 +59,9 @@ const settingsPort = new SettingsPort();
 export const SAVED_SOURCE_NAME = 'Saved in this browser';
 
 /** The journey kept from a previous visit, as a source the merger understands; null when there is none or persistence is off. */
-const loadSavedSource = () => {
+const loadSavedSource = async () => {
     if (getPreference('persistJourney') === false) return null;
-    const doc = store.load();
+    const doc = await store.load();
     if (!doc) return null;
     const { data, distanceUnit } = processRawRows(doc.rows, doc.headers);
     return data.length ? { fileName: SAVED_SOURCE_NAME, data, distanceUnit, saved: true, savedSources: doc.sources ?? [], savedAt: doc.savedAt } : null;
@@ -74,7 +77,7 @@ const fileSummaries = (sources) => {
     return [...out.values()];
 };
 
-function Footer() {
+function Footer({ onCookieSettings, consent }) {
     return (
         <Box component="footer" mt={64} pt="xl" pb="xl" style={{ borderTop: '1px solid var(--ps-border)' }} className="ps-no-print">
             <Container size="xl" px={{ base: 'sm', sm: 'md' }}>
@@ -91,6 +94,9 @@ function Footer() {
                             <Anchor href={REPO_URL} target="_blank" rel="noreferrer" c="dimmed" size="sm">
                                 <Group gap={4} wrap="nowrap"><IconBrandGithub size={16} /><span>GitHub</span></Group>
                             </Anchor>
+                            <Anchor href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer" c="dimmed" size="sm">Privacy</Anchor>
+                            <Anchor href={COOKIE_POLICY_URL} target="_blank" rel="noreferrer" c="dimmed" size="sm">Cookies</Anchor>
+                            <Anchor component="button" type="button" onClick={onCookieSettings} c="dimmed" size="sm">Analytics: {consent?.analytics ? 'on' : 'off'} · change</Anchor>
                             <Anchor href={`${REPO_URL}/blob/main/LICENSE`} target="_blank" rel="noreferrer" c="dimmed" size="sm">
                                 AGPL-3.0 License
                             </Anchor>
@@ -113,11 +119,14 @@ function Footer() {
  * into one journey, and exposes export / reset / add-files to the header.
  */
 function App() {
-    const [sources, setSources] = useState(() => { const saved = loadSavedSource(); return saved ? [saved] : []; }); // parsed files, in the order they were added
+    const [sources, setSources] = useState([]); // parsed files, in the order they were added
+    const [restoring, setRestoring] = useState(() => getPreference('persistJourney') !== false); // true while the saved journey is being read
+    const [saved, setSaved] = useState(null); // summary of what the store holds
     const [filteredData, setFilteredData] = useState(null);
     const [dataOpened, setDataOpened] = useState(false);
     const [prefs] = usePreferences();
     const persist = prefs.persistJourney !== false;
+    const consent = useConsent();
     const [helpOpened, setHelpOpened] = useState(false);
     const [helpTab, setHelpTab] = useState('data');
     const [addOpened, setAddOpened] = useState(false);
@@ -129,13 +138,27 @@ function App() {
     const [unitSystem] = useUnitSystem();
     const journey = useMemo(() => convertJourney(merged, distanceUnitFor(unitSystem)), [merged, unitSystem]);
 
+    // Restore the saved journey once on start (IndexedDB is asynchronous)
+    useEffect(() => {
+        let cancelled = false;
+        loadSavedSource()
+            .then((savedSource) => { if (cancelled) return; if (savedSource) setSources([savedSource]); })
+            .catch(() => {})
+            .finally(() => { if (!cancelled) { setRestoring(false); store.summary().then((s) => { if (!cancelled) setSaved(s); }); } });
+        return () => { cancelled = true; };
+    }, []);
+
     // Keep the de-duplicated journey in this browser (never the synthetic sample)
     useEffect(() => {
-        if (!persist || !merged || synthetic || !merged.data.length) return;
-        const res = store.save({ rows: writer.toRows(merged.data, merged.distanceUnit), distanceUnit: merged.distanceUnit, sources: fileSummaries(sources) });
-        if (!res.ok && res.reason === 'quota') notifications.show({ title: 'Could not save the journey', message: 'The browser storage quota is full; the data stays loaded for this visit only.', color: 'yellow' });
-    }, [merged, persist, synthetic, sources]);
-    const saved = useMemo(() => store.summary(), [merged, persist]); // eslint-disable-line react-hooks/exhaustive-deps
+        if (restoring || !persist || !merged || synthetic || !merged.data.length) return undefined;
+        let cancelled = false;
+        store.save({ rows: writer.toRows(merged.data, merged.distanceUnit), distanceUnit: merged.distanceUnit, sources: fileSummaries(sources) }).then((res) => {
+            if (cancelled) return;
+            if (!res.ok) notifications.show({ title: 'Could not save the journey', message: res.reason === 'quota' ? 'The browser storage quota is full; the data stays loaded for this visit only.' : `The browser refused to store it (${res.reason}); the data stays loaded for this visit only.`, color: 'yellow' });
+            store.summary().then((s) => { if (!cancelled) setSaved(s); });
+        });
+        return () => { cancelled = true; };
+    }, [merged, persist, synthetic, sources, restoring]);
 
     const addSources = useCallback((incoming) => {
         setSources((current) => {
@@ -176,8 +199,7 @@ function App() {
     }, []);
 
     const handleContinueSaved = useCallback(() => {
-        const savedSource = loadSavedSource();
-        if (savedSource) setSources([savedSource]);
+        loadSavedSource().then((savedSource) => { if (savedSource) setSources([savedSource]); });
     }, []);
 
     const handleExportJourney = useCallback(() => {
@@ -200,17 +222,15 @@ function App() {
 
     const handleClearSaved = useCallback(() => {
         // Drop the in-memory journey too; anything still loaded would be saved again on the next render
-        store.clear();
         setSources([]);
         setFilteredData(null);
         setDataOpened(false);
-        notifications.show({ title: 'Saved journey deleted', message: 'Back to the start page; your settings are untouched.', color: 'polestar' });
+        store.clear().then(() => { setSaved(null); notifications.show({ title: 'Saved journey deleted', message: 'Back to the start page; your settings are untouched.', color: 'polestar' }); });
     }, []);
 
     const handleClearAll = useCallback(() => {
-        store.clear();
-        [PREFERENCES_STORAGE_KEY, ANNOTATIONS_STORAGE_KEY, ROUTE_CACHE_KEY, 'polestar-map-hint-seen'].forEach((k) => { try { localStorage.removeItem(k); } catch { /* storage unavailable */ } });
-        window.location.reload();
+        [PREFERENCES_STORAGE_KEY, ANNOTATIONS_STORAGE_KEY, ROUTE_CACHE_KEY, CONSENT_STORAGE_KEY, 'polestar-map-hint-seen'].forEach((k) => { try { localStorage.removeItem(k); } catch { /* storage unavailable */ } });
+        store.clear().finally(() => window.location.reload());
     }, []);
 
     const handleExport = useCallback(() => {
@@ -236,7 +256,9 @@ function App() {
             />
 
             <Box component="main" style={{ flex: 1 }}>
-                {!journey ? (
+                {restoring ? (
+                    <Container size="xl" py={80}><Group justify="center"><Text size="sm" c="dimmed">Opening your saved journey…</Text></Group></Container>
+                ) : !journey ? (
                     <Landing onSourcesLoaded={addSources} onLoadSample={handleLoadSample} saved={saved} onContinueSaved={handleContinueSaved} onManageData={() => setDataOpened(true)} />
                 ) : (
                     <Container size="xl" px={{ base: 'sm', sm: 'md' }} py="lg" className="ps-fade">
@@ -255,7 +277,8 @@ function App() {
                 )}
             </Box>
 
-            <Footer />
+            <Footer onCookieSettings={consent.reopen} consent={consent.decision} />
+            <ConsentBanner open={consent.open} onDecide={consent.decide} />
             <HelpModal key={helpTab} opened={helpOpened} onClose={() => setHelpOpened(false)} initialTab={helpTab} />
             <DataModal opened={dataOpened} onClose={() => setDataOpened(false)} journey={journey} saved={saved} onExportJourney={handleExportJourney} onExportSettings={handleExportSettings} onImportSettings={handleImportSettings} onClearSaved={handleClearSaved} onClearAll={handleClearAll} />
             <Modal opened={addOpened} onClose={() => setAddOpened(false)} title="Add more exports" size="md">

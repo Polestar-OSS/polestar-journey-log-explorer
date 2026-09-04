@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Box, Button, Drawer, Group, Modal, Progress, ScrollArea, SegmentedControl, Select, Slider, Stack, Switch, Text, Tooltip, UnstyledButton, useComputedColorScheme } from '@mantine/core';
+import { ActionIcon, Box, Button, Drawer, Group, Modal, Progress, RangeSlider, ScrollArea, SegmentedControl, Select, Slider, Stack, Switch, Text, Tooltip, UnstyledButton, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery, useReducedMotion } from '@mantine/hooks';
 import { IconMapPin, IconFocus2, IconPlayerPlay, IconPlayerPause, IconPlayerSkipBack, IconAdjustments, IconRoute, IconFlame, IconBuildingCommunity, IconHistory, IconRoad } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -83,6 +83,8 @@ function MapView({ data, distanceUnit = 'km', places }) {
 
     // Replay
     const [cursor, setCursor] = useState(0);
+    const [replayTrip, setReplayTrip] = useState(null); // trip index to replay alone, or null
+    const [replayRange, setReplayRange] = useState(null); // [firstDay, lastDay] over fullReplay.frames, or null for all
     const [playing, setPlaying] = useState(false);
     const [speed, setSpeed] = useState('0.2');
 
@@ -100,7 +102,17 @@ function MapView({ data, distanceUnit = 'km', places }) {
 
     const { center, allTrips, tripsByDay } = useMemo(() => mapDataProcessor.prepare(data), [data]);
 
-    const replay = useMemo(() => replayService.build([...allTrips].reverse()), [allTrips]);
+    const fullReplay = useMemo(() => replayService.build([...allTrips].reverse()), [allTrips]);
+    // What actually plays: one trip, a day range, or everything in the filter
+    const replay = useMemo(() => {
+        if (replayTrip !== null && allTrips[replayTrip]) return replayService.build([allTrips[replayTrip]]);
+        if (replayRange) {
+            const [from, to] = replayRange;
+            const frames = fullReplay.frames.slice(Math.max(0, from), Math.min(fullReplay.frames.length, to + 1));
+            return replayService.build(frames.flatMap((f) => f.trips));
+        }
+        return fullReplay;
+    }, [fullReplay, replayTrip, replayRange, allTrips]);
 
     const tripOptions = useMemo(
         () => allTrips.map((trip, idx) => ({ value: String(idx), label: `${trip.startDate} · ${trip.startAddress.substring(0, 26)} → ${trip.endAddress.substring(0, 26)} · ${trip.distanceKm} ${unit}` })),
@@ -306,6 +318,18 @@ function MapView({ data, distanceUnit = 'km', places }) {
                 />
             </div>
 
+            {mode === 'replay' && (
+                <>
+                    <Select size="xs" label="Replay one trip" placeholder="Every trip in the filter" data={tripOptions} value={replayTrip} onChange={(v) => { setReplayTrip(v); setReplayRange(null); setCursor(0); setPlaying(false); }} searchable clearable maxDropdownHeight={280} nothingFoundMessage="No trip matches" />
+                    {fullReplay.totalDays > 1 && (
+                        <div>
+                            <Text size="xs" c="dimmed" mb={4}>Days to replay · {replayRange ? `${fullReplay.frames[replayRange[0]]?.label} – ${fullReplay.frames[replayRange[1]]?.label}` : `all ${fullReplay.totalDays} days`}</Text>
+                            <RangeSlider size="sm" color="polestar" min={0} max={fullReplay.totalDays - 1} minRange={0} step={1} value={replayRange ?? [0, fullReplay.totalDays - 1]} disabled={replayTrip !== null} onChange={(v) => { setReplayRange(v); setCursor(0); setPlaying(false); }} onChangeEnd={(v) => { if (v[0] === 0 && v[1] === fullReplay.totalDays - 1) setReplayRange(null); }} label={(v) => fullReplay.frames[v]?.label ?? ''} />
+                            <Text size="xs" c="dimmed" mt={4}>{replay.totalDays} day{replay.totalDays === 1 ? '' : 's'} · {replay.frames.at(-1)?.cumulative.trips ?? 0} trips · {formatNumber(replay.frames.at(-1)?.cumulative.distance ?? 0, 0)} {unit}. The filter row above narrows the whole period; this picks days inside it.</Text>
+                        </div>
+                    )}
+                </>
+            )}
             {mode !== 'replay' && (
                 <>
                     <Select size="xs" label="Single trip" placeholder="All recent trips" data={tripOptions} value={selectedTrip} onChange={setSelectedTrip} searchable clearable maxDropdownHeight={280} nothingFoundMessage="No trip matches" />

@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { JourneyLogWriter, exportHeaders } from '../../app/src/services/export/JourneyLogWriter.js';
 import { JourneyStore } from '../../app/src/services/persistence/JourneyStore.js';
+import { MemoryJourneyStorage, LocalStorageJourneyStorage, LEGACY_LOCAL_KEY } from '../../app/src/services/persistence/JourneyStorage.js';
 import { processRawRows } from '../../app/src/utils/dataParser.js';
 import { HEADERS_KM, SMALL_EXPORT } from '../fixtures/rows.js';
 
 const { data } = processRawRows(SMALL_EXPORT, HEADERS_KM);
-const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v), removeItem: (k) => m.delete(k) }; };
+const memoryLocal = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v), removeItem: (k) => m.delete(k) }; };
 
 describe('JourneyLogWriter', () => {
     it('round-trips through the parser with the original columns, newest first', () => {
@@ -28,27 +29,29 @@ describe('JourneyLogWriter', () => {
 
 describe('JourneyStore', () => {
     let store;
-    beforeEach(() => { store = new JourneyStore({ storage: memory() }); });
+    beforeEach(() => { store = new JourneyStore({ storage: new MemoryJourneyStorage() }); });
 
-    it('saves and loads the export-format payload with sources and a timestamp', () => {
+    it('saves and loads the export-format payload with sources and a timestamp', async () => {
         const rows = new JourneyLogWriter().toRows(data, 'km');
-        const res = store.save({ rows, distanceUnit: 'km', sources: [{ fileName: 'a.csv', trips: 8 }] });
+        const res = await store.save({ rows, distanceUnit: 'km', sources: [{ fileName: 'a.csv', trips: 8 }] });
         expect(res.ok).toBe(true);
         expect(res.bytes).toBeGreaterThan(100);
-        const doc = store.load();
+        const doc = await store.load();
         expect(doc.rows).toHaveLength(8);
         expect(doc.headers).toEqual(exportHeaders('km'));
         expect(doc.sources[0].fileName).toBe('a.csv');
-        expect(store.summary()).toMatchObject({ trips: 8, files: 1, distanceUnit: 'km' });
-        store.clear();
-        expect(store.load()).toBeNull();
+        expect(await store.summary()).toMatchObject({ trips: 8, files: 1, distanceUnit: 'km' });
+        await store.clear();
+        expect(await store.load()).toBeNull();
     });
 
-    it('reports a quota failure instead of throwing and ignores garbage', () => {
+    it('works on the localStorage adapter and reports quota failures instead of throwing', async () => {
+        const local = new JourneyStore({ storage: new LocalStorageJourneyStorage(memoryLocal()) });
+        expect((await local.save({ rows: [{ a: 1 }], distanceUnit: 'mi' })).ok).toBe(true);
+        expect((await local.load()).distanceUnit).toBe('mi');
         const full = { getItem: () => null, setItem: () => { const e = new Error('exceeded'); e.name = 'QuotaExceededError'; throw e; }, removeItem: () => {} };
-        expect(new JourneyStore({ storage: full }).save({ rows: [{}], distanceUnit: 'km' })).toMatchObject({ ok: false, reason: 'quota' });
-        const bad = memory(); bad.setItem('polestar-journey-explorer:journey', '{not json');
-        expect(new JourneyStore({ storage: bad }).load()).toBeNull();
-        expect(new JourneyStore({ storage: null }).load()).toBeNull();
+        expect(await new JourneyStore({ storage: new LocalStorageJourneyStorage(full) }).save({ rows: [{}], distanceUnit: 'km' })).toMatchObject({ ok: false, reason: 'quota' });
+        const bad = memoryLocal(); bad.setItem(LEGACY_LOCAL_KEY, '{not json');
+        expect(await new JourneyStore({ storage: new LocalStorageJourneyStorage(bad) }).load()).toBeNull();
     });
 });

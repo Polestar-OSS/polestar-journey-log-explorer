@@ -1,27 +1,24 @@
 import { exportHeaders } from '../export/JourneyLogWriter';
+import { defaultJourneyStorage } from './JourneyStorage';
 
-export const JOURNEY_STORAGE_KEY = 'polestar-journey-explorer:journey';
 const VERSION = 1;
 
 /**
  * JourneyStore - the de-duplicated journey, kept in the browser between
  * visits. The payload is the export format itself (rows plus headers), so
  * loading goes through the same parser as an upload and the stored file can
- * be exported byte-for-byte. Storage is injected so tests use a Map.
+ * be exported byte-for-byte. The storage adapter is injected (IndexedDB by
+ * default, see JourneyStorage.js); every method is async.
  */
 export class JourneyStore {
-    constructor({ storage = typeof localStorage !== 'undefined' ? localStorage : null, key = JOURNEY_STORAGE_KEY } = {}) {
+    constructor({ storage = defaultJourneyStorage() } = {}) {
         this.storage = storage;
-        this.key = key;
     }
 
-    /** @returns {{ version, distanceUnit, headers, rows, sources: Array<{fileName, trips}>, savedAt } | null} */
-    load() {
-        if (!this.storage) return null;
+    /** @returns {Promise<{ version, distanceUnit, headers, rows, sources: Array<{fileName, trips}>, savedAt } | null>} */
+    async load() {
         try {
-            const raw = this.storage.getItem(this.key);
-            if (!raw) return null;
-            const doc = JSON.parse(raw);
+            const doc = await this.storage.get();
             if (!doc || doc.version !== VERSION || !Array.isArray(doc.rows) || !Array.isArray(doc.headers) || !doc.rows.length) return null;
             return doc;
         } catch {
@@ -31,32 +28,28 @@ export class JourneyStore {
 
     /**
      * @param {{ rows: Array, distanceUnit: 'km'|'mi', sources: Array<{fileName, trips}> }} payload
-     * @returns {{ ok: boolean, bytes: number, reason?: string }}
+     * @returns {Promise<{ ok: boolean, bytes: number, reason?: string }>}
      */
-    save({ rows, distanceUnit = 'km', sources = [] }) {
-        if (!this.storage) return { ok: false, bytes: 0, reason: 'no storage' };
+    async save({ rows, distanceUnit = 'km', sources = [] }) {
         const doc = { version: VERSION, distanceUnit, headers: exportHeaders(distanceUnit), rows, sources, savedAt: new Date().toISOString() };
-        const text = JSON.stringify(doc);
+        const bytes = JSON.stringify(doc).length;
         try {
-            this.storage.setItem(this.key, text);
-            return { ok: true, bytes: text.length };
+            await this.storage.set(doc);
+            return { ok: true, bytes };
         } catch (e) {
-            return { ok: false, bytes: text.length, reason: e?.name === 'QuotaExceededError' || /quota/i.test(e?.message ?? '') ? 'quota' : (e?.message ?? 'error') };
+            return { ok: false, bytes, reason: e?.name === 'QuotaExceededError' || /quota/i.test(e?.message ?? '') ? 'quota' : (e?.message ?? 'error') };
         }
     }
 
-    clear() {
-        try { this.storage?.removeItem(this.key); } catch { /* nothing to do */ }
+    async clear() {
+        try { await this.storage.remove(); } catch { /* nothing to do */ }
     }
 
-    /** Size of the stored document in bytes (UTF-16 code units, close enough for a quota gauge). */
-    bytes() {
-        try { return this.storage?.getItem(this.key)?.length ?? 0; } catch { return 0; }
-    }
-
-    summary() {
-        const doc = this.load();
+    async summary() {
+        const doc = await this.load();
         if (!doc) return null;
-        return { trips: doc.rows.length, files: doc.sources?.length ?? 0, distanceUnit: doc.distanceUnit, savedAt: doc.savedAt, bytes: this.bytes(), sources: doc.sources ?? [] };
+        let bytes = 0;
+        try { bytes = await this.storage.bytes(); } catch { /* size is cosmetic */ }
+        return { trips: doc.rows.length, files: doc.sources?.length ?? 0, distanceUnit: doc.distanceUnit, savedAt: doc.savedAt, bytes, sources: doc.sources ?? [] };
     }
 }

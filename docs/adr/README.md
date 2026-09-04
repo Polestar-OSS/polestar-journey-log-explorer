@@ -18,6 +18,7 @@ decisions get a new number; superseded ones are marked, never deleted.
 | [0011](./0011-real-comparison-vehicles.md) | Petrol comparisons use real vehicles from the EPA database, never an average or an assumed price | Accepted |
 | [0012](./0012-units-at-the-boundary.md) | Metric/imperial is a preference applied once at the app boundary by one units module | Accepted |
 | [0013](./0013-journey-persistence.md) | The de-duplicated journey persists in the browser in the export format; settings export and import; confirmed deletion | Accepted |
+| [0014](./0014-first-party-consent.md) | Consent is first-party: one banner gating Google Analytics through Consent Mode, no hosted consent script | Accepted |
 
 Template:
 

@@ -25,8 +25,9 @@ the first file.
 
 ## Your data stays in this browser
 
-By default the de-duplicated journey is saved in your browser after every
-upload and reopens by itself next time; the landing page shows what is
+By default the de-duplicated journey is saved in your browser's IndexedDB
+(room for many years of driving) after every upload and reopens by itself
+next time; the landing page shows what is
 saved and lets you open, add to, or delete it. Open **Your data and
 settings** (database icon in the header, or the ⋮ menu on phones) to:
 
@@ -131,7 +132,8 @@ first tap):
 - **Heat**: a density heatmap of where you start and stop.
 - **Places**: bubbles sized by how many trips touch each place, drawn from the
   same clustering as the "Most visited" insight. Click one to fly to it.
-- **Replay**: drives the filtered period day by day. A car marker moves
+- **Replay**: drives the filtered period day by day, or just the days you
+  pick on the range slider, or one trip chosen from the list. A car marker moves
   along each trip in order with the route drawing behind it (along the road
   when snapping is on), the view pans to keep it in sight, and running
   totals tick up. Long days take longer; the speed control (0.2× to 10×,
@@ -229,8 +231,10 @@ builder has its own CSV button.
 
 Processing is local. The only outbound requests are map tiles, road
 snapping on the map if you turn it on (rounded start/end coordinates, after
-you agree), and the site's analytics and cookie-consent scripts, which never
-see trip data.
+you agree), and Google Analytics to count visits, which stays off until you
+accept the banner and never sees trip data. The footer shows whether
+analytics is on and lets you change it; "Delete everything" in the data
+dialog also clears that choice.
 
 ## Troubleshooting
 

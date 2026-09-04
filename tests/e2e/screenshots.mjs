@@ -33,6 +33,11 @@ async function run(name, { width, height, scheme, mobile = false }) {
     const current = await page.evaluate(() => document.documentElement.getAttribute('data-mantine-color-scheme'));
     if (current !== scheme) await page.getByRole('button', { name: /Toggle colour scheme/i }).click();
     await page.evaluate(() => localStorage.clear());
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('text=Your journeys', { timeout: 30000 });
+    if (!mobile) await page.screenshot({ path: `${OUT}/${name}-consent.png`, fullPage: false });
+    await page.getByRole('button', { name: /^Decline$/ }).click();
+    await page.waitForTimeout(300);
     if (!mobile) await page.screenshot({ path: `${OUT}/${name}-landing.png`, fullPage: false });
     if (FILES.length) await page.locator('input[type=file]').setInputFiles(FILES);
     else await page.getByRole('button', { name: /sample data/i }).click();

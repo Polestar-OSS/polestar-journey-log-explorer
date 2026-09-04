@@ -42,14 +42,14 @@ function DataModal({ opened, onClose, journey, saved, onExportJourney, onExportS
                 <Stack gap="lg">
                     <Box>
                         <Eyebrow>In this browser</Eyebrow>
-                        <Switch mt={8} size="sm" color="polestar" label="Keep my journey in this browser" description="The de-duplicated trips are saved here after every upload and reopen automatically. Nothing is sent anywhere." checked={persist} onChange={(e) => update('persistJourney', e.currentTarget.checked)} />
+                        <Switch mt={8} size="sm" color="polestar" label="Keep my journey in this browser" description="The de-duplicated trips are saved in this browser's IndexedDB after every upload and reopen automatically. Nothing is sent anywhere." checked={persist} onChange={(e) => update('persistJourney', e.currentTarget.checked)} />
                         {saved ? (
                             <Table fz="xs" verticalSpacing={3} withRowBorders={false} mt="sm" className="ps-tabular">
                                 <Table.Tbody>
                                     <Table.Tr><Table.Td c="dimmed">Saved trips</Table.Td><Table.Td>{saved.trips.toLocaleString()} · {saved.distanceUnit}</Table.Td></Table.Tr>
                                     <Table.Tr><Table.Td c="dimmed">From files</Table.Td><Table.Td>{saved.sources.length ? saved.sources.map((s) => s.fileName).join(', ') : '–'}</Table.Td></Table.Tr>
                                     <Table.Tr><Table.Td c="dimmed">Last saved</Table.Td><Table.Td>{saved.savedAt ? new Date(saved.savedAt).toLocaleString() : '–'}</Table.Td></Table.Tr>
-                                    <Table.Tr><Table.Td c="dimmed">Size</Table.Td><Table.Td>{kb(saved.bytes)} of roughly 5,000 KB the browser allows</Table.Td></Table.Tr>
+                                    <Table.Tr><Table.Td c="dimmed">Size</Table.Td><Table.Td>{kb(saved.bytes)} in this browser's IndexedDB (hundreds of MB available)</Table.Td></Table.Tr>
                                 </Table.Tbody>
                             </Table>
                         ) : (

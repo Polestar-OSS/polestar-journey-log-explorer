@@ -95,9 +95,12 @@ type StoryCard = {
 };
 ```
 
-## Saved journey (`localStorage`)
+## Saved journey (IndexedDB)
 
-Key `polestar-journey-explorer:journey` (`services/persistence/JourneyStore`):
+IndexedDB database `polestar-journey-explorer`, object store `journey`, key
+`current` (`services/persistence/JourneyStore` over the adapters in
+`JourneyStorage.js`; localStorage key `polestar-journey-explorer:journey`
+is the fallback and the pre-IndexedDB location, migrated on first read):
 `{ version: 1, distanceUnit: 'km', headers: [...export headers], rows: [...export-format rows], sources: [{ fileName, trips }], savedAt }`.
 The rows are exactly what `JourneyLogWriter.toRows` produces, so loading
 goes through `processRawRows` like an upload. Written after every merge
