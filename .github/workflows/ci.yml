@@ -65,5 +65,5 @@ jobs:
       - name: Install
         run: make install
 
-      - name: Audit production dependencies
+      - name: Audit dependencies
         run: make audit

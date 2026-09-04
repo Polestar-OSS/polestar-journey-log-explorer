@@ -41,8 +41,8 @@ test-watch: ## Unit tests in watch mode
 coverage: ## Unit tests with coverage report
 	$(NPM) run test:coverage
 
-audit: ## Dependency vulnerability audit (production deps, high and above)
-	$(NPM) audit --omit=dev --audit-level=high
+audit: ## Dependency vulnerability audit, high and above (whole tree: the --omit=dev path uses npm's retired "quick audit" endpoint and fails with 400)
+	$(NPM) audit --audit-level=high
 
 check: lint test build ## Everything CI runs on a pull request
 
