@@ -103,7 +103,14 @@ Each service has one job, takes plain data, and returns plain data.
 | `analytics/PivotService` | Group-by/aggregate over registered dimensions and metrics; CSV |
 | `story/StoryBuilder` | Plain-language cards for the Simple level |
 | `table/TableDataProcessor` | Search, sort, paginate, format, export |
-| `map/*` and `strategies/map/*` | OpenLayers feature building, colour scales, tile layer and marker strategies |
+| `cost/TariffModel` | Tariff shape, defaults, presets and `normalizeTariff` (the only way a tariff enters the domain) |
+| `cost/TariffEngine` | Which period and price applies at a moment; tiered pricing of a month; average price of a window |
+| `cost/ChargingSessionAllocator` | Places a charging session's energy into hourly slots by strategy (plug-in, cheapest, window) and charger power |
+| `cost/CostCalculator` | Orchestrates the above over a trip set: session inference from SOC, public share, losses, monthly/period breakdown |
+| `map/MapService`, `map/FeatureBuilder`, `map/ColorCalculator` | OpenLayers layers and styles: glow routes, flow animation, heat, places, clusters, pulse; hover/popup |
+| `map/RouteSnapper` | Opt-in OSRM road routing per unique start/end pair with a browser cache |
+| `map/ReplayService` | Day-by-day frames with cumulative totals for the replay mode |
+| `strategies/map/LayerStrategy` | Basemap catalogue (CARTO dark/light, satellite, OSM) |
 
 Every formula these services implement is written down in
 [`ANALYTICS.md`](./ANALYTICS.md).
@@ -151,7 +158,9 @@ See [ADR-0005](./adr/0005-experience-levels.md).
 - **Charts**: Recharts, styled by the dataviz rules in the design system
   (single axis, thin marks, hairline grid, table twin for every chart).
 - **Map**: OpenLayers, loaded lazily on first open. CARTO light/dark basemaps
-  follow the theme; OSM variants remain available.
+  follow the theme; satellite and OSM variants remain available. Four modes
+  (routes, heat, places, replay) over one `MapService`; animation runs in an
+  OpenLayers `postrender` hook and stops under reduced motion.
 - **Motion**: CSS keyframes and a count-up hook, all gated on
   `prefers-reduced-motion`.
 
@@ -167,9 +176,15 @@ See [ADR-0005](./adr/0005-experience-levels.md).
 
 ## 9. Privacy and security posture
 
-- No network calls with user data. The only outbound requests are tile
-  images, the optional Nominatim city lookup in the cost calculator (a typed
+- No network calls with user data by default. The outbound requests are tile
+  images, the optional Nominatim city lookup in the tariff settings (a typed
   city name, never trip data), Google Analytics and the cookie-consent script.
+- Road snapping on the map is opt-in behind an explicit consent dialog. It
+  sends start/end coordinates rounded to four decimals to the public OSRM
+  demo server, one request per unique pair, and caches responses in
+  `localStorage` ([ADR-0008](./adr/0008-opt-in-road-snapping.md)).
+- The electricity tariff is stored in `localStorage` and never leaves the
+  browser ([ADR-0009](./adr/0009-tariff-model.md)).
 - Popup HTML on the map is built with an escaping helper; every other user
   string is rendered through React text nodes.
 - Notes, tags and preferences live in `localStorage` only.

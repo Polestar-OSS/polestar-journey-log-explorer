@@ -174,9 +174,54 @@ Cards restate §2 and §4 in words. Two helpers deserve a note:
 - `describeDistance(km)`: picks the reference distance (marathon, London–Paris,
   …, once around the equator) whose log-ratio to the journey is smallest, and
   phrases it as "about X", "N × X" or "P % of X".
-- Cost: `energy × electricityRate` at the tariff saved in the cost calculator
-  (default 0.13 per kWh), stated on the card.
+- Cost: the `CostCalculator` result for the current selection (§9) when the
+  caller passes one; otherwise `energy × electricityRate` at a flat rate.
 
 Tips are rule-based on the same insights (winter penalty ≥ 20 %, short-hop share
 ≥ 25 %, charging to ≥ 95 %, a dip below 10 %, coverage < 85 %, average
 efficiency above 22 kWh/100 km).
+
+## 9. Electricity cost (`CostCalculator`)
+
+Inputs: the trips in view, the saved tariff (`TariffModel`), and the usable
+battery estimate from §4 Battery (overridable in the tariff).
+
+Energy accounting, in kWh:
+
+```
+driven      = Σ consumptionKwh
+public      = driven × publicShare            (0 when public charging is off)
+homeBattery = driven − public
+homeWall    = homeBattery ÷ (1 − loss)        what the meter sees
+publicCost  = public × publicRate             operators bill per kWh delivered
+```
+
+Home cost by tariff mode:
+
+- **Flat**: `homeWall × rate`.
+- **Tiered**: for each calendar month, `wall = homeWall share of that month's
+  driving`; the month is priced through the tiers after the household
+  baseline has consumed the first blocks (`TariffEngine.tieredMonthCost`).
+- **Time of use**, two methods:
+  - *Sessions* (needs ≥ 3 sessions): a session is a rise in SOC between
+    consecutive trips, `kwh = Δsoc% × usableKwh`, parked window = previous
+    end → next start. `ChargingSessionAllocator` splits the window into
+    hourly slots, each tagged with its period and price, and fills them by
+    strategy: `plugin` in order at charger power, `cheapest` lowest price
+    first, `window` inside the preferred window first (cheapest within it),
+    then the rest. Energy the charger could not deliver in the window is
+    spread across all slots. Session energy is then scaled so all sessions
+    sum to `homeWall` (SOC is 1 % coarse; consumption is not).
+  - *Proportional* (fallback): `homeWall × averageRateInWindow(from, to)`,
+    the mean price of the preferred charging window over a full week.
+
+Period resolution (`TariffEngine.periodAt`): periods are tested in order;
+one matches when the day rule fits (`all`, `weekday`, `weekend`) and the
+minute of day is inside `[from, to)`, with `to ≤ from` meaning the window
+wraps midnight. No match → `defaultRate`.
+
+Derived: `effectiveRatePerKwh = total ÷ driven`, `costPer100 = total ÷
+distance × 100`, `costPerTrip`, `costPerMonth = total ÷ months present`.
+Fixed monthly fees are reported (`fees × months`) but not added to the total,
+because they are paid regardless of the car. Every non-obvious input is
+echoed in `assumptions[]` and shown in the settings panel.

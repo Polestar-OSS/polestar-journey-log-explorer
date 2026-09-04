@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Box, Button, Grid, Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import { IconRoute, IconBolt, IconGauge, IconLeaf, IconClock, IconCoin, IconArrowsDiagonal, IconCalendarStats } from '@tabler/icons-react';
-import CostCalculatorModal from '../CostCalculatorModal';
+import TariffSettingsModal from '../cost/TariffSettingsModal';
+import { useTariff } from '../../hooks/useTariff';
+import { CostCalculator } from '../../services/cost/CostCalculator';
+import { CURRENCY_SYMBOLS } from '../../utils/preferences';
 import StatTile from './StatTile';
 import Eyebrow from '../ui/Eyebrow';
 import DeltaBadge from '../ui/DeltaBadge';
@@ -16,8 +19,9 @@ const processor = new ChartDataProcessor();
  * Hero figure (total distance) plus a KPI row. Deltas compare the filtered
  * period with the period of equal length that precedes it.
  */
-function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel, compact = false }) {
+function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel, compact = false, usableKwh = null }) {
     const [costModalOpened, setCostModalOpened] = useState(false);
+    const [tariff] = useTariff();
     const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
 
     const totalDistance = parseFloat(statistics?.totalDistance ?? 0);
@@ -33,6 +37,10 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
             efficiency: processor.sparkline(data, 'efficiency', granularity, 14).map((p) => ({ ...p, value: p.value ?? 0 })),
         };
     }, [data, statistics]);
+
+    const cost = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(data || [], { usableKwh }), [tariff, data, distanceUnit, usableKwh]);
+    const symbol = CURRENCY_SYMBOLS[tariff.currency] ?? `${tariff.currency} `;
+    const modeLabel = { flat: 'flat rate', tou: 'time-of-use', tiered: 'tiered' }[cost.mode] ?? cost.mode;
 
     if (!statistics) return null;
 
@@ -151,9 +159,9 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
                         {!compact && (
                         <StatTile
                                 label="Charging cost"
-                                value="Estimate"
+                                value={cost.method === 'none' ? '–' : `${symbol}${formatNumber(cost.cost.total, 0)}`}
                                 icon={IconCoin}
-                                hint="Open the calculator with your tariff"
+                                hint={cost.method === 'none' ? 'Set your tariff' : `${modeLabel} · ${symbol}${cost.costPer100 ?? 0}/100 ${distLabel} · tap to change tariff`}
                                 onClick={() => setCostModalOpened(true)}
                                 className="ps-card ps-rise ps-card-hover"
                                 style={{ '--i': 8 }}
@@ -166,12 +174,12 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
             {!compact && (
                 <Group justify="flex-end" mt={-4} className="ps-no-print">
                     <Button size="compact-xs" variant="subtle" color="gray" onClick={() => setCostModalOpened(true)}>
-                        Charging cost calculator
+                        Electricity tariff settings
                     </Button>
                 </Group>
             )}
 
-            <CostCalculatorModal opened={costModalOpened} onClose={() => setCostModalOpened(false)} statistics={statistics} distanceUnit={distanceUnit} />
+            <TariffSettingsModal opened={costModalOpened} onClose={() => setCostModalOpened(false)} data={data} distanceUnit={distanceUnit} usableKwh={usableKwh} />
         </>
     );
 }

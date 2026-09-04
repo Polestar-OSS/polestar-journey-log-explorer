@@ -1,3 +1,5 @@
+import { CURRENCY_SYMBOLS } from '../../utils/preferences';
+
 const KM_PER_MILE = 1.60934;
 const round = (n, d = 0) => (n === null || n === undefined || !isFinite(n) ? null : Math.round(n * 10 ** d) / 10 ** d);
 
@@ -65,7 +67,7 @@ export class StoryBuilder {
         this.fuelPrice = fuelPrice; // per litre (km) or per gallon (mi); optional
     }
 
-    build({ statistics, insights, data }) {
+    build({ statistics, insights, data, cost = null }) {
         if (!statistics || !insights || !data?.length) return [];
         const cards = [];
         const u = this.unit;
@@ -103,18 +105,9 @@ export class StoryBuilder {
             ].filter(Boolean).join(' '),
         });
 
-        // 3. What it cost, with the assumed tariff stated
-        const cost = energy * this.rate;
-        const costPer100 = energy > 0 && distance > 0 ? (energy / distance) * 100 * this.rate : null;
-        cards.push({
-            id: 'cost',
-            eyebrow: 'What it cost',
-            figure: `${this.symbol}${round(cost).toLocaleString()}`,
-            unit: '',
-            headline: costPer100 ? `in electricity, or ${this.symbol}${round(costPer100, 2)} per 100 ${u}.` : 'in electricity.',
-            body: `Assuming ${this.symbol}${this.rate}/kWh at home. ${weeks ? `That is about ${this.symbol}${round(cost / weeks, 2)} a week.` : ''} Change the tariff in the cost calculator and this updates.`,
-            action: 'cost',
-        });
+        // 3. What it cost. Prefer a CostCalculator result (tariff-aware);
+        // fall back to a flat rate so the card never disappears.
+        cards.push(this._costCard({ energy, distance, weeks, cost }));
 
         // 4. Range on a full charge
         const b = insights.battery;
@@ -238,6 +231,41 @@ export class StoryBuilder {
         }
 
         return cards;
+    }
+
+    /**
+     * The cost card. `cost` is a CostCalculator result when the caller has a
+     * tariff; otherwise the flat rate from the constructor is applied to
+     * the driven energy.
+     */
+    _costCard({ energy, distance, weeks, cost }) {
+        const u = this.unit;
+        const sym = cost?.currency ? (CURRENCY_SYMBOLS[cost.currency] ?? `${cost.currency} `) : this.symbol;
+        if (cost && cost.method !== 'none') {
+            const total = cost.cost.total;
+            const modeLabel = { flat: 'a flat rate', tou: 'your time-of-use tariff', tiered: 'your tiered tariff' }[cost.mode] ?? 'your tariff';
+            const publicPart = cost.energy.public > 0 ? ` ${sym}${round(cost.cost.public).toLocaleString()} of that was public charging.` : '';
+            return {
+                id: 'cost',
+                eyebrow: 'What it cost',
+                figure: `${sym}${round(total).toLocaleString()}`,
+                unit: '',
+                headline: cost.costPer100 ? `in electricity, or ${sym}${round(cost.costPer100, 2)} per 100 ${u}.` : 'in electricity.',
+                body: `Priced with ${modeLabel} at an effective ${sym}${round(cost.effectiveRatePerKwh ?? 0, 3)}/kWh.${publicPart}${weeks ? ` About ${sym}${round(total / weeks, 2)} a week.` : ''}`,
+                action: 'cost',
+            };
+        }
+        const total = energy * this.rate;
+        const costPer100 = energy > 0 && distance > 0 ? (energy / distance) * 100 * this.rate : null;
+        return {
+            id: 'cost',
+            eyebrow: 'What it cost',
+            figure: `${sym}${round(total).toLocaleString()}`,
+            unit: '',
+            headline: costPer100 ? `in electricity, or ${sym}${round(costPer100, 2)} per 100 ${u}.` : 'in electricity.',
+            body: `Assuming ${sym}${this.rate}/kWh at home. ${weeks ? `That is about ${sym}${round(total / weeks, 2)} a week.` : ''} Set your own tariff and this updates.`,
+            action: 'cost',
+        };
     }
 
     _tips({ insights, statistics }) {

@@ -5,10 +5,11 @@ import { IconArrowRight, IconMapPin, IconCoin, IconChartBar, IconTelescope, Icon
 import Eyebrow from '../ui/Eyebrow';
 import ChartCard from '../charts/ChartCard';
 import ChartTooltip from '../charts/ChartTooltip';
-import CostCalculatorModal from '../CostCalculatorModal';
+import TariffSettingsModal from '../cost/TariffSettingsModal';
 import { StoryBuilder } from '../../services/story/StoryBuilder';
 import { ChartDataProcessor } from '../../services/charts/ChartDataProcessor';
-import { usePreferences } from '../../hooks/usePreferences';
+import { useTariff } from '../../hooks/useTariff';
+import { CostCalculator } from '../../services/cost/CostCalculator';
 import { CURRENCY_SYMBOLS } from '../../utils/preferences';
 import { useTokens } from '../../theme/useTokens';
 import { useCountUp } from '../../hooks/useCountUp';
@@ -63,7 +64,7 @@ function StoryCard({ card, index, wide, onAction }) {
             )}
             {card.action === 'cost' && (
                 <Button variant="subtle" color="gray" size="compact-sm" mt="auto" style={{ alignSelf: 'flex-start' }} rightSection={<IconArrowRight size={14} />} leftSection={<IconCoin size={14} />} onClick={() => onAction('cost')}>
-                    Use my own electricity price
+                    Set my electricity tariff
                 </Button>
             )}
         </Box>
@@ -74,21 +75,22 @@ function StoryCard({ card, index, wide, onAction }) {
  * The Simple level: what the log says, in sentences. One idea per card,
  * comparisons people can picture, and three tips derived from the data.
  */
-function StoryView({ statistics, insights, data, distanceUnit = 'km', onOpenTab, onChangeLevel }) {
+function StoryView({ statistics, insights, data, distanceUnit = 'km', usableKwh = null, onOpenTab, onChangeLevel }) {
     const t = useTokens();
-    const [prefs] = usePreferences();
+    const [tariff] = useTariff();
     const [costOpened, setCostOpened] = useState(false);
     const unit = distanceUnit === 'mi' ? 'mi' : 'km';
 
+    const cost = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(data || [], { usableKwh }), [tariff, data, distanceUnit, usableKwh]);
     const cards = useMemo(
         () =>
             new StoryBuilder({
                 distanceUnit,
-                electricityRate: prefs.electricityRate,
-                currency: prefs.currency,
-                currencySymbol: CURRENCY_SYMBOLS[prefs.currency] ?? '$',
-            }).build({ statistics, insights, data }),
-        [statistics, insights, data, distanceUnit, prefs.electricityRate, prefs.currency]
+                electricityRate: tariff.flat.rate,
+                currency: tariff.currency,
+                currencySymbol: CURRENCY_SYMBOLS[tariff.currency] ?? '$',
+            }).build({ statistics, insights, data, cost }),
+        [statistics, insights, data, distanceUnit, tariff, cost]
     );
 
     const months = useMemo(() => processor.aggregateByPeriod(data, 'month'), [data]);
@@ -156,7 +158,7 @@ function StoryView({ statistics, insights, data, distanceUnit = 'km', onOpenTab,
                 </Grid.Col>
             </Grid>
 
-            <CostCalculatorModal opened={costOpened} onClose={() => setCostOpened(false)} statistics={statistics} distanceUnit={distanceUnit} />
+            <TariffSettingsModal opened={costOpened} onClose={() => setCostOpened(false)} data={data} distanceUnit={distanceUnit} usableKwh={usableKwh} />
         </Stack>
     );
 }
