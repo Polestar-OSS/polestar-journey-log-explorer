@@ -108,6 +108,7 @@ Each service has one job, takes plain data, and returns plain data.
 | `cost/ChargingSessionAllocator` | Places a charging session's energy into hourly slots by strategy (plug-in, cheapest, window) and charger power |
 | `cost/CostCalculator` | Orchestrates the above over a trip set: session inference from SOC, public share, losses, monthly/period breakdown |
 | `map/MapService`, `map/FeatureBuilder`, `map/ColorCalculator` | OpenLayers layers and styles: glow routes, flow animation, heat, places, clusters, pulse; hover/popup |
+| `map/MapDataProcessor` | Trips with coordinates, newest first, grouped by day, plus the centre to open on |
 | `map/RouteSnapper` | Opt-in OSRM road routing per unique start/end pair with a browser cache |
 | `map/ReplayService` | Day-by-day frames with cumulative totals for the replay mode |
 | `strategies/map/LayerStrategy` | Basemap catalogue (CARTO dark/light, satellite, OSM) |
