@@ -10,7 +10,6 @@ import { StoryBuilder } from '../../services/story/StoryBuilder';
 import { ChartDataProcessor } from '../../services/charts/ChartDataProcessor';
 import { useTariff } from '../../hooks/useTariff';
 import { CostCalculator } from '../../services/cost/CostCalculator';
-import { CURRENCY_SYMBOLS } from '../../utils/preferences';
 import { useTokens } from '../../theme/useTokens';
 import { useCountUp } from '../../hooks/useCountUp';
 import { formatNumber } from '../../utils/format';
@@ -88,7 +87,6 @@ function StoryView({ statistics, insights, data, distanceUnit = 'km', usableKwh 
                 distanceUnit,
                 electricityRate: tariff.flat.rate,
                 currency: tariff.currency,
-                currencySymbol: CURRENCY_SYMBOLS[tariff.currency] ?? '$',
             }).build({ statistics, insights, data, cost }),
         [statistics, insights, data, distanceUnit, tariff, cost]
     );
@@ -123,7 +121,7 @@ function StoryView({ statistics, insights, data, distanceUnit = 'km', usableKwh 
                 ))}
             </SimpleGrid>
 
-            <Grid gutter="md">
+            <Grid gap="md">
                 <Grid.Col span={{ base: 12, lg: 8 }}>
                     <ChartCard eyebrow="Month by month" title={`How far you drove each month, in ${unit}`} description="Taller bars are months with more driving. Empty months are months the app did not record." className="ps-rise" style={{ '--i': rest.length + 1 }}>
                         <ResponsiveContainer width="100%" height={220}>

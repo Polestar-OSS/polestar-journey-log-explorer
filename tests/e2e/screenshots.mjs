@@ -19,7 +19,8 @@ const BASE = process.env.APP_URL || 'http://localhost:4173/polestar-journey-log-
 const FILES = process.argv[2] ? process.argv[2].split(',') : [];
 const OUT = process.argv[3] || './screenshots';
 fs.mkdirSync(OUT, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+// PLAYWRIGHT_CHROMIUM_PATH points at a preinstalled Chromium when the Playwright-managed build is unavailable
+const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined });
 const errors = [];
 const checks = [];
 async function run(name, { width, height, scheme, mobile = false }) {
@@ -32,6 +33,7 @@ async function run(name, { width, height, scheme, mobile = false }) {
     const current = await page.evaluate(() => document.documentElement.getAttribute('data-mantine-color-scheme'));
     if (current !== scheme) await page.getByRole('button', { name: /Toggle colour scheme/i }).click();
     await page.evaluate(() => localStorage.clear());
+    if (!mobile) await page.screenshot({ path: `${OUT}/${name}-landing.png`, fullPage: false });
     if (FILES.length) await page.locator('input[type=file]').setInputFiles(FILES);
     else await page.getByRole('button', { name: /sample data/i }).click();
     await page.waitForSelector('text=Distance driven', { timeout: 60000 });
@@ -68,9 +70,13 @@ async function run(name, { width, height, scheme, mobile = false }) {
         await page.waitForTimeout(500);
         await page.getByRole('button', { name: /Electricity tariff settings/i }).click();
         await page.waitForSelector('text=Effective price', { timeout: 15000 });
-        await page.locator('label', { hasText: /^Time of use$/ }).first().click();
+        await page.getByPlaceholder(/Choose a provider/).fill('Time of use');
+        await page.waitForTimeout(300);
+        await page.keyboard.press('ArrowDown'); // first match: Hydro Ottawa · Time of use (named providers list first)
+        await page.keyboard.press('Enter');
         await page.waitForTimeout(1200);
-        checks.push(`[${name}] tariff modal: ${(await page.evaluate(() => document.body.innerText)).includes('charging sessions inferred') ? 'sessions priced' : 'proportional'}`);
+        const modalText = await page.evaluate(() => document.body.innerText);
+        checks.push(`[${name}] tariff modal: ${modalText.includes('charging sessions inferred') ? 'sessions priced' : 'proportional'} · ${modalText.includes('Hydro Ottawa') ? 'preset applied' : 'PRESET MISSING'}`);
         await page.screenshot({ path: `${OUT}/${name}-tariff.png`, fullPage: false });
         await page.keyboard.press('Escape');
     } else {

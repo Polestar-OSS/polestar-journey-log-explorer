@@ -11,7 +11,7 @@ export const useTariff = () => {
     const [prefs, update] = usePreferences();
     const tariff = useMemo(() => {
         if (prefs.tariff) return normalizeTariff(prefs.tariff);
-        return normalizeTariff({ currency: prefs.currency, flat: { rate: prefs.electricityRate }, publicCharging: { enabled: true, sharePct: 100 - (prefs.homeChargingPercent ?? 80), rate: (prefs.electricityRate ?? 0.13) * 2.5 } });
+        return normalizeTariff({ currency: prefs.currency ?? '', flat: { rate: prefs.electricityRate }, publicCharging: { enabled: true, sharePct: 100 - (prefs.homeChargingPercent ?? 80), rate: (prefs.electricityRate ?? 0.13) * 2.5 } });
     }, [prefs.tariff, prefs.currency, prefs.electricityRate, prefs.homeChargingPercent]);
 
     const setTariff = useCallback((next) => {

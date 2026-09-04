@@ -408,7 +408,7 @@ function MapView({ data, distanceUnit = 'km', places }) {
             )}
 
             {/* Snap consent */}
-            <Modal opened={snapConsent} onClose={() => setSnapConsent(false)} title="Snap routes to roads" size="md">
+            <Modal opened={snapConsent} onClose={() => setSnapConsent(false)} title="Snap routes to roads" size="md" zIndex={1000} fullScreen={isMobile} radius={0}>
                 <Stack gap="sm">
                     <Text size="sm">
                         Routes are drawn as straight lines because the export only has a start and an end. Snapping asks the public <b>OSRM</b> router (router.project-osrm.org) for the road path between each unique start/end pair.

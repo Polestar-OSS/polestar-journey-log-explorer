@@ -43,9 +43,9 @@ Rendered from the built-in synthetic sample (no real data).
 |---|---|---|
 | ![Landing](./docs/screenshots/landing.png) | ![Light](./docs/screenshots/light.png) | ![Mobile](./docs/screenshots/mobile.png) |
 
-| Electricity tariff settings (flat, time-of-use, tiered) |
-|---|
-| ![Tariff settings](./docs/screenshots/tariff.png) |
+| Electricity tariff settings (Hydro Ottawa time-of-use preset, seasons) | On a phone |
+|---|---|
+| ![Tariff settings](./docs/screenshots/tariff.png) | ![Tariff settings on mobile](./docs/screenshots/tariff-mobile.png) |
 
 ## 🚀 Quick Start
 
@@ -96,11 +96,11 @@ Makefile    install · dev · lint · test · build · audit · check · screens
 
 ## 🛠️ Tech Stack
 
-- **React 18** - UI framework
-- **Vite** - Build tool and dev server
-- **Mantine UI** - Component library
+- **React 19** - UI framework
+- **Vite 8** - Build tool and dev server (Rolldown)
+- **Mantine 9** - Component library
 - **OpenLayers** - Interactive maps (CARTO / OpenStreetMap tiles)
-- **Recharts** - Data visualization
+- **Recharts 3** - Data visualization
 - **PapaParse / ExcelJS** - CSV and XLSX parsing (ExcelJS is loaded on demand)
 - **Inter Variable** - Bundled typeface
 

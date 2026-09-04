@@ -113,12 +113,13 @@ and forces the last tier open-ended, so consumers never see a partial object.
 
 ```ts
 interface Tariff {
-  version: 1;
-  currency: string;                 // ISO code; symbol from CURRENCY_SYMBOLS
+  version: 2;
+  currency: string;                 // display label only ('', '$', 'EUR'); currencyPrefix() maps known codes to symbols
   mode: 'flat' | 'tou' | 'tiered';
+  seasons: Season[];                // ≤ 4; empty = same schedule all year
   flat:   { rate: number };                                   // per kWh
-  tou:    { defaultRate: number; periods: TouPeriod[] };      // ≤ 8 periods
-  tiered: { householdBaselineKwh: number; tiers: Tier[] };    // last upToKwh null
+  tou:    { defaultRate: number; periods: TouPeriod[] };      // ≤ 12 periods
+  tiered: { householdBaselineKwh: number; tiers: Tier[]; tiersBySeason: Record<string, Tier[]> }; // last upToKwh null
   fixedMonthlyFee: number;
   publicCharging: { enabled: boolean; sharePct: number; rate: number };
   chargingLossPct: number;          // 0–50, wall → battery
@@ -126,9 +127,16 @@ interface Tariff {
   homeChargingWindow: { from: 'HH:MM'; to: 'HH:MM' };
   batteryUsableKwh: number | null;  // null → estimate from the data
 }
-interface TouPeriod { id; label; rate; days: 'all'|'weekday'|'weekend'; from: 'HH:MM'; to: 'HH:MM' }
+interface Season { id: string; label: string; from: 'MM-DD'; to: 'MM-DD' }   // inclusive, may wrap the year end
+interface TouPeriod { id; label; rate; days: 'all'|'weekday'|'weekend'; season: 'all' | Season['id']; from: 'HH:MM'; to: 'HH:MM' }
 interface Tier { upToKwh: number | null; rate: number }
 ```
+
+### Tariff preset (`services/cost/TariffPresets.js`)
+
+Flattened from the provider files under `app/src/data/tariffs/` (schema in
+[`TARIFF_PRESETS.md`](./TARIFF_PRESETS.md)):
+`{ id: '<provider>/<plan>', label, description, group, provider, region, source, effective, notes, tariff: Tariff }`.
 
 ### Cost result (`CostCalculator.compute`)
 

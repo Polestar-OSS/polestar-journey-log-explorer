@@ -11,19 +11,28 @@
  * power and the charging strategy, which decide *when* home charging lands
  * on a time-of-use schedule.
  */
-export const TARIFF_VERSION = 1;
+export const TARIFF_VERSION = 2;
+
+/** Upper bounds that keep the editor and the engine honest. */
+export const LIMITS = { periods: 12, tiers: 6, seasons: 4 };
 
 export const DEFAULT_TARIFF = {
     version: TARIFF_VERSION,
-    currency: 'USD',
+    currency: '', // optional display label ('$', 'EUR', 'kr'); pricing never depends on it
     mode: 'flat',
+    /**
+     * Optional seasons, as MM-DD ranges (wrapping the year end is fine).
+     * Time-of-use periods and tier thresholds may then differ per season.
+     * Empty means the same schedule all year.
+     */
+    seasons: [],
     flat: { rate: 0.13 },
     tou: {
         defaultRate: 0.16,
         periods: [
-            { id: 'offpeak', label: 'Off-peak', rate: 0.08, days: 'all', from: '22:00', to: '07:00' },
-            { id: 'midpeak', label: 'Mid-peak', rate: 0.12, days: 'weekday', from: '07:00', to: '16:00' },
-            { id: 'peak', label: 'On-peak', rate: 0.2, days: 'weekday', from: '16:00', to: '22:00' },
+            { id: 'offpeak', label: 'Off-peak', rate: 0.08, days: 'all', season: 'all', from: '22:00', to: '07:00' },
+            { id: 'midpeak', label: 'Mid-peak', rate: 0.12, days: 'weekday', season: 'all', from: '07:00', to: '16:00' },
+            { id: 'peak', label: 'On-peak', rate: 0.2, days: 'weekday', season: 'all', from: '16:00', to: '22:00' },
         ],
     },
     tiered: {
@@ -32,6 +41,8 @@ export const DEFAULT_TARIFF = {
             { upToKwh: 600, rate: 0.1 },
             { upToKwh: null, rate: 0.15 },
         ],
+        /** Per-season tier tables, keyed by season id; a season without an entry uses `tiers`. */
+        tiersBySeason: {},
     },
     fixedMonthlyFee: 0,
     publicCharging: { enabled: true, sharePct: 20, rate: 0.35 },
@@ -49,6 +60,17 @@ const num = (v, fallback, { min = -Infinity, max = Infinity } = {}) => {
 
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 const time = (v, fallback) => (typeof v === 'string' && TIME_RE.test(v) ? v : fallback);
+const MMDD_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+const monthDay = (v, fallback) => (typeof v === 'string' && MMDD_RE.test(v) ? v : fallback);
+const slug = (v, fallback) => (typeof v === 'string' && /^[a-z0-9][a-z0-9-]{0,31}$/i.test(v) ? v : fallback);
+
+const normalizeTiers = (raw, fallback) => {
+    const tiers = Array.isArray(raw) && raw.length ? raw : fallback;
+    return tiers.slice(0, LIMITS.tiers).map((t, i, arr) => ({
+        upToKwh: i === arr.length - 1 ? null : num(t.upToKwh, 0, { min: 0, max: 1e6 }) || null,
+        rate: num(t.rate, fallback[0].rate, { min: 0, max: 100 }),
+    }));
+};
 
 /**
  * Merge a stored/partial tariff over the defaults and clamp every number,
@@ -58,29 +80,42 @@ export const normalizeTariff = (raw) => {
     const r = raw && typeof raw === 'object' ? raw : {};
     const d = DEFAULT_TARIFF;
     const periods = Array.isArray(r.tou?.periods) && r.tou.periods.length ? r.tou.periods : d.tou.periods;
-    const tiers = Array.isArray(r.tiered?.tiers) && r.tiered.tiers.length ? r.tiered.tiers : d.tiered.tiers;
+    const seasons = (Array.isArray(r.seasons) ? r.seasons : []).slice(0, LIMITS.seasons).map((x, i) => ({
+        id: slug(x?.id, `season-${i + 1}`),
+        label: typeof x?.label === 'string' && x.label ? x.label : `Season ${i + 1}`,
+        from: monthDay(x?.from, '01-01'),
+        to: monthDay(x?.to, '12-31'),
+    }));
+    const seasonIds = new Set(seasons.map((x) => x.id));
+    const tiers = normalizeTiers(r.tiered?.tiers, d.tiered.tiers);
+    const tiersBySeason = {};
+    if (r.tiered?.tiersBySeason && typeof r.tiered.tiersBySeason === 'object') {
+        Object.entries(r.tiered.tiersBySeason).forEach(([id, list]) => {
+            if (seasonIds.has(id) && Array.isArray(list) && list.length) tiersBySeason[id] = normalizeTiers(list, tiers);
+        });
+    }
     return {
         version: TARIFF_VERSION,
-        currency: typeof r.currency === 'string' && r.currency ? r.currency : d.currency,
+        currency: typeof r.currency === 'string' ? r.currency.trim().slice(0, 8) : '',
         mode: ['flat', 'tou', 'tiered'].includes(r.mode) ? r.mode : d.mode,
+        seasons,
         flat: { rate: num(r.flat?.rate, d.flat.rate, { min: 0, max: 100 }) },
         tou: {
             defaultRate: num(r.tou?.defaultRate, d.tou.defaultRate, { min: 0, max: 100 }),
-            periods: periods.slice(0, 8).map((p, i) => ({
+            periods: periods.slice(0, LIMITS.periods).map((p, i) => ({
                 id: typeof p.id === 'string' && p.id ? p.id : `period-${i}`,
                 label: typeof p.label === 'string' && p.label ? p.label : `Period ${i + 1}`,
                 rate: num(p.rate, d.tou.defaultRate, { min: 0, max: 100 }),
                 days: ['all', 'weekday', 'weekend'].includes(p.days) ? p.days : 'all',
+                season: seasonIds.has(p.season) ? p.season : 'all',
                 from: time(p.from, '00:00'),
                 to: time(p.to, '00:00'),
             })),
         },
         tiered: {
             householdBaselineKwh: num(r.tiered?.householdBaselineKwh, d.tiered.householdBaselineKwh, { min: 0, max: 100000 }),
-            tiers: tiers.slice(0, 6).map((t, i, arr) => ({
-                upToKwh: i === arr.length - 1 ? null : num(t.upToKwh, 0, { min: 0, max: 1e6 }) || null,
-                rate: num(t.rate, d.tiered.tiers[0].rate, { min: 0, max: 100 }),
-            })),
+            tiers,
+            tiersBySeason,
         },
         fixedMonthlyFee: num(r.fixedMonthlyFee, d.fixedMonthlyFee, { min: 0, max: 1e5 }),
         publicCharging: {
@@ -102,58 +137,13 @@ export const normalizeTariff = (raw) => {
 };
 
 /**
- * Starting points people can pick and then edit. Rates are rough public
- * figures (2025–2026) and exist to save typing, not to be authoritative.
+ * Display helper: the label to print before an amount. Known ISO codes map
+ * to a symbol; anything else is printed as typed; empty prints nothing.
  */
-export const TARIFF_PRESETS = [
-    { id: 'flat-usd', label: 'Flat · US average', tariff: { currency: 'USD', mode: 'flat', flat: { rate: 0.16 }, publicCharging: { enabled: true, sharePct: 20, rate: 0.45 } } },
-    { id: 'flat-eur', label: 'Flat · EU average', tariff: { currency: 'EUR', mode: 'flat', flat: { rate: 0.28 }, publicCharging: { enabled: true, sharePct: 20, rate: 0.6 } } },
-    {
-        id: 'tou-ontario',
-        label: 'Time of use · Ontario (CAD)',
-        tariff: {
-            currency: 'CAD',
-            mode: 'tou',
-            tou: {
-                defaultRate: 0.098,
-                periods: [
-                    { id: 'offpeak', label: 'Off-peak', rate: 0.076, days: 'all', from: '19:00', to: '07:00' },
-                    { id: 'midpeak', label: 'Mid-peak', rate: 0.122, days: 'weekday', from: '07:00', to: '11:00' },
-                    { id: 'peak', label: 'On-peak', rate: 0.158, days: 'weekday', from: '11:00', to: '17:00' },
-                    { id: 'midpeak2', label: 'Mid-peak', rate: 0.122, days: 'weekday', from: '17:00', to: '19:00' },
-                ],
-            },
-            publicCharging: { enabled: true, sharePct: 15, rate: 0.55 },
-        },
-    },
-    {
-        id: 'tou-ev-night',
-        label: 'Time of use · EV night tariff (GBP)',
-        tariff: {
-            currency: 'GBP',
-            mode: 'tou',
-            tou: { defaultRate: 0.27, periods: [{ id: 'night', label: 'EV night rate', rate: 0.085, days: 'all', from: '00:30', to: '05:30' }] },
-            publicCharging: { enabled: true, sharePct: 15, rate: 0.75 },
-        },
-    },
-    {
-        id: 'tou-sweden',
-        label: 'Time of use · Nordic day/night (SEK)',
-        tariff: {
-            currency: 'SEK',
-            mode: 'tou',
-            tou: { defaultRate: 2.4, periods: [{ id: 'night', label: 'Night', rate: 1.4, days: 'all', from: '22:00', to: '06:00' }, { id: 'weekend', label: 'Weekend', rate: 1.6, days: 'weekend', from: '00:00', to: '00:00' }] },
-            publicCharging: { enabled: true, sharePct: 20, rate: 5.5 },
-        },
-    },
-    {
-        id: 'tiered-california',
-        label: 'Tiered · baseline + over-baseline (USD)',
-        tariff: {
-            currency: 'USD',
-            mode: 'tiered',
-            tiered: { householdBaselineKwh: 350, tiers: [{ upToKwh: 400, rate: 0.31 }, { upToKwh: null, rate: 0.39 }] },
-            publicCharging: { enabled: true, sharePct: 20, rate: 0.5 },
-        },
-    },
-];
+export const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$', SEK: 'kr ', NOK: 'kr ', DKK: 'kr ', CHF: 'CHF ', BRL: 'R$', JPY: '¥', INR: '₹', PLN: 'zł ', CZK: 'Kč ' };
+export const currencyPrefix = (currency) => {
+    if (!currency) return '';
+    const upper = currency.toUpperCase();
+    return CURRENCY_SYMBOLS[upper] ?? (/^[A-Z]{3}$/.test(upper) ? `${upper} ` : currency);
+};
+

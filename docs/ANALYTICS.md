@@ -215,10 +215,19 @@ Home cost by tariff mode:
   - *Proportional* (fallback): `homeWall × averageRateInWindow(from, to)`,
     the mean price of the preferred charging window over a full week.
 
-Period resolution (`TariffEngine.periodAt`): periods are tested in order;
-one matches when the day rule fits (`all`, `weekday`, `weekend`) and the
-minute of day is inside `[from, to)`, with `to ≤ from` meaning the window
-wraps midnight. No match → `defaultRate`.
+Period resolution (`TariffEngine.periodAt`): the season in force on the
+calendar day is found first (`seasons[]`, `MM-DD` inclusive ranges that may
+wrap the year end; none → no season). Periods are then tested in order; one
+matches when its season is `all` or the current one, the day rule fits
+(`all`, `weekday`, `weekend`) and the minute of day is inside `[from, to)`,
+with `to ≤ from` meaning the window wraps midnight. No match → `defaultRate`.
+
+Tier tables (`TariffEngine.tiersFor`): a month uses `tiersBySeason[season]`
+when the season of its 15th has an entry, else `tiers`.
+
+Window average (`averageRateInWindow`): mean of `rateAt` over every hour of
+the window across seven weekdays in each of twelve months, so seasonal and
+weekend rules are both weighted in.
 
 Derived: `effectiveRatePerKwh = total ÷ driven`, `costPer100 = total ÷
 distance × 100`, `costPerTrip`, `costPerMonth = total ÷ months present`.

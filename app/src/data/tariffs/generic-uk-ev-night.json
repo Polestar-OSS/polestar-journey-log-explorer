@@ -1,0 +1,23 @@
+{
+  "$schema": "./tariff-provider.schema.json",
+  "id": "generic-uk-ev-night",
+  "provider": "Generic",
+  "region": "United Kingdom",
+  "currency": "GBP",
+  "source": "https://www.ofgem.gov.uk/energy-price-cap",
+  "effective": "2026-01-01",
+  "notes": "The common shape of UK EV tariffs: price-cap level by day, a short cheap window at night. Window and prices differ per supplier.",
+  "plans": [
+    {
+      "id": "ev-night",
+      "label": "Time of use · EV night window",
+      "tariff": {
+        "currency": "GBP",
+        "mode": "tou",
+        "tou": { "defaultRate": 0.27, "periods": [ { "id": "night", "label": "EV night rate", "rate": 0.085, "days": "all", "season": "all", "from": "00:30", "to": "05:30" } ] },
+        "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.75 },
+        "homeChargingWindow": { "from": "00:30", "to": "05:30" }
+      }
+    }
+  ]
+}

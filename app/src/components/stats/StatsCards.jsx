@@ -4,7 +4,7 @@ import { IconRoute, IconBolt, IconGauge, IconLeaf, IconClock, IconCoin, IconArro
 import TariffSettingsModal from '../cost/TariffSettingsModal';
 import { useTariff } from '../../hooks/useTariff';
 import { CostCalculator } from '../../services/cost/CostCalculator';
-import { CURRENCY_SYMBOLS } from '../../utils/preferences';
+import { currencyPrefix } from '../../services/cost/TariffModel';
 import StatTile from './StatTile';
 import Eyebrow from '../ui/Eyebrow';
 import DeltaBadge from '../ui/DeltaBadge';
@@ -39,7 +39,7 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
     }, [data, statistics]);
 
     const cost = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(data || [], { usableKwh }), [tariff, data, distanceUnit, usableKwh]);
-    const symbol = CURRENCY_SYMBOLS[tariff.currency] ?? `${tariff.currency} `;
+    const symbol = currencyPrefix(tariff.currency);
     const modeLabel = { flat: 'flat rate', tou: 'time-of-use', tiered: 'tiered' }[cost.mode] ?? cost.mode;
 
     if (!statistics) return null;
@@ -51,7 +51,7 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
 
     return (
         <>
-            <Grid gutter="md" align="stretch">
+            <Grid gap="md" align="stretch">
                 <Grid.Col span={{ base: 12, md: 5, lg: 4 }}>
                     <Box className="ps-card ps-rise" p={{ base: 'lg', sm: 'xl' }} h="100%" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
                         <Box className="ps-dotgrid" style={{ position: 'absolute', right: -60, top: -60, width: 260, height: 260, opacity: 0.6, pointerEvents: 'none' }} />

@@ -103,7 +103,8 @@ Each service has one job, takes plain data, and returns plain data.
 | `analytics/PivotService` | Group-by/aggregate over registered dimensions and metrics; CSV |
 | `story/StoryBuilder` | Plain-language cards for the Simple level |
 | `table/TableDataProcessor` | Search, sort, paginate, format, export |
-| `cost/TariffModel` | Tariff shape, defaults, presets and `normalizeTariff` (the only way a tariff enters the domain) |
+| `cost/TariffModel` | Tariff shape (modes, seasons, per-season tiers), defaults, `normalizeTariff` (the only way a tariff enters the domain) and the currency display helper |
+| `cost/TariffPresets` | Loads and validates the provider JSON files under `src/data/tariffs`; flattens them for the picker |
 | `cost/TariffEngine` | Which period and price applies at a moment; tiered pricing of a month; average price of a window |
 | `cost/ChargingSessionAllocator` | Places a charging session's energy into hourly slots by strategy (plug-in, cheapest, window) and charger power |
 | `cost/CostCalculator` | Orchestrates the above over a trip set: session inference from SOC, public share, losses, monthly/period breakdown |
@@ -154,7 +155,8 @@ See [ADR-0005](./adr/0005-experience-levels.md).
 
 - **Design system**: tokens in `theme/tokens.js` mirrored by CSS custom
   properties in `theme/global.css`; a Mantine theme in `theme/mantineTheme.js`.
-  Charts and the map read the JS tokens through `useTokens()`. See
+  Charts and the map read the JS tokens through `useTokens()`. Form
+  controls are 16 px on coarse pointers so phones do not zoom on focus. See
   [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md).
 - **Charts**: Recharts, styled by the dataviz rules in the design system
   (single axis, thin marks, hairline grid, table twin for every chart).
@@ -167,7 +169,8 @@ See [ADR-0005](./adr/0005-experience-levels.md).
 
 ## 8. Build and deployment
 
-- Vite 7, React 18, Node ≥ 20.19 / ≥ 22.12 (`engines` in `app/package.json`).
+- Vite 8 (Rolldown), React 19, Mantine 9, Recharts 3, Vitest 4, Node ≥ 20.19 / ≥ 22.12 (`engines` in `app/package.json`).
+- ESLint stays on 9 until `eslint-plugin-react` declares support for 10; Dependabot is told to skip that major.
 - ExcelJS and the map chunk are dynamic imports; the main bundle stays under
   1.2 MB minified (≈ 340 kB gzipped).
 - `deploy.yml` builds on release (or manually) and publishes `app/dist` to

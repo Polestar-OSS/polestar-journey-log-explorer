@@ -5,6 +5,12 @@ const minutesOf = (hhmm) => {
     return h * 60 + m;
 };
 
+/** 'MM-DD' → day-of-year-ish ordinal (month * 100 + day) for range checks; leap days need no special case. */
+const monthDayOrdinal = (mmdd) => {
+    const [mo, d] = mmdd.split('-').map(Number);
+    return mo * 100 + d;
+};
+
 /**
  * TariffEngine - answers "what does a kWh cost at this moment?" for a
  * tariff. Pure; no dates are created here except from the timestamps it is
@@ -15,6 +21,21 @@ export class TariffEngine {
     constructor(tariff) {
         this.tariff = normalizeTariff(tariff);
         this.periods = this.tariff.tou.periods.map((p) => ({ ...p, fromMin: minutesOf(p.from), toMin: minutesOf(p.to) }));
+        this.seasons = this.tariff.seasons.map((x) => ({ ...x, fromOrd: monthDayOrdinal(x.from), toOrd: monthDayOrdinal(x.to) }));
+    }
+
+    /** Is the calendar day (ordinal MM*100+DD) inside [from, to], wrapping the year end when to < from? */
+    static inSeason(ord, fromOrd, toOrd) {
+        if (fromOrd <= toOrd) return ord >= fromOrd && ord <= toOrd;
+        return ord >= fromOrd || ord <= toOrd;
+    }
+
+    /** The season id in force on `date`, or null when the tariff has no seasons or none matches. */
+    seasonAt(date) {
+        if (!this.seasons.length) return null;
+        const ord = (date.getMonth() + 1) * 100 + date.getDate();
+        const hit = this.seasons.find((x) => TariffEngine.inSeason(ord, x.fromOrd, x.toOrd));
+        return hit ? hit.id : null;
     }
 
     static minutesOf = minutesOf;
@@ -39,7 +60,8 @@ export class TariffEngine {
             return { id: 'flat', label: this.tariff.mode === 'tiered' ? 'Tiered' : 'Flat', rate: this.tariff.mode === 'flat' ? this.tariff.flat.rate : null };
         }
         const m = date.getHours() * 60 + date.getMinutes();
-        const hit = this.periods.find((p) => TariffEngine.matchesDays(p.days, date) && TariffEngine.inWindow(m, p.fromMin, p.toMin));
+        const season = this.seasonAt(date);
+        const hit = this.periods.find((p) => (p.season === 'all' || p.season === season) && TariffEngine.matchesDays(p.days, date) && TariffEngine.inWindow(m, p.fromMin, p.toMin));
         return hit ? { id: hit.id, label: hit.label, rate: hit.rate } : { id: 'default', label: 'Standard', rate: this.tariff.tou.defaultRate };
     }
 
@@ -48,12 +70,24 @@ export class TariffEngine {
         return this.periodAt(date).rate;
     }
 
+    /** The tier table for a month ('YYYY-MM'): the season's own table when it has one, else the default. */
+    tiersFor(monthKey) {
+        const { tiers, tiersBySeason } = this.tariff.tiered;
+        if (!monthKey || !this.seasons.length) return tiers;
+        const [y, mo] = monthKey.split('-').map(Number);
+        const season = this.seasonAt(new Date(y, mo - 1, 15));
+        return (season && tiersBySeason[season]) || tiers;
+    }
+
     /**
      * Cost of `carKwh` in a month under a tiered tariff, with the household's
      * own baseline consumed first so the car lands on the right tier.
+     * @param {number} carKwh
+     * @param {string} [monthKey] 'YYYY-MM', used to pick seasonal thresholds
      */
-    tieredMonthCost(carKwh) {
-        const { tiers, householdBaselineKwh } = this.tariff.tiered;
+    tieredMonthCost(carKwh, monthKey = null) {
+        const { householdBaselineKwh } = this.tariff.tiered;
+        const tiers = this.tiersFor(monthKey);
         let remainingBaseline = householdBaselineKwh;
         let remainingCar = carKwh;
         let lower = 0;
@@ -78,9 +112,9 @@ export class TariffEngine {
     }
 
     /**
-     * Average home rate over a recurring daily window, weekday/weekend
-     * weighted (5/7, 2/7). Used when there is no session data to place
-     * charging in time.
+     * Average home rate over a recurring daily window across a whole year
+     * (every weekday, every month, so seasons and weekend rules both count).
+     * Used when there is no session data to place charging in time.
      */
     averageRateInWindow(from, to) {
         if (this.tariff.mode === 'flat') return this.tariff.flat.rate;
@@ -88,18 +122,18 @@ export class TariffEngine {
         const fromMin = minutesOf(from);
         const toMin = minutesOf(to);
         let sum = 0;
-        let weight = 0;
-        // Any week works; only weekday and time-of-day matter
-        for (let day = 0; day < 7; day++) {
-            const w = day === 0 || day === 6 ? 1 : 1;
-            for (let h = 0; h < 24; h++) {
-                const m = h * 60 + 30;
-                if (!TariffEngine.inWindow(m, fromMin, toMin)) continue;
-                const date = new Date(2026, 0, 4 + day, h, 30); // 2026-01-04 is a Sunday
-                sum += this.rateAt(date) * w;
-                weight += w;
+        let count = 0;
+        // One full week in each month of a fixed year; only month, weekday and hour matter
+        for (let month = 0; month < 12; month++) {
+            for (let day = 0; day < 7; day++) {
+                for (let h = 0; h < 24; h++) {
+                    const m = h * 60 + 30;
+                    if (!TariffEngine.inWindow(m, fromMin, toMin)) continue;
+                    sum += this.rateAt(new Date(2026, month, 8 + day, h, 30));
+                    count++;
+                }
             }
         }
-        return weight ? sum / weight : this.tariff.tou.defaultRate;
+        return count ? sum / count : this.tariff.tou.defaultRate;
     }
 }

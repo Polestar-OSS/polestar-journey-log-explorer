@@ -40,6 +40,12 @@ documents it links to.
 - Screenshots in the description are welcome when they come from the sample
   dataset.
 
+## Adding your electricity provider
+
+Presets are JSON files, no code needed: copy an existing file under
+`app/src/data/tariffs/`, fill in the rates with a source link, run
+`make test`. The guide is [TARIFF_PRESETS.md](./TARIFF_PRESETS.md).
+
 ## Reporting bugs
 
 Use the issue templates. For parsing problems, describe the header row of your

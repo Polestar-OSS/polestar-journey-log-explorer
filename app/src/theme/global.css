@@ -276,6 +276,29 @@ body {
   border-color: var(--ps-critical);
 }
 
+/*
+ * Touch devices: iOS Safari zooms the page when a focused input's font is
+ * under 16px, and a zoomed full-screen modal cannot be panned back. Every
+ * form control gets 16px on coarse pointers; the visual size stays compact.
+ */
+@media (pointer: coarse) {
+  .mantine-Input-input,
+  .mantine-NumberInput-input,
+  .mantine-Select-input,
+  .mantine-TextInput-input,
+  .mantine-Textarea-input,
+  .mantine-TagsInput-input,
+  .mantine-PillsInput-input,
+  input[type='text'],
+  input[type='number'],
+  input[type='time'],
+  input[type='search'],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 .ps-sticky-header {
   position: sticky;
   top: 0;

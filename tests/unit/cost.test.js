@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeTariff, DEFAULT_TARIFF, TARIFF_PRESETS } from '../../app/src/services/cost/TariffModel.js';
+import { normalizeTariff, DEFAULT_TARIFF, currencyPrefix } from '../../app/src/services/cost/TariffModel.js';
+import { TARIFF_PRESETS, TARIFF_PROVIDERS, validateProvider, findPreset } from '../../app/src/services/cost/TariffPresets.js';
 import { TariffEngine } from '../../app/src/services/cost/TariffEngine.js';
 import { ChargingSessionAllocator } from '../../app/src/services/cost/ChargingSessionAllocator.js';
 import { CostCalculator } from '../../app/src/services/cost/CostCalculator.js';
@@ -24,8 +25,79 @@ describe('normalizeTariff', () => {
         expect(t.tiered.tiers.map((x) => x.upToKwh)).toEqual([100, null]);
     });
 
-    it('ships presets that all normalise cleanly', () => {
-        TARIFF_PRESETS.forEach((p) => expect(normalizeTariff(p.tariff).currency).toBe(p.tariff.currency));
+    it('keeps the currency as a free-form display label', () => {
+        expect(normalizeTariff({ currency: 'R$' }).currency).toBe('R$');
+        expect(normalizeTariff({ currency: 42 }).currency).toBe('');
+        expect(currencyPrefix('')).toBe('');
+        expect(currencyPrefix('usd')).toBe('$');
+        expect(currencyPrefix('BRL')).toBe('R$');
+        expect(currencyPrefix('XYZ')).toBe('XYZ ');
+        expect(currencyPrefix('kr')).toBe('kr');
+    });
+
+    it('normalises seasons and per-season tiers, dropping references to unknown seasons', () => {
+        const t = normalizeTariff({
+            seasons: [{ id: 'summer', label: 'Summer', from: '05-01', to: '10-31' }, { id: 'bad id', from: 'nope', to: '13-99' }],
+            tou: { periods: [{ rate: 0.1, season: 'summer' }, { rate: 0.2, season: 'ghost' }] },
+            tiered: { tiers: [{ upToKwh: 600, rate: 0.1 }, { upToKwh: null, rate: 0.2 }], tiersBySeason: { summer: [{ upToKwh: 300, rate: 0.1 }, { upToKwh: null, rate: 0.2 }], ghost: [] } },
+        });
+        expect(t.seasons.map((x) => x.id)).toEqual(['summer', 'season-2']);
+        expect(t.seasons[1]).toMatchObject({ from: '01-01', to: '12-31' });
+        expect(t.tou.periods.map((p) => p.season)).toEqual(['summer', 'all']);
+        expect(Object.keys(t.tiered.tiersBySeason)).toEqual(['summer']);
+    });
+});
+
+describe('tariff presets (src/data/tariffs)', () => {
+    it('validates every provider file', () => {
+        expect(TARIFF_PROVIDERS.length).toBeGreaterThan(0);
+        TARIFF_PROVIDERS.forEach((prov) => expect(validateProvider(prov, prov.fileName)).toEqual([]));
+    });
+
+    it('flattens plans with provider-qualified ids and normalised tariffs', () => {
+        const ids = TARIFF_PRESETS.map((p) => p.id);
+        expect(new Set(ids).size).toBe(ids.length);
+        expect(findPreset('hydro-ottawa/tou').tariff.seasons).toHaveLength(2);
+        expect(findPreset('hydro-ottawa/tiered').tariff.tiered.tiersBySeason.winter[0].upToKwh).toBe(1000);
+        expect(findPreset('nope')).toBeNull();
+    });
+
+    it('rejects the mistakes a contributor is likely to make', () => {
+        const errors = validateProvider({ id: 'Bad Id', provider: 'X', region: 'Y', plans: [{ id: 'p', label: 'P', tariff: { mode: 'tou', tou: { periods: [{ rate: 0.1, from: '25:00', to: '07:00', season: 'summer' }] } } }] }, 'bad-id.json');
+        expect(errors.join('\n')).toMatch(/id must be lower-case/);
+        expect(errors.join('\n')).toMatch(/HH:MM/);
+        expect(errors.join('\n')).toMatch(/not declared in seasons/);
+        expect(errors.join('\n')).toMatch(/defaultRate is required/);
+        expect(validateProvider({ id: 'x', provider: 'X', region: 'Y', plans: [{ id: 'p', label: 'P', tariff: { mode: 'tiered', tiered: { tiers: [{ upToKwh: 100, rate: 0.1 }] } } }] }).join(' ')).toMatch(/last tier/);
+    });
+
+    it('prices Ontario time of use with the right season, weekday and hour', () => {
+        const engine = new TariffEngine(findPreset('hydro-ottawa/tou').tariff);
+        expect(engine.rateAt(new Date(2026, 6, 15, 12, 0))).toBe(0.203); // July weekday noon: summer on-peak
+        expect(engine.rateAt(new Date(2026, 6, 15, 8, 0))).toBe(0.157); // July weekday morning: summer mid-peak
+        expect(engine.rateAt(new Date(2026, 0, 14, 8, 0))).toBe(0.203); // January weekday morning: winter on-peak
+        expect(engine.rateAt(new Date(2026, 0, 14, 12, 0))).toBe(0.157); // January weekday noon: winter mid-peak
+        expect(engine.rateAt(new Date(2026, 0, 17, 12, 0))).toBe(0.098); // Saturday: off-peak all day
+        expect(engine.rateAt(new Date(2026, 0, 14, 22, 0))).toBe(0.098); // weekday night
+        expect(engine.seasonAt(new Date(2026, 3, 30))).toBe('winter');
+        expect(engine.seasonAt(new Date(2026, 4, 1))).toBe('summer');
+    });
+
+    it('applies the winter threshold to winter months of the tiered plan', () => {
+        const engine = new TariffEngine(findPreset('hydro-ottawa/tiered').tariff);
+        expect(engine.tiersFor('2026-01')[0].upToKwh).toBe(1000);
+        expect(engine.tiersFor('2026-07')[0].upToKwh).toBe(600);
+        // 800 kWh in a month: all tier 1 in winter, 600 + 200 in summer
+        expect(engine.tieredMonthCost(800, '2026-01').cost).toBeCloseTo(800 * 0.12, 4);
+        expect(engine.tieredMonthCost(800, '2026-07').cost).toBeCloseTo(600 * 0.12 + 200 * 0.142, 4);
+    });
+
+    it('prices the ultra-low overnight plan cheapest at night and dearest at the evening peak', () => {
+        const engine = new TariffEngine(findPreset('hydro-ottawa/ulo').tariff);
+        expect(engine.rateAt(new Date(2026, 2, 3, 2, 0))).toBe(0.039);
+        expect(engine.rateAt(new Date(2026, 2, 3, 18, 0))).toBe(0.391);
+        expect(engine.rateAt(new Date(2026, 2, 7, 18, 0))).toBe(0.098); // Saturday evening
+        expect(engine.averageRateInWindow('23:00', '07:00')).toBeCloseTo(0.039, 5);
     });
 });
 

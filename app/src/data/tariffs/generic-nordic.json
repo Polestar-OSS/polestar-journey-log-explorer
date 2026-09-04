@@ -1,0 +1,28 @@
+{
+  "$schema": "./tariff-provider.schema.json",
+  "id": "generic-nordic",
+  "provider": "Generic",
+  "region": "Sweden (Nordic day/night)",
+  "currency": "SEK",
+  "source": "https://www.energimarknadsinspektionen.se/",
+  "effective": "2026-01-01",
+  "notes": "A typical shape for Nordic spot-plus-grid contracts: cheaper nights and weekends. Spot prices move daily; treat these as an average.",
+  "plans": [
+    {
+      "id": "day-night",
+      "label": "Time of use · day/night and weekend",
+      "tariff": {
+        "currency": "SEK",
+        "mode": "tou",
+        "tou": {
+          "defaultRate": 2.4,
+          "periods": [
+            { "id": "night", "label": "Night", "rate": 1.4, "days": "all", "season": "all", "from": "22:00", "to": "06:00" },
+            { "id": "weekend", "label": "Weekend", "rate": 1.6, "days": "weekend", "season": "all", "from": "00:00", "to": "00:00" }
+          ]
+        },
+        "publicCharging": { "enabled": true, "sharePct": 20, "rate": 5.5 }
+      }
+    }
+  ]
+}

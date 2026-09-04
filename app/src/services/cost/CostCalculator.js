@@ -102,17 +102,16 @@ export class CostCalculator {
         if (tariff.mode === 'tiered') {
             // Volume-based: price the car's wall energy month by month
             method = 'tiered';
-            const breakdownAll = [];
             drivenByMonth.forEach((kwh, key) => {
                 const wall = this.allocator.wallEnergy(kwh * (1 - publicShare));
-                const { cost, breakdown } = this.engine.tieredMonthCost(wall);
+                const { cost, breakdown } = this.engine.tieredMonthCost(wall, key);
                 homeCost += cost;
                 addMonth(key, wall, cost);
-                breakdown.forEach((b) => addPeriod(`tier-${b.upToKwh ?? 'top'}`, b.upToKwh === null ? `Above ${tiers?.at?.(-2)?.upToKwh ?? ''} kWh`.trim() : `Up to ${b.upToKwh} kWh`, b.rate, b.kwh, b.cost));
-                breakdownAll.push(...breakdown);
+                breakdown.forEach((b, i) => addPeriod(`tier-${i + 1}`, b.upToKwh === null ? `Top tier` : `Tier ${i + 1} (up to ${b.upToKwh} kWh)`, b.rate, b.kwh, b.cost));
             });
             tiers = tariff.tiered.tiers;
             assumptions.push(`Household baseline of ${tariff.tiered.householdBaselineKwh} kWh/month is consumed before the car.`);
+            if (tariff.seasons.length) assumptions.push(`Tier thresholds follow the ${tariff.seasons.map((x) => x.label.toLowerCase()).join(' / ')} seasons.`);
         } else {
             const sessions = CostCalculator.sessionsFrom(trips, battery);
             const sessionKwh = sessions.reduce((s, x) => s + x.kwh, 0);

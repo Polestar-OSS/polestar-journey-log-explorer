@@ -64,10 +64,10 @@ function Landing({ onSourcesLoaded, onLoadSample }) {
 
     return (
         <Container size="xl" px={{ base: 'sm', sm: 'md' }} py={{ base: 'xl', sm: 48 }}>
-            <Grid gutter={{ base: 'xl', md: 56 }} align="center">
+            <Grid gap={{ base: 'xl', md: 56 }} align="center">
                 <Grid.Col span={{ base: 12, md: 6 }}>
                     <Stack gap="lg" className="ps-rise">
-                        <Image src={logoFor(scheme)} alt="Polestar OSS" fit="contain" style={{ height: 'clamp(80px, 9vw, 120px)', width: 'auto', maxWidth: '60%', alignSelf: 'flex-start' }} />
+                        <Image src={logoFor(scheme)} alt="Polestar OSS" fit="contain" style={{ height: 'clamp(56px, 9vw, 120px)', width: 'auto', maxWidth: '50%', alignSelf: 'flex-start' }} />
                         <Eyebrow>Polestar Journey Log Explorer</Eyebrow>
                         <Title order={1} className="ps-display" fz={{ base: 40, sm: 56, lg: 64 }}>
                             Your journeys,
@@ -94,8 +94,9 @@ function Landing({ onSourcesLoaded, onLoadSample }) {
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 6 }}>
                     <Box className="ps-rise" style={{ '--i': 2, position: 'relative' }}>
-                        <Box className="ps-dotgrid" style={{ position: 'absolute', inset: -40, zIndex: 0, pointerEvents: 'none' }} />
-                        <Box style={{ position: 'absolute', inset: '-90px -40px', zIndex: 0, pointerEvents: 'none' }}>
+                        {/* Decorative layers bleed outside the column on purpose; on phones the column is the viewport, so they are hidden */}
+                        <Box className="ps-dotgrid" display={{ base: 'none', md: 'block' }} style={{ position: 'absolute', inset: -40, zIndex: 0, pointerEvents: 'none' }} />
+                        <Box display={{ base: 'none', md: 'block' }} style={{ position: 'absolute', inset: '-90px -40px', zIndex: 0, pointerEvents: 'none' }}>
                             <RouteArt />
                         </Box>
                         <Box style={{ position: 'relative', zIndex: 1 }}>
@@ -117,7 +118,7 @@ function Landing({ onSourcesLoaded, onLoadSample }) {
                 ))}
             </SimpleGrid>
 
-            <Grid gutter="xl" mt={{ base: 48, sm: 72 }} className="ps-rise" style={{ '--i': 6 }}>
+            <Grid gap="xl" mt={{ base: 48, sm: 72 }} className="ps-rise" style={{ '--i': 6 }}>
                 <Grid.Col span={{ base: 12, md: 4 }}>
                     <Eyebrow>Getting your data</Eyebrow>
                     <Title order={3} mt="xs" className="ps-display" fz={28}>Four steps, one email.</Title>

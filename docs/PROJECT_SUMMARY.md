@@ -18,7 +18,7 @@ Journey Log app into a private, browser-only dashboard.
 
 ## How it is built
 
-- React 18, Vite 7, Mantine 7, Recharts 2, OpenLayers 10; Inter bundled.
+- React 19, Vite 8, Mantine 9, Recharts 3, OpenLayers 10; Inter bundled.
 - Domain logic in pure, unit-aware services with a Vitest unit suite over every service.
 - Token-based design system, light and dark, CVD-validated chart palette,
   reduced-motion aware, responsive to 390 px.

@@ -1,0 +1,17 @@
+{
+  "$schema": "./tariff-provider.schema.json",
+  "id": "generic-europe",
+  "provider": "Generic",
+  "region": "European Union (average)",
+  "currency": "EUR",
+  "source": "https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Electricity_price_statistics",
+  "effective": "2026-01-01",
+  "notes": "Rounded household average including taxes. Country averages range from about 0.10 to 0.40 EUR/kWh.",
+  "plans": [
+    {
+      "id": "flat",
+      "label": "Flat · EU average",
+      "tariff": { "currency": "EUR", "mode": "flat", "flat": { "rate": 0.28 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.6 } }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { CURRENCY_SYMBOLS } from '../../utils/preferences';
+import { currencyPrefix } from '../cost/TariffModel';
 
 const KM_PER_MILE = 1.60934;
 const round = (n, d = 0) => (n === null || n === undefined || !isFinite(n) ? null : Math.round(n * 10 ** d) / 10 ** d);
@@ -58,12 +58,12 @@ export const describeEnergy = (kwh) => {
  * number, one comparison. Pure: no formatting components, no side effects.
  */
 export class StoryBuilder {
-    constructor({ distanceUnit = 'km', electricityRate = 0.13, currency = 'USD', currencySymbol = '$', fuelPrice = null } = {}) {
+    constructor({ distanceUnit = 'km', electricityRate = 0.13, currency = '', currencySymbol = null, fuelPrice = null } = {}) {
         this.unit = distanceUnit === 'mi' ? 'mi' : 'km';
         this.toKm = this.unit === 'mi' ? KM_PER_MILE : 1;
         this.rate = electricityRate;
         this.currency = currency;
-        this.symbol = currencySymbol;
+        this.symbol = currencySymbol ?? currencyPrefix(currency);
         this.fuelPrice = fuelPrice; // per litre (km) or per gallon (mi); optional
     }
 
@@ -240,7 +240,7 @@ export class StoryBuilder {
      */
     _costCard({ energy, distance, weeks, cost }) {
         const u = this.unit;
-        const sym = cost?.currency ? (CURRENCY_SYMBOLS[cost.currency] ?? `${cost.currency} `) : this.symbol;
+        const sym = cost ? currencyPrefix(cost.currency) : this.symbol;
         if (cost && cost.method !== 'none') {
             const total = cost.cost.total;
             const modeLabel = { flat: 'a flat rate', tou: 'your time-of-use tariff', tiered: 'your tiered tariff' }[cost.mode] ?? 'your tariff';

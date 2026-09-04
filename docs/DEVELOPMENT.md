@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 20.19+ or 22.12+ (Vite 7 requirement; CI uses 22)
+- Node.js 20.19+ or 22.12+ (Vite 8 requirement; CI uses 22)
 - npm 10+
 - `make`
 

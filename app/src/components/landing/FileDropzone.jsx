@@ -87,12 +87,12 @@ function FileDropzone({ onSourcesLoaded, compact = false }) {
                     </Text>
                 </div>
                 {!compact && (
-                    <Group gap="xs" mt="xs">
-                        <Eyebrow>Processed locally</Eyebrow>
-                        <Text size="xs" c="dimmed">·</Text>
-                        <Eyebrow>Overlaps de-duplicated</Eyebrow>
-                        <Text size="xs" c="dimmed">·</Text>
-                        <Eyebrow>Nothing is uploaded</Eyebrow>
+                    <Group gap={6} mt="xs" justify="center" wrap="wrap">
+                        {['Processed locally', 'Overlaps de-duplicated', 'Nothing is uploaded'].map((label) => (
+                            <Box key={label} px={8} py={3} style={{ border: '1px solid var(--ps-border)', borderRadius: 2 }}>
+                                <Eyebrow style={{ fontSize: 10 }}>{label}</Eyebrow>
+                            </Box>
+                        ))}
                     </Group>
                 )}
             </Stack>

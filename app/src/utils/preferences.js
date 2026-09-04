@@ -14,7 +14,7 @@ export const EXPERIENCE_LEVELS = [
 export const DEFAULT_PREFERENCES = {
     experienceLevel: 'simple',
     electricityRate: 0.13,
-    currency: 'USD',
+    currency: '',
     homeChargingPercent: 80,
     tariff: null, // see services/cost/TariffModel.js; null until the user saves one
 };
@@ -43,4 +43,3 @@ export const setPreference = (key, value) => {
 
 export const getAllPreferences = readAll;
 
-export const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$', SEK: 'kr', NOK: 'kr', DKK: 'kr', CHF: 'CHF ' };

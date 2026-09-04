@@ -122,19 +122,30 @@ Open **Electricity tariff settings** under the KPI row, the "Charging cost"
 tile, or the cost card in the Simple story. Everything you set is saved in
 your browser and applied everywhere a cost is shown.
 
-- **Preset or country**: start from a bundled preset (flat, EV night rate,
-  Ontario TOU, Swedish spot-style TOU, California tiers) or type your city
-  to pick up your country's average price.
+- **Preset or country**: pick a provider's plan from the list (Hydro
+  Ottawa's time-of-use, ultra-low overnight and tiered plans, plus generic
+  regional averages), or type your city to pick up your country's average
+  price. Presets are JSON files anyone can add; see
+  [`TARIFF_PRESETS.md`](./TARIFF_PRESETS.md).
+- **Currency label**: optional and only for display. Type `$`, `EUR`, `R$`
+  or nothing at all; the maths is the same either way.
 - **Flat**: one price per kWh.
-- **Time of use**: a default price plus up to eight periods, each with a
-  price, days (every day, weekdays, weekends) and a from/to time. Windows
-  that end before they start wrap midnight. Periods are checked in order.
+- **Time of use**: a default price plus up to twelve periods, each with a
+  price, days (every day, weekdays, weekends), an optional season and a
+  from/to time. Windows that end before they start wrap midnight. Periods
+  are checked in order.
+- **Seasons**: if your utility changes the schedule or the tier blocks
+  between summer and winter, define the seasons (month-day ranges) and pick
+  one on each period, or switch on different tiers for that season.
 - **Tiered**: monthly volume blocks. Set your household's baseline so the
   car is priced in the block it actually lands in.
 - **Charging habits** (accordion): the share and price of public charging,
   wall-to-battery losses, charger power, whether the car charges as soon as
   it is plugged in, in the cheapest hours, or in a window you choose, the
   window itself, the battery's usable capacity and any fixed monthly fee.
+
+On a phone the panel opens full screen; the period editor becomes a stack of
+cards and every input is sized so the browser does not zoom in on focus.
 
 The panel on the right prices the trips currently in view: total, home vs
 public, effective price per kWh, cost per 100 km and per trip, a breakdown by

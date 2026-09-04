@@ -1,19 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
-import { Accordion, ActionIcon, Badge, Box, Button, Combobox, Grid, Group, List, Loader, Modal, NumberInput, ScrollArea, SegmentedControl, Select, Slider, Stack, Switch, Table, Text, TextInput, Tooltip, useCombobox } from '@mantine/core';
+import { Accordion, ActionIcon, Anchor, Badge, Box, Button, Combobox, Grid, Group, List, Loader, Modal, NumberInput, ScrollArea, SegmentedControl, Select, Slider, Stack, Switch, Table, Tabs, Text, TextInput, Tooltip, useCombobox } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTip, XAxis, YAxis } from 'recharts';
-import { IconPlus, IconTrash, IconMapPin, IconBolt, IconClock, IconStack2, IconInfoCircle } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconMapPin, IconBolt, IconClock, IconStack2, IconInfoCircle, IconCalendarEvent, IconExternalLink } from '@tabler/icons-react';
 import { useTariff } from '../../hooks/useTariff';
 import { CostCalculator } from '../../services/cost/CostCalculator';
-import { TARIFF_PRESETS } from '../../services/cost/TariffModel';
-import { CURRENCY_SYMBOLS } from '../../utils/preferences';
+import { LIMITS, currencyPrefix } from '../../services/cost/TariffModel';
+import { findPreset, presetGroups } from '../../services/cost/TariffPresets';
 import { useTokens } from '../../theme/useTokens';
 import { formatNumber } from '../../utils/format';
 import Eyebrow from '../ui/Eyebrow';
 import ChartTooltip from '../charts/ChartTooltip';
-
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'SEK', 'NOK', 'DKK', 'CHF'].map((c) => ({ value: c, label: c }));
 
 /** Rough average residential prices per kWh by country, in local currency (2025–2026). */
 const COUNTRY_RATES = {
@@ -21,9 +19,14 @@ const COUNTRY_RATES = {
     Germany: { rate: 0.38, currency: 'EUR' }, France: { rate: 0.23, currency: 'EUR' }, Spain: { rate: 0.2, currency: 'EUR' }, Italy: { rate: 0.31, currency: 'EUR' },
     Netherlands: { rate: 0.3, currency: 'EUR' }, Belgium: { rate: 0.3, currency: 'EUR' }, Sweden: { rate: 2.1, currency: 'SEK' }, Norway: { rate: 1.8, currency: 'NOK' },
     Denmark: { rate: 2.6, currency: 'DKK' }, Finland: { rate: 0.19, currency: 'EUR' }, Switzerland: { rate: 0.27, currency: 'CHF' }, Austria: { rate: 0.24, currency: 'EUR' },
-    Poland: { rate: 0.18, currency: 'EUR' }, Portugal: { rate: 0.27, currency: 'EUR' }, Ireland: { rate: 0.32, currency: 'EUR' }, Australia: { rate: 0.25, currency: 'AUD' },
-    'New Zealand': { rate: 0.23, currency: 'AUD' }, Japan: { rate: 0.26, currency: 'USD' }, 'South Korea': { rate: 0.11, currency: 'USD' }, Brazil: { rate: 0.15, currency: 'USD' },
+    Poland: { rate: 0.85, currency: 'PLN' }, Portugal: { rate: 0.27, currency: 'EUR' }, Ireland: { rate: 0.32, currency: 'EUR' }, Australia: { rate: 0.25, currency: 'AUD' },
+    'New Zealand': { rate: 0.23, currency: 'NZD' }, Japan: { rate: 31, currency: 'JPY' }, 'South Korea': { rate: 150, currency: 'KRW' }, Brazil: { rate: 0.95, currency: 'BRL' },
+    India: { rate: 8, currency: 'INR' }, Mexico: { rate: 2.5, currency: 'MXN' }, 'Czech Republic': { rate: 7.5, currency: 'CZK' }, Czechia: { rate: 7.5, currency: 'CZK' },
 };
+
+const DAY_OPTIONS = [{ value: 'all', label: 'Every day' }, { value: 'weekday', label: 'Weekdays' }, { value: 'weekend', label: 'Weekends' }];
+const MMDD_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+const th = (label) => <Table.Th key={label} style={{ color: 'var(--ps-muted)', fontWeight: 600 }}>{label}</Table.Th>;
 
 function Field({ label, children }) {
     return (
@@ -34,23 +37,85 @@ function Field({ label, children }) {
     );
 }
 
+/** A 'MM-DD' text field that only commits valid values. */
+function MonthDayInput({ value, onChange, ...rest }) {
+    const [draft, setDraft] = useState(value);
+    const [editing, setEditing] = useState(false);
+    const shown = editing ? draft : value;
+    return (
+        <TextInput
+            size="xs"
+            w={76}
+            placeholder="MM-DD"
+            value={shown}
+            error={editing && draft !== '' && !MMDD_RE.test(draft)}
+            onFocus={() => { setDraft(value); setEditing(true); }}
+            onChange={(e) => { const v = e.currentTarget.value; setDraft(v); if (MMDD_RE.test(v)) onChange(v); }}
+            onBlur={() => setEditing(false)}
+            className="ps-tabular"
+            {...rest}
+        />
+    );
+}
+
+/** Editable tier table shared by the default table and each seasonal override. */
+function TierTable({ tiers, onChange, compact }) {
+    const setTier = (i, key, v) => onChange(tiers.map((t, j) => (j === i ? { ...t, [key]: v } : t)));
+    const remove = (i) => onChange(tiers.filter((_, j) => j !== i));
+    const add = () => {
+        const last = tiers.at(-1);
+        const prevCap = tiers.at(-2)?.upToKwh ?? 0;
+        onChange([...tiers.slice(0, -1), { upToKwh: prevCap + 300, rate: last.rate }, { upToKwh: null, rate: last.rate * 1.2 }]);
+    };
+    return (
+        <Stack gap="xs">
+            <Table fz="xs" verticalSpacing={4} withRowBorders={false}>
+                <Table.Thead><Table.Tr>{['Tier', 'Up to (kWh/month)', 'Price per kWh', ''].map(th)}</Table.Tr></Table.Thead>
+                <Table.Tbody>
+                    {tiers.map((tier, i) => (
+                        <Table.Tr key={i}>
+                            <Table.Td>{i + 1}</Table.Td>
+                            <Table.Td>{tier.upToKwh === null ? <Text size="xs" c="dimmed">and above</Text> : <NumberInput size="xs" value={tier.upToKwh} onChange={(v) => typeof v === 'number' && setTier(i, 'upToKwh', v)} min={1} step={50} w={compact ? 96 : 120} />}</Table.Td>
+                            <Table.Td><NumberInput size="xs" value={tier.rate} onChange={(v) => typeof v === 'number' && setTier(i, 'rate', v)} min={0} step={0.01} decimalScale={4} w={compact ? 88 : 100} /></Table.Td>
+                            <Table.Td>{tiers.length > 1 && tier.upToKwh !== null && <ActionIcon size="sm" variant="subtle" color="gray" onClick={() => remove(i)} aria-label="Remove tier"><IconTrash size={14} /></ActionIcon>}</Table.Td>
+                        </Table.Tr>
+                    ))}
+                </Table.Tbody>
+            </Table>
+            <Button size="compact-xs" variant="default" leftSection={<IconPlus size={12} />} style={{ alignSelf: 'flex-end' }} onClick={add} disabled={tiers.length >= LIMITS.tiers}>Add tier</Button>
+        </Stack>
+    );
+}
+
 /**
  * Everything about what electricity costs the user, persisted, with the
  * result of applying it to the current trips beside the inputs. Pricing
  * logic lives in services/cost; this component only edits the model.
+ * Presets are JSON files under src/data/tariffs (see docs/TARIFF_PRESETS.md).
  */
 function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usableKwh = null }) {
     const t = useTokens();
     const isMobile = useMediaQuery('(max-width: 48em)');
     const [tariff, setTariff] = useTariff();
+    const [presetId, setPresetId] = useState(null);
     const unit = distanceUnit === 'mi' ? 'mi' : 'km';
-    const symbol = CURRENCY_SYMBOLS[tariff.currency] ?? `${tariff.currency} `;
+    const symbol = currencyPrefix(tariff.currency);
+    const preset = presetId ? findPreset(presetId) : null;
+    const hasSeasons = tariff.seasons.length > 0;
+    const seasonOptions = [{ value: 'all', label: 'All year' }, ...tariff.seasons.map((s) => ({ value: s.id, label: s.label }))];
 
     const result = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(data || [], { usableKwh }), [tariff, data, distanceUnit, usableKwh]);
 
     const patch = (fn) => setTariff((current) => fn(structuredClone(current)));
     const setPeriod = (i, key, value) => patch((c) => { c.tou.periods[i][key] = value; return c; });
-    const setTier = (i, key, value) => patch((c) => { c.tiered.tiers[i][key] = value; return c; });
+    const removePeriod = (i) => patch((c) => { c.tou.periods.splice(i, 1); if (!c.tou.periods.length) c.tou.periods.push({ id: 'p1', label: 'Off-peak', rate: c.tou.defaultRate, days: 'all', season: 'all', from: '22:00', to: '07:00' }); return c; });
+    const addPeriod = () => patch((c) => { c.tou.periods.push({ id: `p${Date.now()}`, label: 'Period', rate: c.tou.defaultRate, days: 'all', season: 'all', from: '00:00', to: '00:00' }); return c; });
+    const applyPreset = (id) => {
+        const p = findPreset(id);
+        if (!p) return;
+        setPresetId(id);
+        setTariff({ ...p.tariff, currency: p.tariff.currency || tariff.currency });
+    };
 
     // Country lookup (typed city name → Nominatim → country → average rate)
     const combobox = useCombobox();
@@ -83,15 +148,92 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
 
     const money = (v, d = 2) => `${symbol}${formatNumber(v, d)}`;
 
+    const periodEditor = isMobile ? (
+        <Stack gap="xs">
+            {tariff.tou.periods.map((p, i) => (
+                <Box key={p.id} p="sm" style={{ border: '1px solid var(--ps-border)', borderRadius: 2 }}>
+                    <Group gap="xs" wrap="nowrap" align="flex-end">
+                        <TextInput size="xs" label="Period" value={p.label} onChange={(e) => setPeriod(i, 'label', e.currentTarget.value)} style={{ flex: 1 }} />
+                        <NumberInput size="xs" label="Price per kWh" value={p.rate} onChange={(v) => typeof v === 'number' && setPeriod(i, 'rate', v)} min={0} step={0.01} decimalScale={4} w={110} />
+                        <ActionIcon size="lg" variant="subtle" color="gray" onClick={() => removePeriod(i)} aria-label="Remove period"><IconTrash size={16} /></ActionIcon>
+                    </Group>
+                    <Group gap="xs" wrap="nowrap" mt="xs" grow>
+                        <Select size="xs" label="Days" data={DAY_OPTIONS} value={p.days} onChange={(v) => v && setPeriod(i, 'days', v)} allowDeselect={false} />
+                        {hasSeasons && <Select size="xs" label="Season" data={seasonOptions} value={p.season} onChange={(v) => v && setPeriod(i, 'season', v)} allowDeselect={false} />}
+                    </Group>
+                    <Group gap="xs" wrap="nowrap" mt="xs" grow>
+                        <TimeInput size="xs" label="From" value={p.from} onChange={(e) => setPeriod(i, 'from', e.currentTarget.value)} />
+                        <TimeInput size="xs" label="To" value={p.to} onChange={(e) => setPeriod(i, 'to', e.currentTarget.value)} />
+                    </Group>
+                </Box>
+            ))}
+        </Stack>
+    ) : (
+        <Box className="ps-scroll-x">
+            <Table fz="xs" verticalSpacing={3} withRowBorders={false} style={{ minWidth: hasSeasons ? 560 : 470 }}>
+                <Table.Thead>
+                    <Table.Tr>{['Period', 'Price per kWh', 'Days', ...(hasSeasons ? ['Season'] : []), 'From', 'To', ''].map(th)}</Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                    {tariff.tou.periods.map((p, i) => (
+                        <Table.Tr key={p.id}>
+                            <Table.Td><TextInput size="xs" value={p.label} onChange={(e) => setPeriod(i, 'label', e.currentTarget.value)} w={96} /></Table.Td>
+                            <Table.Td><NumberInput size="xs" value={p.rate} onChange={(v) => typeof v === 'number' && setPeriod(i, 'rate', v)} min={0} step={0.01} decimalScale={4} w={78} /></Table.Td>
+                            <Table.Td><Select size="xs" data={DAY_OPTIONS} value={p.days} onChange={(v) => v && setPeriod(i, 'days', v)} w={100} allowDeselect={false} /></Table.Td>
+                            {hasSeasons && <Table.Td><Select size="xs" data={seasonOptions} value={p.season} onChange={(v) => v && setPeriod(i, 'season', v)} w={92} allowDeselect={false} /></Table.Td>}
+                            <Table.Td><TimeInput size="xs" value={p.from} onChange={(e) => setPeriod(i, 'from', e.currentTarget.value)} w={80} /></Table.Td>
+                            <Table.Td><TimeInput size="xs" value={p.to} onChange={(e) => setPeriod(i, 'to', e.currentTarget.value)} w={80} /></Table.Td>
+                            <Table.Td><ActionIcon size="sm" variant="subtle" color="gray" onClick={() => removePeriod(i)} aria-label="Remove period"><IconTrash size={14} /></ActionIcon></Table.Td>
+                        </Table.Tr>
+                    ))}
+                </Table.Tbody>
+            </Table>
+        </Box>
+    );
+
+    const seasonsEditor = (
+        <Accordion variant="contained" radius="xs" chevronPosition="left">
+            <Accordion.Item value="seasons">
+                <Accordion.Control icon={<IconCalendarEvent size={14} style={{ color: 'var(--ps-muted)' }} />}>
+                    <Group gap="xs"><Text size="sm" fw={500}>Seasons</Text>{hasSeasons ? <Badge size="xs" variant="light" color="gray">{tariff.seasons.map((s) => s.label).join(' · ')}</Badge> : <Text size="xs" c="dimmed">same schedule all year</Text>}</Group>
+                </Accordion.Control>
+                <Accordion.Panel>
+                    <Stack gap="xs">
+                        <Text size="xs" c="dimmed">Some utilities change the schedule or the tier thresholds between summer and winter. Define the seasons here (MM-DD, inclusive; a range may wrap the year end), then pick a season on each period or tier table.</Text>
+                        {tariff.seasons.map((s, i) => (
+                            <Group key={s.id} gap="xs" wrap="nowrap" align="flex-end">
+                                <TextInput size="xs" label={i === 0 ? 'Name' : undefined} value={s.label} onChange={(e) => patch((c) => { c.seasons[i].label = e.currentTarget.value; return c; })} style={{ flex: 1 }} />
+                                <MonthDayInput label={i === 0 ? 'From' : undefined} value={s.from} onChange={(v) => patch((c) => { c.seasons[i].from = v; return c; })} />
+                                <MonthDayInput label={i === 0 ? 'To' : undefined} value={s.to} onChange={(v) => patch((c) => { c.seasons[i].to = v; return c; })} />
+                                <ActionIcon size="lg" variant="subtle" color="gray" onClick={() => patch((c) => { c.seasons.splice(i, 1); return c; })} aria-label="Remove season"><IconTrash size={16} /></ActionIcon>
+                            </Group>
+                        ))}
+                        <Group justify="space-between">
+                            <Button size="compact-xs" variant="default" leftSection={<IconPlus size={12} />} disabled={tariff.seasons.length >= LIMITS.seasons} onClick={() => patch((c) => { const n = c.seasons.length + 1; c.seasons.push(n === 1 ? { id: 'summer', label: 'Summer', from: '05-01', to: '10-31' } : n === 2 ? { id: 'winter', label: 'Winter', from: '11-01', to: '04-30' } : { id: `season-${n}`, label: `Season ${n}`, from: '01-01', to: '12-31' }); return c; })}>Add season</Button>
+                            {hasSeasons && <Text size="xs" c="dimmed">Days outside every season use the all-year periods and default tiers.</Text>}
+                        </Group>
+                    </Stack>
+                </Accordion.Panel>
+            </Accordion.Item>
+        </Accordion>
+    );
+
     return (
-        <Modal opened={opened} onClose={onClose} title="Electricity tariff and charging" size={1080} fullScreen={isMobile} radius={0}>
-            <Grid gutter="lg">
+        <Modal opened={opened} onClose={onClose} title="Electricity tariff and charging" size={1180} fullScreen={isMobile} radius={0} zIndex={1000}>
+            <Grid gap="lg">
                 <Grid.Col span={{ base: 12, md: 7 }}>
                     <Stack gap="md">
-                        <Group grow align="flex-end">
-                            <Select label="Start from a preset" placeholder="Choose…" data={TARIFF_PRESETS.map((p) => ({ value: p.id, label: p.label }))} value={null} onChange={(id) => { const p = TARIFF_PRESETS.find((x) => x.id === id); if (p) setTariff({ ...tariff, ...p.tariff }); }} size="xs" />
-                            <Select label="Currency" data={CURRENCIES} value={tariff.currency} onChange={(v) => v && patch((c) => { c.currency = v; return c; })} size="xs" allowDeselect={false} />
+                        <Group grow align="flex-end" preventGrowOverflow={false}>
+                            <Select label="Start from a preset" placeholder="Choose a provider or region…" data={presetGroups()} value={presetId} onChange={(id) => id && applyPreset(id)} size="xs" searchable nothingFoundMessage="No preset. Contributions welcome: see docs/TARIFF_PRESETS.md" />
+                            <TextInput size="xs" label="Currency label" description="Only for display; leave empty for plain numbers" placeholder="$, EUR, R$ …" value={tariff.currency} maxLength={8} onChange={(e) => patch((c) => { c.currency = e.currentTarget.value; return c; })} w={{ base: '100%', sm: 180 }} style={{ flexGrow: 0 }} />
                         </Group>
+                        {preset && (
+                            <Text size="xs" c="dimmed" lh={1.5}>
+                                <b>{preset.provider}</b> · {preset.region}{preset.effective ? ` · rates effective ${preset.effective}` : ''}
+                                {preset.source && <> · <Anchor href={preset.source} target="_blank" rel="noreferrer" size="xs">source <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} /></Anchor></>}
+                                {preset.notes ? ` — ${preset.notes}` : ''}
+                            </Text>
+                        )}
 
                         <Combobox store={combobox} onOptionSubmit={(v) => { applyCountry(v); combobox.closeDropdown(); }}>
                             <Combobox.Target>
@@ -108,63 +250,50 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
 
                         <div>
                             <Eyebrow>How you are billed</Eyebrow>
-                            <SegmentedControl fullWidth mt={6} size="xs" radius="xs" value={tariff.mode} onChange={(m) => patch((c) => { c.mode = m; return c; })} data={[{ value: 'flat', label: (<Group gap={4} justify="center"><IconBolt size={13} /><span>Flat</span></Group>) }, { value: 'tou', label: (<Group gap={4} justify="center"><IconClock size={13} /><span>Time of use</span></Group>) }, { value: 'tiered', label: (<Group gap={4} justify="center"><IconStack2 size={13} /><span>Tiered</span></Group>) }]} />
+                            <SegmentedControl fullWidth mt={6} size="xs" radius="xs" value={tariff.mode} onChange={(m) => patch((c) => { c.mode = m; return c; })} data={[{ value: 'flat', label: (<Group gap={4} justify="center" wrap="nowrap"><IconBolt size={13} /><span>Flat</span></Group>) }, { value: 'tou', label: (<Group gap={4} justify="center" wrap="nowrap"><IconClock size={13} /><span>Time of use</span></Group>) }, { value: 'tiered', label: (<Group gap={4} justify="center" wrap="nowrap"><IconStack2 size={13} /><span>Tiered</span></Group>) }]} />
                         </div>
 
                         {tariff.mode === 'flat' && (
-                            <NumberInput size="sm" label={`Price per kWh (${tariff.currency})`} value={tariff.flat.rate} onChange={(v) => typeof v === 'number' && patch((c) => { c.flat.rate = v; return c; })} min={0} step={0.01} decimalScale={4} />
+                            <NumberInput size="sm" label="Price per kWh" value={tariff.flat.rate} onChange={(v) => typeof v === 'number' && patch((c) => { c.flat.rate = v; return c; })} min={0} step={0.01} decimalScale={4} />
                         )}
 
                         {tariff.mode === 'tou' && (
                             <Stack gap="sm">
-                                <NumberInput size="xs" label={`Price outside every period (${tariff.currency}/kWh)`} value={tariff.tou.defaultRate} onChange={(v) => typeof v === 'number' && patch((c) => { c.tou.defaultRate = v; return c; })} min={0} step={0.01} decimalScale={4} />
-                                <Box className="ps-scroll-x">
-                                    <Table fz="xs" verticalSpacing={4} withRowBorders={false} style={{ minWidth: 500 }}>
-                                        <Table.Thead>
-                                            <Table.Tr>
-                                                {['Period', `${tariff.currency}/kWh`, 'Days', 'From', 'To', ''].map((h) => <Table.Th key={h} style={{ color: 'var(--ps-muted)', fontWeight: 600 }}>{h}</Table.Th>)}
-                                            </Table.Tr>
-                                        </Table.Thead>
-                                        <Table.Tbody>
-                                            {tariff.tou.periods.map((p, i) => (
-                                                <Table.Tr key={p.id}>
-                                                    <Table.Td><TextInput size="xs" value={p.label} onChange={(e) => setPeriod(i, 'label', e.currentTarget.value)} w={100} /></Table.Td>
-                                                    <Table.Td><NumberInput size="xs" value={p.rate} onChange={(v) => typeof v === 'number' && setPeriod(i, 'rate', v)} min={0} step={0.01} decimalScale={4} w={84} /></Table.Td>
-                                                    <Table.Td><Select size="xs" data={[{ value: 'all', label: 'Every day' }, { value: 'weekday', label: 'Weekdays' }, { value: 'weekend', label: 'Weekends' }]} value={p.days} onChange={(v) => v && setPeriod(i, 'days', v)} w={104} allowDeselect={false} /></Table.Td>
-                                                    <Table.Td><TimeInput size="xs" value={p.from} onChange={(e) => setPeriod(i, 'from', e.currentTarget.value)} w={84} /></Table.Td>
-                                                    <Table.Td><TimeInput size="xs" value={p.to} onChange={(e) => setPeriod(i, 'to', e.currentTarget.value)} w={84} /></Table.Td>
-                                                    <Table.Td><ActionIcon size="sm" variant="subtle" color="gray" onClick={() => patch((c) => { c.tou.periods.splice(i, 1); if (!c.tou.periods.length) c.tou.periods.push({ id: 'p1', label: 'Off-peak', rate: c.tou.defaultRate, days: 'all', from: '22:00', to: '07:00' }); return c; })} aria-label="Remove period"><IconTrash size={14} /></ActionIcon></Table.Td>
-                                                </Table.Tr>
-                                            ))}
-                                        </Table.Tbody>
-                                    </Table>
-                                </Box>
-                                <Group justify="space-between">
-                                    <Text size="xs" c="dimmed">Periods are checked in order; a window that ends before it starts wraps midnight. Weekday/weekend rules do not overlap.</Text>
-                                    <Button size="compact-xs" variant="default" leftSection={<IconPlus size={12} />} onClick={() => patch((c) => { c.tou.periods.push({ id: `p${Date.now()}`, label: 'Period', rate: c.tou.defaultRate, days: 'all', from: '00:00', to: '00:00' }); return c; })} disabled={tariff.tou.periods.length >= 8}>Add period</Button>
+                                {seasonsEditor}
+                                <NumberInput size="xs" label="Price per kWh when no period applies" value={tariff.tou.defaultRate} onChange={(v) => typeof v === 'number' && patch((c) => { c.tou.defaultRate = v; return c; })} min={0} step={0.01} decimalScale={4} />
+                                {periodEditor}
+                                <Group justify="space-between" align="flex-start">
+                                    <Text size="xs" c="dimmed" style={{ flex: 1, minWidth: 200 }}>Periods are checked in order; a window that ends before it starts wraps midnight, and equal times mean all day.</Text>
+                                    <Button size="compact-xs" variant="default" leftSection={<IconPlus size={12} />} onClick={addPeriod} disabled={tariff.tou.periods.length >= LIMITS.periods}>Add period</Button>
                                 </Group>
                             </Stack>
                         )}
 
                         {tariff.mode === 'tiered' && (
                             <Stack gap="sm">
+                                {seasonsEditor}
                                 <NumberInput size="xs" label="Household electricity before the car (kWh per month)" description="Consumed first, so the car lands on the right tier" value={tariff.tiered.householdBaselineKwh} onChange={(v) => typeof v === 'number' && patch((c) => { c.tiered.householdBaselineKwh = v; return c; })} min={0} step={10} />
-                                <Table fz="xs" verticalSpacing={4} withRowBorders={false}>
-                                    <Table.Thead>
-                                        <Table.Tr>{['Tier', 'Up to (kWh/month)', `${tariff.currency}/kWh`, ''].map((h) => <Table.Th key={h} style={{ color: 'var(--ps-muted)', fontWeight: 600 }}>{h}</Table.Th>)}</Table.Tr>
-                                    </Table.Thead>
-                                    <Table.Tbody>
-                                        {tariff.tiered.tiers.map((tier, i) => (
-                                            <Table.Tr key={i}>
-                                                <Table.Td>{i + 1}</Table.Td>
-                                                <Table.Td>{tier.upToKwh === null ? <Text size="xs" c="dimmed">and above</Text> : <NumberInput size="xs" value={tier.upToKwh} onChange={(v) => typeof v === 'number' && setTier(i, 'upToKwh', v)} min={1} step={50} w={120} />}</Table.Td>
-                                                <Table.Td><NumberInput size="xs" value={tier.rate} onChange={(v) => typeof v === 'number' && setTier(i, 'rate', v)} min={0} step={0.01} decimalScale={4} w={100} /></Table.Td>
-                                                <Table.Td>{tariff.tiered.tiers.length > 1 && tier.upToKwh !== null && <ActionIcon size="sm" variant="subtle" color="gray" onClick={() => patch((c) => { c.tiered.tiers.splice(i, 1); return c; })} aria-label="Remove tier"><IconTrash size={14} /></ActionIcon>}</Table.Td>
-                                            </Table.Tr>
+                                {hasSeasons ? (
+                                    <Tabs defaultValue="default" variant="outline" radius="xs">
+                                        <Tabs.List>
+                                            <Tabs.Tab value="default">Default</Tabs.Tab>
+                                            {tariff.seasons.map((s) => <Tabs.Tab key={s.id} value={s.id}>{s.label}{tariff.tiered.tiersBySeason[s.id] ? '' : ' · same'}</Tabs.Tab>)}
+                                        </Tabs.List>
+                                        <Tabs.Panel value="default" pt="sm">
+                                            <TierTable tiers={tariff.tiered.tiers} compact={isMobile} onChange={(tiers) => patch((c) => { c.tiered.tiers = tiers; return c; })} />
+                                        </Tabs.Panel>
+                                        {tariff.seasons.map((s) => (
+                                            <Tabs.Panel key={s.id} value={s.id} pt="sm">
+                                                <Stack gap="xs">
+                                                    <Switch size="sm" color="polestar" label={`Different tiers in ${s.label.toLowerCase()}`} checked={Boolean(tariff.tiered.tiersBySeason[s.id])} onChange={(e) => patch((c) => { if (e.currentTarget.checked) c.tiered.tiersBySeason[s.id] = structuredClone(c.tiered.tiers); else delete c.tiered.tiersBySeason[s.id]; return c; })} />
+                                                    {tariff.tiered.tiersBySeason[s.id] && <TierTable tiers={tariff.tiered.tiersBySeason[s.id]} compact={isMobile} onChange={(tiers) => patch((c) => { c.tiered.tiersBySeason[s.id] = tiers; return c; })} />}
+                                                </Stack>
+                                            </Tabs.Panel>
                                         ))}
-                                    </Table.Tbody>
-                                </Table>
-                                <Button size="compact-xs" variant="default" leftSection={<IconPlus size={12} />} style={{ alignSelf: 'flex-end' }} onClick={() => patch((c) => { const last = c.tiered.tiers.pop(); const prevCap = c.tiered.tiers.at(-1)?.upToKwh ?? 0; c.tiered.tiers.push({ upToKwh: prevCap + 300, rate: last.rate }, { upToKwh: null, rate: last.rate * 1.2 }); return c; })} disabled={tariff.tiered.tiers.length >= 6}>Add tier</Button>
+                                    </Tabs>
+                                ) : (
+                                    <TierTable tiers={tariff.tiered.tiers} compact={isMobile} onChange={(tiers) => patch((c) => { c.tiered.tiers = tiers; return c; })} />
+                                )}
                             </Stack>
                         )}
 
@@ -179,7 +308,7 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
                                                 <Field label={`Share of energy charged publicly: ${tariff.publicCharging.sharePct}%`}>
                                                     <Slider size="sm" color="polestar" min={0} max={100} step={5} value={tariff.publicCharging.sharePct} onChange={(v) => patch((c) => { c.publicCharging.sharePct = v; return c; })} label={(v) => `${v}%`} />
                                                 </Field>
-                                                <NumberInput size="xs" label={`Public price (${tariff.currency}/kWh)`} value={tariff.publicCharging.rate} onChange={(v) => typeof v === 'number' && patch((c) => { c.publicCharging.rate = v; return c; })} min={0} step={0.05} decimalScale={3} />
+                                                <NumberInput size="xs" label="Public price per kWh" value={tariff.publicCharging.rate} onChange={(v) => typeof v === 'number' && patch((c) => { c.publicCharging.rate = v; return c; })} min={0} step={0.05} decimalScale={3} />
                                             </Group>
                                         )}
                                         <Group grow align="flex-start">
@@ -195,7 +324,7 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
                                         </Group>
                                         <Group grow align="flex-start">
                                             <NumberInput size="xs" label="Usable battery (kWh)" description={usableKwh ? `Leave empty to use the ${formatNumber(usableKwh, 0)} kWh estimated from your trips` : 'Leave empty for the default'} value={tariff.batteryUsableKwh ?? ''} onChange={(v) => patch((c) => { c.batteryUsableKwh = typeof v === 'number' ? v : null; return c; })} min={10} max={300} step={1} placeholder={usableKwh ? formatNumber(usableKwh, 0) : '79'} />
-                                            <NumberInput size="xs" label={`Fixed fees (${tariff.currency}/month)`} description="Standing charge; shown, not attributed to the car" value={tariff.fixedMonthlyFee} onChange={(v) => typeof v === 'number' && patch((c) => { c.fixedMonthlyFee = v; return c; })} min={0} step={1} />
+                                            <NumberInput size="xs" label="Fixed fees per month" description="Standing or delivery charge; shown, not attributed to the car" value={tariff.fixedMonthlyFee} onChange={(v) => typeof v === 'number' && patch((c) => { c.fixedMonthlyFee = v; return c; })} min={0} step={1} />
                                         </Group>
                                     </Stack>
                                 </Accordion.Panel>
@@ -244,7 +373,7 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
                                         <CartesianGrid vertical={false} stroke={t.grid} />
                                         <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: t.muted, fontSize: 10 }} interval="preserveStartEnd" minTickGap={28} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fill: t.muted, fontSize: 10 }} tickFormatter={(v) => formatNumber(v, 0)} />
-                                        <ChartTip cursor={{ fill: t.accentSoft }} content={<ChartTooltip title={(d) => d?.label} rows={(d) => [{ key: 'cost', label: tariff.currency, value: d.cost, color: t.series[0] }, { key: 'kwh', label: 'kWh', value: d.kwh, color: t.contextStrong }]} />} />
+                                        <ChartTip cursor={{ fill: t.accentSoft }} content={<ChartTooltip title={(d) => d?.label} rows={(d) => [{ key: 'cost', label: 'cost', value: money(d.cost), color: t.series[0] }, { key: 'kwh', label: 'kWh', value: d.kwh, color: t.contextStrong }]} />} />
                                         <Bar dataKey="cost" fill={t.series[0]} radius={[3, 3, 0, 0]} maxBarSize={18} isAnimationActive={false} />
                                     </BarChart>
                                 </ResponsiveContainer>
