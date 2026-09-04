@@ -47,11 +47,12 @@ jobs:
           path: ./app/dist
 
   deploy:
+    # No `environment:` block on purpose. Releases deploy from a tag, and the
+    # auto-created github-pages environment only allows branches, so declaring
+    # it rejects every release ("Tag ... is not allowed to deploy"). deploy-pages
+    # still records the deployment against github-pages through the Pages API.
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
