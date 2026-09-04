@@ -1,5 +1,5 @@
-import { ActionIcon, Box, Button, Container, Group, Image, Text, Tooltip, useMantineColorScheme, useComputedColorScheme } from '@mantine/core';
-import { IconSun, IconMoon, IconBrandGithub, IconDownload, IconHelp, IconFileUpload, IconPlus } from '@tabler/icons-react';
+import { ActionIcon, Box, Button, Container, Group, Image, Menu, Text, Tooltip, useMantineColorScheme, useComputedColorScheme } from '@mantine/core';
+import { IconSun, IconMoon, IconBrandGithub, IconDownload, IconHelp, IconFileUpload, IconPlus, IconDotsVertical } from '@tabler/icons-react';
 import Eyebrow from '../ui/Eyebrow';
 import { logoFor } from '../../theme/logo';
 import LevelSwitch from './LevelSwitch';
@@ -42,35 +42,38 @@ function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp
                                     Add files
                                 </Button>
                             </Tooltip>
-                            <Tooltip label="Add more exports">
-                                <ActionIcon size="lg" variant="subtle" color="gray" onClick={onAddFiles} hiddenFrom="sm" aria-label="Add more exports">
-                                    <IconPlus size={16} />
-                                </ActionIcon>
-                            </Tooltip>
                             <Tooltip label="Start over with different files">
                                 <Button size="xs" variant="subtle" color="gray" leftSection={<IconFileUpload size={14} />} onClick={onReset} visibleFrom="sm">
                                     Start over
                                 </Button>
                             </Tooltip>
-                            <Tooltip label="Start over with different files">
-                                <ActionIcon size="lg" variant="subtle" color="gray" onClick={onReset} hiddenFrom="sm" aria-label="Start over">
-                                    <IconFileUpload size={16} />
-                                </ActionIcon>
-                            </Tooltip>
                         </>
                     )}
                     {onHelp && (
                         <Tooltip label="How to get your journey data">
-                            <ActionIcon size="lg" variant="subtle" color="gray" onClick={onHelp} aria-label="Help">
+                            <ActionIcon size="lg" variant="subtle" color="gray" onClick={onHelp} aria-label="Help" visibleFrom={hasData ? 'sm' : 'xs'}>
                                 <IconHelp size={18} />
                             </ActionIcon>
                         </Tooltip>
                     )}
                     <Tooltip label="Source on GitHub">
-                        <ActionIcon size="lg" variant="subtle" color="gray" component="a" href={REPO_URL} target="_blank" rel="noreferrer" aria-label="GitHub" visibleFrom="xs">
+                        <ActionIcon size="lg" variant="subtle" color="gray" component="a" href={REPO_URL} target="_blank" rel="noreferrer" aria-label="GitHub" visibleFrom="sm">
                             <IconBrandGithub size={18} />
                         </ActionIcon>
                     </Tooltip>
+                    <Menu position="bottom-end" shadow="md" width={220}>
+                        <Menu.Target>
+                            <ActionIcon size="lg" variant="subtle" color="gray" aria-label="More actions" hiddenFrom="sm">
+                                <IconDotsVertical size={18} />
+                            </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                            {hasData && <Menu.Item leftSection={<IconPlus size={14} />} onClick={onAddFiles}>Add exports</Menu.Item>}
+                            {hasData && <Menu.Item leftSection={<IconFileUpload size={14} />} onClick={onReset}>Start over</Menu.Item>}
+                            {onHelp && <Menu.Item leftSection={<IconHelp size={14} />} onClick={onHelp}>How to get your data</Menu.Item>}
+                            <Menu.Item leftSection={<IconBrandGithub size={14} />} component="a" href={REPO_URL} target="_blank" rel="noreferrer">Source on GitHub</Menu.Item>
+                        </Menu.Dropdown>
+                    </Menu>
                     <Tooltip label={`Switch to ${scheme === 'dark' ? 'light' : 'dark'} theme`}>
                         <ActionIcon size="lg" variant="default" onClick={() => toggleColorScheme()} aria-label="Toggle colour scheme">
                             {scheme === 'dark' ? <IconSun size={17} /> : <IconMoon size={17} />}
