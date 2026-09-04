@@ -26,18 +26,6 @@ function DataGuide({ distanceUnit = 'km' }) {
     ? 'If you consumed 150 kWh over 470 mi: (150 / 470) \u00d7 100 = 31.9 kWh/100mi'
     : 'If you consumed 150 kWh over 750 km: (150 / 750) \u00d7 100 = 20 kWh/100km';
 
-  const co2Formula = isMi
-    ? `CO\u2082 Saved = Total Distance (mi) \u00d7 ICE Emissions per mi\nDefault: 0.19 kg CO\u2082/mi (based on avg US ICE vehicle)`
-    : `CO\u2082 Saved = Total Distance (km) \u00d7 ICE Emissions per km\nDefault: 0.12 kg CO\u2082/km (120g CO\u2082/km)`;
-
-  const co2Example = isMi
-    ? 'For 620 mi traveled: 620 \u00d7 0.19 = 117.8 kg CO\u2082 saved'
-    : 'For 1,000 km traveled: 1,000 \u00d7 0.12 = 120 kg CO\u2082 saved';
-
-  const co2Assumption = isMi
-    ? 'Based on average US ICE vehicle emissions of ~190g CO\u2082/mi (typical for mid-size sedans)'
-    : 'Based on average ICE vehicle emissions of 120g CO\u2082/km (typical for mid-size sedans)';
-
 
   // Efficiency thresholds scaled to distance unit
   // km thresholds: 15, 20, 25
@@ -133,32 +121,26 @@ function DataGuide({ distanceUnit = 'km' }) {
               <Divider />
 
               <div>
-                <Text fw={600} size="sm" mb="xs">🌱 CO₂ Saved vs ICE Vehicle</Text>
+                <Text fw={600} size="sm" mb="xs">🌱 CO₂ avoided</Text>
                 <Text size="sm" c="dimmed" mb="xs">
-                  The estimated carbon dioxide emissions you avoided by driving an electric vehicle 
-                  instead of a comparable internal combustion engine (ICE) vehicle.
+                  The tailpipe CO₂ the car you chose under <b>Compared with a petrol or hybrid car</b> would have
+                  emitted over the same trips. It is a real car from the US EPA fuel-economy database, not an
+                  average, and the EPA vehicle id is shown next to it so you can check the figure.
                 </Text>
                 <BorderedPaper p="sm" withBorder borderColor="green-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
-                    {co2Formula}
+                    {`CO₂ = distance on petrol × g CO₂/km ÷ 1000
+g CO₂/km = 8,887 g per US gallon of gasoline (EPA) ÷ combined mpg ÷ 1.609
+Plug-in hybrids: the first <electric range> of each day is electric and emits nothing here`}
                   </Code>
-                  <Text size="xs" c="dimmed" mt="xs">
-                    <strong>Example:</strong> {co2Example}
-                  </Text>
                 </BorderedPaper>
                 <div>
                   <Text size="xs" c="dimmed" mt="xs" fw={600}>Assumptions:</Text>
                   <List size="xs" mt={4}>
-                    <List.Item>
-                      {co2Assumption}
-                    </List.Item>
-                    <List.Item>
-                      Does not account for electricity generation emissions (assumes renewable energy or average grid mix)
-                    </List.Item>
-                    <List.Item>
-                      Your actual environmental impact may vary based on your electricity source
-                    </List.Item>
+                    <List.Item>Tailpipe only: neither the petrol car's fuel production nor your electricity's generation is counted.</List.Item>
+                    <List.Item>Combined-cycle figures; a real petrol car in winter city traffic burns more.</List.Item>
+                    <List.Item>Tree-years use 22 kg of CO₂ per mature tree per year (Arbor Day Foundation).</List.Item>
                   </List>
                 </div>
               </div>

@@ -95,12 +95,22 @@ type StoryCard = {
 };
 ```
 
+## Saved journey (`localStorage`)
+
+Key `polestar-journey-explorer:journey` (`services/persistence/JourneyStore`):
+`{ version: 1, distanceUnit: 'km', headers: [...export headers], rows: [...export-format rows], sources: [{ fileName, trips }], savedAt }`.
+The rows are exactly what `JourneyLogWriter.toRows` produces, so loading
+goes through `processRawRows` like an upload. Written after every merge
+while the `persistJourney` preference is on, never for the synthetic sample.
+
 ## Preferences (`localStorage`)
 
 Key `polestar-journey-explorer:prefs`:
 ```ts
 {
   experienceLevel: 'simple' | 'detailed' | 'expert';
+  unitSystem: 'metric' | 'imperial';  // display units; the journey is converted once in App (services/units/UnitSystem)
+  persistJourney: boolean;          // keep the merged journey in localStorage (default true)
   tariff: Tariff | null;            // see below; null until first saved
   comparisonVehicleId: string | null; // services/comparison/Vehicles id; null → default (newest XC60 mild hybrid)
   fuelPrice: number | null;         // per litre (km) or US gallon (mi); null → no money comparison
@@ -134,6 +144,11 @@ interface Season { id: string; label: string; from: 'MM-DD'; to: 'MM-DD' }   // 
 interface TouPeriod { id; label; rate; days: 'all'|'weekday'|'weekend'; season: 'all' | Season['id']; from: 'HH:MM'; to: 'HH:MM' }
 interface Tier { upToKwh: number | null; rate: number }
 ```
+
+### Settings file (`services/persistence/SettingsPort`)
+
+`{ version: 1, app: 'polestar-journey-log-explorer', exportedAt, preferences: {...}, annotations: { [tripKey]: { notes, tags[] } } }`.
+Import writes only preference keys the app knows and merges annotations.
 
 ### Tariff preset (`services/cost/TariffPresets.js`)
 

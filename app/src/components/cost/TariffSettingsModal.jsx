@@ -6,11 +6,13 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTip,
 import { IconPlus, IconTrash, IconSearch, IconBolt, IconClock, IconStack2, IconInfoCircle, IconCalendarEvent, IconExternalLink, IconCar } from '@tabler/icons-react';
 import { useTariff } from '../../hooks/useTariff';
 import { useComparison } from '../../hooks/useComparison';
+import { useUnitSystem } from '../../hooks/useUnitSystem';
+import { UNIT_SYSTEMS, fuelUnitLabel, toCents, fromCents } from '../../services/units/UnitSystem';
 import { VehicleComparison } from '../../services/comparison/VehicleComparison';
 import { vehicleGroups } from '../../services/comparison/Vehicles';
 import { CostCalculator } from '../../services/cost/CostCalculator';
 import { LIMITS, currencyPrefix } from '../../services/cost/TariffModel';
-import { findPreset, presetGroups, searchPresets } from '../../services/cost/TariffPresets';
+import { findPreset, presetGroups, searchPresets, presetFuelPrice } from '../../services/cost/TariffPresets';
 import { useTokens } from '../../theme/useTokens';
 import { formatNumber } from '../../utils/format';
 import Eyebrow from '../ui/Eyebrow';
@@ -98,6 +100,7 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
 
     const result = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(data || [], { usableKwh }), [tariff, data, distanceUnit, usableKwh]);
     const { vehicle, fuelPrice, setVehicleId, setFuelPrice } = useComparison();
+    const [unitSystem, setUnitSystem] = useUnitSystem();
     const comparison = useMemo(
         () => new VehicleComparison({ distanceUnit }).compare(data || [], vehicle, { fuelPrice, evCostPerKwh: result.effectiveRatePerKwh, evCostTotal: result.cost.total }),
         [data, vehicle, fuelPrice, result, distanceUnit]
@@ -112,6 +115,8 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
         if (!p) return;
         setPresetId(id);
         setTariff({ ...p.tariff, currency: p.tariff.currency || tariff.currency });
+        const pump = presetFuelPrice(p, unit);
+        if (pump) setFuelPrice(pump);
     };
 
     const money = (v, d = 2) => `${symbol}${formatNumber(v, d)}`;
@@ -187,7 +192,7 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
     );
 
     return (
-        <Modal opened={opened} onClose={onClose} title="Electricity, charging and comparison" size={1180} fullScreen={isMobile} radius={0} zIndex={1000}>
+        <Modal opened={opened} onClose={onClose} title="Electricity, charging and comparison" size={1180} fullScreen={isMobile} radius={0}>
             <Grid gap="lg">
                 <Grid.Col span={{ base: 12, md: 7 }}>
                     <Stack gap="md">
@@ -209,11 +214,16 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
                             />
                             <TextInput size="xs" label="Currency label" description="Only for display; leave empty for plain numbers" placeholder="$, EUR, R$ …" value={tariff.currency} maxLength={8} onChange={(e) => patch((c) => { c.currency = e.currentTarget.value; return c; })} w={{ base: '100%', sm: 180 }} style={{ flexGrow: 0 }} />
                         </Group>
+                        <div>
+                            <Text size="xs" c="dimmed" mb={4}>Units · {UNIT_SYSTEMS.find((u) => u.value === unitSystem)?.description}</Text>
+                            <SegmentedControl size="xs" radius="xs" value={unitSystem} onChange={setUnitSystem} data={UNIT_SYSTEMS.map((u) => ({ value: u.value, label: u.label }))} />
+                        </div>
                         {preset && (
                             <Text size="xs" c="dimmed" lh={1.5}>
                                 <b>{preset.provider}</b> · {preset.region}{preset.effective ? ` · rates effective ${preset.effective}` : ''}
                                 {preset.source && <> · <Anchor href={preset.source} target="_blank" rel="noreferrer" size="xs">source <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} /></Anchor></>}
                                 {preset.notes ? ` — ${preset.notes}` : ''}
+                                {preset.fuel && <> Petrol {presetFuelPrice(preset, unit)} per {unit === 'mi' ? 'gallon' : 'litre'} from <Anchor href={preset.fuel.source} target="_blank" rel="noreferrer" size="xs">{preset.fuel.note ?? 'source'}</Anchor> ({preset.fuel.effective}), filled into the comparison below and editable there.</>}
                             </Text>
                         )}
 
@@ -274,7 +284,7 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
                                         <Text size="xs" c="dimmed">The CO₂ tile, the story and the Insights table compare your trips with a real car from the US EPA fuel-economy database, on the combined cycle. Plug-in hybrids are modelled as charged every night: the first {vehicle?.electric ? formatNumber(vehicle.electric.rangeKm * (unit === 'mi' ? 0.621371 : 1), 0) : '—'} {unit} of each day electric, the rest on petrol.</Text>
                                         <Group grow align="flex-start">
                                             <Select size="xs" label="Car to compare against" data={vehicleGroups()} value={vehicle?.id ?? null} onChange={(id) => id && setVehicleId(id)} allowDeselect={false} searchable maxDropdownHeight={280} />
-                                            <NumberInput size="xs" label={`Fuel price per ${unit === 'mi' ? 'US gallon' : 'litre'}`} description="Leave empty to skip the money comparison" value={fuelPrice ?? ''} onChange={(v) => setFuelPrice(typeof v === 'number' ? v : null)} min={0} step={0.05} decimalScale={3} placeholder="e.g. 1.55" />
+                                            <NumberInput size="xs" label={`Fuel price (¢ per ${fuelUnitLabel(unitSystem)})`} description={`As on the pump sign; ${unitSystem === 'imperial' ? '407 means 4.07 per gallon' : '171 means 1.71 per litre'}. Leave empty to skip the money comparison`} value={toCents(fuelPrice) ?? ''} onChange={(v) => setFuelPrice(typeof v === 'number' ? fromCents(v) : null)} min={0} step={1} decimalScale={1} placeholder={unitSystem === 'imperial' ? 'e.g. 407' : 'e.g. 171'} />
                                         </Group>
                                         {vehicle && (
                                             <Text size="xs" c="dimmed">

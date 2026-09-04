@@ -8,18 +8,60 @@
   "effective": "2026-10-01",
   "notes": "Ofgem price cap for 1 October to 31 December 2026, direct debit, averaged across England, Scotland and Wales: 26.32 p/kWh and a 54.83 p/day standing charge (shown as the fixed fee, about 16.7 GBP a month). EV tariffs from individual suppliers keep the cap-level day rate and add a cheap night window; the window and price differ per supplier, so edit the night period to match yours.",
   "plans": [
-    { "id": "price-cap", "label": "Price cap (flat)", "tariff": { "currency": "GBP", "mode": "flat", "flat": { "rate": 0.2632 }, "fixedMonthlyFee": 16.7, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.75 } } },
+    {
+      "id": "price-cap",
+      "label": "Price cap (flat)",
+      "tariff": {
+        "currency": "GBP",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.2632
+        },
+        "fixedMonthlyFee": 16.7,
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.75
+        }
+      }
+    },
     {
       "id": "ev-night",
       "label": "EV tariff with a night window (typical shape)",
       "tariff": {
         "currency": "GBP",
         "mode": "tou",
-        "tou": { "defaultRate": 0.2632, "periods": [ { "id": "night", "label": "EV night rate", "rate": 0.085, "days": "all", "season": "all", "from": "00:30", "to": "05:30" } ] },
+        "tou": {
+          "defaultRate": 0.2632,
+          "periods": [
+            {
+              "id": "night",
+              "label": "EV night rate",
+              "rate": 0.085,
+              "days": "all",
+              "season": "all",
+              "from": "00:30",
+              "to": "05:30"
+            }
+          ]
+        },
         "fixedMonthlyFee": 16.7,
-        "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.75 },
-        "homeChargingWindow": { "from": "00:30", "to": "05:30" }
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.75
+        },
+        "homeChargingWindow": {
+          "from": "00:30",
+          "to": "05:30"
+        }
       }
     }
-  ]
+  ],
+  "fuel": {
+    "pricePerLitre": 1.6161,
+    "source": "https://www.gov.uk/government/statistics/weekly-road-fuel-prices",
+    "effective": "2026-08-31",
+    "note": "Department for Energy Security and Net Zero weekly road fuel prices, ULSP average for the week of 2026-08-31"
+  }
 }

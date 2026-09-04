@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeTariff, DEFAULT_TARIFF, currencyPrefix } from '../../app/src/services/cost/TariffModel.js';
-import { TARIFF_PRESETS, TARIFF_PROVIDERS, validateProvider, findPreset, searchPresets, presetGroups } from '../../app/src/services/cost/TariffPresets.js';
+import { TARIFF_PRESETS, TARIFF_PROVIDERS, validateProvider, findPreset, searchPresets, presetGroups, presetFuelPrice } from '../../app/src/services/cost/TariffPresets.js';
 import { TariffEngine } from '../../app/src/services/cost/TariffEngine.js';
 import { ChargingSessionAllocator } from '../../app/src/services/cost/ChargingSessionAllocator.js';
 import { CostCalculator } from '../../app/src/services/cost/CostCalculator.js';
@@ -73,6 +73,16 @@ describe('tariff presets (src/data/tariffs)', () => {
         const groups = presetGroups(searchPresets('ottawa'));
         expect(groups).toHaveLength(1);
         expect(groups[0].items[0].label).toBe('Hydro Ottawa · Time of use');
+    });
+
+    it('carries sourced pump prices and converts them to the export unit', () => {
+        expect(presetFuelPrice(findPreset('hydro-ottawa/tou'))).toBeCloseTo(1.708, 3);
+        expect(presetFuelPrice(findPreset('canada/quebec'))).toBeCloseTo(1.874, 3);
+        expect(presetFuelPrice(findPreset('usa/texas'), 'mi')).toBeCloseTo(3.618, 3);
+        expect(presetFuelPrice(findPreset('usa/texas'), 'km')).toBeCloseTo(3.618 / 3.785411784, 3);
+        expect(presetFuelPrice(findPreset('united-kingdom/price-cap'))).toBeCloseTo(1.616, 3);
+        expect(presetFuelPrice(findPreset('sweden/national'))).toBeNull();
+        expect(validateProvider({ id: 'x', provider: 'X', region: 'Y', fuel: { pricePerLitre: 1 }, plans: [{ id: 'p', label: 'P', tariff: { mode: 'flat', flat: { rate: 0.1 } } }] }).join(' ')).toMatch(/fuel.source/);
     });
 
     it('lists named providers before generic countries', () => {

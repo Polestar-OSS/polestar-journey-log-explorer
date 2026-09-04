@@ -290,7 +290,8 @@ function InsightsView({ insights, statistics, distanceUnit = 'km', data, cost, c
             {fleet.length > 0 && (
                 <InsightCard icon={IconCar} eyebrow="Against real petrol and hybrid cars" index={i++}
                     headline={comparison ? `The same driving in a ${comparison.vehicle.year} ${comparison.vehicle.model} ${comparison.vehicle.trim} would have burned ${formatNumber(comparison.fuel, 0)} ${comparison.fuelUnit} and emitted ${formatNumber(comparison.co2Kg, 0)} kg of CO₂.` : 'Pick a car to compare against in the settings.'}
-                    body={`Every row is a real car from the US EPA fuel-economy database (combined cycle, tailpipe CO₂ only). Plug-in hybrids are assumed charged every night: the first electric-range ${unit} of each day are electric at your electricity price, the rest petrol.${fuelPrice ? '' : ' Enter a fuel price in the settings to fill the cost columns.'}`}>
+                    body={`${comparison && !comparison.chosen ? 'That car is the default until you pick one in the settings. ' : ''}Every row is a real car from the US EPA fuel-economy database (combined cycle, tailpipe CO₂ only). Plug-in hybrids are assumed charged every night: the first electric-range ${unit} of each day are electric at your electricity price, the rest petrol.${fuelPrice ? '' : ' Enter a fuel price in the settings to fill the cost columns.'}`}
+>
                     <Box className="ps-scroll-x">
                         <Table fz="xs" verticalSpacing={4} withRowBorders={false} className="ps-tabular" style={{ minWidth: 640 }}>
                             <Table.Thead>
@@ -301,7 +302,7 @@ function InsightsView({ insights, statistics, distanceUnit = 'km', data, cost, c
                                     const chosen = comparison?.vehicle?.id === row.vehicle.id;
                                     return (
                                         <Table.Tr key={row.vehicle.id} style={chosen ? { background: 'var(--ps-accent-soft)' } : undefined}>
-                                            <Table.Td>{row.vehicle.year} {row.vehicle.model} {row.vehicle.trim}{chosen && <Badge size="xs" variant="light" color="polestar" ml={6}>chosen</Badge>}</Table.Td>
+                                            <Table.Td>{row.vehicle.year} {row.vehicle.model} {row.vehicle.trim}{chosen && <Badge size="xs" variant="light" color={comparison.chosen ? 'polestar' : 'gray'} ml={6}>{comparison.chosen ? 'your pick' : 'default'}</Badge>}</Table.Td>
                                             <Table.Td c="dimmed">{row.vehicle.powertrainLabel}</Table.Td>
                                             <Table.Td ta="right">{row.vehicle.lPer100km}</Table.Td>
                                             <Table.Td ta="right">{formatNumber(row.fuel, 0)}</Table.Td>

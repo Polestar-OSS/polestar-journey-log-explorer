@@ -27,6 +27,13 @@ An interactive web-based dashboard for analyzing your Polestar journey log data.
 
 **Private.** 100 % client-side. Files never leave the browser. A synthetic sample lets you explore without uploading anything.
 
+## 💾 Your data, in your browser
+
+The de-duplicated journey is saved in your browser and reopens next visit;
+add exports over time, export the merged file in the original Journey Log
+format, export or import your settings, and delete everything behind a
+confirmation. Nothing leaves the browser.
+
 ## 🚗 Compared with real cars
 
 CO₂ and fuel comparisons use real Volvo S60, S90, V60, V90, XC60 and XC90

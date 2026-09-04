@@ -69,6 +69,7 @@ The parts that matter for a preset:
 | `tiered.tiers[]` | `{ upToKwh, rate }` in ascending order; the last has `upToKwh: null` |
 | `tiered.tiersBySeason` | Optional. `{ "<season id>": tiers[] }` when thresholds differ by season |
 | `fixedMonthlyFee` | Standing or delivery charge; reported, not added to the car's total |
+| `fuel` (provider or plan level) | `{ pricePerLitre \| pricePerGallon, source, effective, note }`: the regular petrol pump price from an official series (Statistics Canada, US EIA, UK DESNZ …). Choosing the preset fills the fuel price used by the petrol comparison; the user can still edit it. Omit it rather than guess. |
 | `publicCharging` | `{ enabled, sharePct, rate }` for charging away from home |
 | `homeCharger`, `homeChargingWindow` | Charger power and when the car charges; only matter for time of use |
 

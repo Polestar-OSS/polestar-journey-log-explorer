@@ -23,6 +23,40 @@ wins and the disagreement is counted as a conflict.
 A km export and a mile export can be mixed; everything is shown in the unit of
 the first file.
 
+## Your data stays in this browser
+
+By default the de-duplicated journey is saved in your browser after every
+upload and reopens by itself next time; the landing page shows what is
+saved and lets you open, add to, or delete it. Open **Your data and
+settings** (database icon in the header, or the ⋮ menu on phones) to:
+
+- switch the saving off or on;
+- export the journey as a CSV with the same columns as the Journey Log
+  export, de-duplicated across every file you added, in your display unit,
+  so it opens anywhere the original does and re-imports here;
+- export or import your settings as JSON (level, units, tariff, comparison
+  car, fuel price, this switch, trip notes and tags);
+- delete the saved journey, or everything the app stored, each behind a
+  confirmation.
+
+Files in miles and files in kilometres can be mixed; everything is merged
+into one unit and shown in the units you chose. The synthetic sample is
+never saved.
+
+## Units
+
+Everything is metric by default (km, kWh/100 km, litres) whatever unit
+your export used; switch to imperial (miles, kWh/100 mi, US gallons) in
+the settings panel. The choice is remembered and the saved fuel price is
+converted with it. Pump prices are entered in cents, as on the sign.
+
+## Help inside the app
+
+The **?** in the header (in the ⋮ menu on phones) opens two pages: how to
+export your data from the car app, and a level-by-level, feature-by-feature
+guide to what each view shows and how to read it. The **Guide** tab holds
+the formulas.
+
 ## Choosing a level
 
 The header has a **Simple · Detailed · Expert** switch. It is remembered.
@@ -100,8 +134,9 @@ first tap):
 - **Replay**: drives the filtered period day by day. A car marker moves
   along each trip in order with the route drawing behind it (along the road
   when snapping is on), the view pans to keep it in sight, and running
-  totals tick up. Long days take longer; the speed control divides that.
-  The slider scrubs by day; with reduced motion the replay steps day by day.
+  totals tick up. Long days take longer; the speed control (0.2× to 10×,
+  0.2× by default so a day is watchable) divides that. The slider scrubs by
+  day; with reduced motion the replay steps day by day.
 
 Basemaps: satellite imagery, OpenStreetMap and Humanitarian. Imagery is the
 default under the dark theme, OpenStreetMap under the light one. Trips without coordinates never appear on the map.
@@ -171,8 +206,11 @@ The CO₂ tile, the "Compared with" story card and the "Against real petrol
 and hybrid cars" table in Insights use a real car, not an average. Open the
 settings (same panel as the tariff), pick the car under **Compared with a
 petrol or hybrid car** and, if you want the money side, enter your fuel
-price per litre (or per US gallon for mile exports). Without a price the
-app shows fuel volume and CO₂ only; it never assumes a price.
+price per litre (or per US gallon for mile exports). Choosing a tariff
+preset that carries an official pump price (Canada and its provinces, the
+US and its regions, the UK) fills it in for you, with the source shown.
+Without a price the app shows fuel volume and CO₂ only; it never assumes
+one.
 
 Bundled cars are the Volvo S60, S90, V60, V90, XC60 and XC90 as petrol mild
 hybrids and plug-in hybrids, from the US EPA fuel-economy database, with the

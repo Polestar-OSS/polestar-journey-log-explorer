@@ -25,6 +25,14 @@ export const validateProvider = (doc, fileName = 'provider') => {
     ['provider', 'region'].forEach((k) => { if (typeof doc[k] !== 'string' || !doc[k]) fail(`${k} is required`); });
     if (doc.effective && !/^\d{4}-\d{2}-\d{2}$/.test(doc.effective)) fail('effective must be YYYY-MM-DD');
     if (doc.source && !/^https?:\/\//.test(doc.source)) fail('source must be a URL');
+    const checkFuel = (fuel, where) => {
+        if (fuel === undefined) return;
+        if (!fuel || typeof fuel !== 'object') { fail(`${where}.fuel must be an object`); return; }
+        if (!(fuel.pricePerLitre > 0) && !(fuel.pricePerGallon > 0)) fail(`${where}.fuel needs pricePerLitre or pricePerGallon`);
+        if (!/^https?:\/\//.test(fuel.source ?? '')) fail(`${where}.fuel.source must be a URL`);
+        if (typeof fuel.effective !== 'string' || !fuel.effective) fail(`${where}.fuel.effective is required`);
+    };
+    checkFuel(doc.fuel, 'provider');
     if (!Array.isArray(doc.plans) || !doc.plans.length) { fail('plans must be a non-empty array'); return errors; }
     const planIds = new Set();
     doc.plans.forEach((plan, i) => {
@@ -33,6 +41,7 @@ export const validateProvider = (doc, fileName = 'provider') => {
         if (planIds.has(plan?.id)) fail(`${where}.id "${plan.id}" is duplicated`);
         planIds.add(plan?.id);
         if (typeof plan?.label !== 'string' || !plan.label) fail(`${where}.label is required`);
+        checkFuel(plan?.fuel, where);
         const t = plan?.tariff;
         if (!t || typeof t !== 'object') { fail(`${where}.tariff is required`); return; }
         if (!['flat', 'tou', 'tiered'].includes(t.mode)) fail(`${where}.tariff.mode must be flat, tou or tiered`);
@@ -87,6 +96,7 @@ export const TARIFF_PRESETS = TARIFF_PROVIDERS.flatMap((prov) =>
         source: prov.source ?? null,
         effective: prov.effective ?? null,
         notes: prov.notes ?? '',
+        fuel: plan.fuel ?? prov.fuel ?? null,
         tariff: normalizeTariff({ currency: prov.currency, ...plan.tariff }),
     }))
 );
@@ -115,4 +125,17 @@ export const presetGroups = (presets = TARIFF_PRESETS) => {
         groups.get(p.group).push({ value: p.id, label: p.provider === 'Generic' ? p.label : `${p.provider} · ${p.label}` });
     });
     return [...groups.entries()].map(([group, items]) => ({ group, items }));
+};
+
+const L_PER_GAL = 3.785411784;
+/**
+ * A preset's pump price in the unit the app stores: per litre for km
+ * exports, per US gallon for mile exports. Null when the preset has none.
+ */
+export const presetFuelPrice = (preset, distanceUnit = 'km') => {
+    const f = preset?.fuel;
+    if (!f) return null;
+    const perLitre = f.pricePerLitre ?? (f.pricePerGallon ? f.pricePerGallon / L_PER_GAL : null);
+    if (!perLitre) return null;
+    return Math.round((distanceUnit === 'mi' ? perLitre * L_PER_GAL : perLitre) * 1000) / 1000;
 };

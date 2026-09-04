@@ -250,5 +250,11 @@
         }
       }
     }
-  ]
+  ],
+  "fuel": {
+    "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+    "effective": "2026-07",
+    "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Toronto",
+    "pricePerLitre": 1.727
+  }
 }

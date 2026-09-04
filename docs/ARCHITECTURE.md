@@ -101,6 +101,10 @@ Each service has one job, takes plain data, and returns plain data.
 | `insights/InsightsCalculator` | Narrative findings: seasonality, places (clustered), charging sessions, battery estimate, odometer coverage, short trips, rhythm, records, period deltas |
 | `analytics/StatsService` | Expert layer: percentiles, consumption model (OLS), efficiency drivers, battery fit, charge histogram, data quality |
 | `analytics/PivotService` | Group-by/aggregate over registered dimensions and metrics; CSV |
+| `export/JourneyLogWriter` | Trips back to the Journey Log export columns (rows and CSV), unit in the distance header |
+| `persistence/JourneyStore` | The de-duplicated journey in `localStorage` as export-format rows; injected storage, quota-safe |
+| `persistence/SettingsPort` | Settings and trip notes as a JSON file, out and in, with validation |
+| `units/UnitSystem` | Metric/imperial: distance and fuel-price conversion, cents helpers, and `convertJourney`, applied once at the App boundary so nothing below knows about the preference |
 | `comparison/Vehicles` | Loads and validates the per-make vehicle files under `src/data/vehicles` (EPA provenance required) |
 | `comparison/VehicleComparison` | Fuel, tailpipe CO₂ and money for the same trips in a chosen petrol or plug-in hybrid car; nightly-charge model for hybrids |
 | `story/StoryBuilder` | Plain-language cards for the Simple level |
@@ -195,7 +199,9 @@ See [ADR-0005](./adr/0005-experience-levels.md).
   browser ([ADR-0009](./adr/0009-tariff-model.md)).
 - Popup HTML on the map is built with an escaping helper; every other user
   string is rendered through React text nodes.
-- Notes, tags and preferences live in `localStorage` only.
+- Notes, tags, preferences and (by default) the de-duplicated journey live
+  in `localStorage` only; the user can switch the journey saving off, export
+  everything, or delete it ([ADR-0013](./adr/0013-journey-persistence.md)).
 - Dependencies are audited in CI and by Dependabot (npm and GitHub Actions).
 
 ## 10. Extension points

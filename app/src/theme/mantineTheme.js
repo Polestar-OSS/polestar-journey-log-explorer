@@ -55,6 +55,8 @@ export const mantineTheme = createTheme({
                 radius: 'xs',
                 overlayProps: { backgroundOpacity: 0.55, blur: 6 },
                 transitionProps: { transition: 'fade-up', duration: 200 },
+                // Above the sticky header and the map drawer (200), below Select/Popover dropdowns and tooltips (300)
+                zIndex: 250,
             },
             classNames: { content: 'ps-modal', header: 'ps-modal-header', title: 'ps-modal-title' },
         }),

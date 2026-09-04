@@ -115,7 +115,7 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
                             value={comparison?.co2Kg ?? 0}
                             unit="kg"
                             icon={IconLeaf}
-                            hint={comparison ? `vs ${comparison.vehicle.shortLabel} · ${formatNumber(comparison.fuel, 0)} ${comparison.fuelUnit} of fuel not burned` : 'Pick a car to compare against in the settings'}
+                            hint={comparison ? `vs ${comparison.vehicle.shortLabel}${comparison.chosen ? '' : ' (default, tap to change)'} · ${formatNumber(comparison.fuel, 0)} ${comparison.fuelUnit} of fuel not burned` : 'Pick a car to compare against in the settings'}
                             onClick={() => setCostModalOpened(true)}
                             className="ps-card ps-rise ps-card-hover"
                             style={{ '--i': 4 }}

@@ -58,7 +58,7 @@ function RouteArt() {
     );
 }
 
-function Landing({ onSourcesLoaded, onLoadSample }) {
+function Landing({ onSourcesLoaded, onLoadSample, saved = null, onContinueSaved, onManageData }) {
     const [helpOpened, setHelpOpened] = useState(false);
     const scheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
 
@@ -82,6 +82,17 @@ function Landing({ onSourcesLoaded, onLoadSample }) {
                             <List.Item>Works with the CSV and XLSX exports, in km or miles. Drop several; overlaps are de-duplicated.</List.Item>
                             <List.Item>Free and open source, AGPL-3.0.</List.Item>
                         </List>
+                        {saved && (
+                            <Box className="ps-card" p="md" style={{ borderLeft: '3px solid var(--ps-accent)' }}>
+                                <Eyebrow>Saved in this browser</Eyebrow>
+                                <Text size="sm" fw={500} mt={4}>{saved.trips.toLocaleString()} de-duplicated trips from {saved.sources.length || 'your'} file{saved.sources.length === 1 ? '' : 's'}</Text>
+                                <Text size="xs" c="dimmed">Last saved {saved.savedAt ? new Date(saved.savedAt).toLocaleString() : ''}. Dropping more exports below adds to it.</Text>
+                                <Group gap="sm" mt="sm">
+                                    <Button size="xs" leftSection={<IconArrowRight size={14} />} onClick={onContinueSaved}>Open saved journey</Button>
+                                    <Button size="xs" variant="subtle" color="gray" onClick={onManageData}>Manage or delete</Button>
+                                </Group>
+                            </Box>
+                        )}
                         <Group gap="sm" mt="xs">
                             <Button variant="default" leftSection={<IconSparkles size={16} />} onClick={onLoadSample}>
                                 Explore with sample data

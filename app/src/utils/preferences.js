@@ -3,7 +3,8 @@
  * here is a convenience (theme, experience level, tariff); the app must
  * render correctly when storage is empty or unavailable.
  */
-const STORAGE_KEY = 'polestar-journey-explorer:prefs';
+export const PREFERENCES_STORAGE_KEY = 'polestar-journey-explorer:prefs';
+const STORAGE_KEY = PREFERENCES_STORAGE_KEY;
 
 export const EXPERIENCE_LEVELS = [
     { value: 'simple', label: 'Simple', description: 'Plain-language summary of your driving.' },
@@ -13,6 +14,8 @@ export const EXPERIENCE_LEVELS = [
 
 export const DEFAULT_PREFERENCES = {
     experienceLevel: 'simple',
+    unitSystem: 'metric', // display units; the export's own unit is converted at the app boundary
+    persistJourney: true, // keep the de-duplicated journey in localStorage between visits (services/persistence/JourneyStore)
     electricityRate: 0.13,
     currency: '',
     homeChargingPercent: 80,

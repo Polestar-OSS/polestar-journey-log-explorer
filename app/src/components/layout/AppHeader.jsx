@@ -1,12 +1,12 @@
 import { ActionIcon, Box, Button, Container, Group, Image, Menu, Text, Tooltip, useMantineColorScheme, useComputedColorScheme } from '@mantine/core';
-import { IconSun, IconMoon, IconBrandGithub, IconDownload, IconHelp, IconFileUpload, IconPlus, IconDotsVertical } from '@tabler/icons-react';
+import { IconSun, IconMoon, IconBrandGithub, IconDownload, IconHelp, IconFileUpload, IconPlus, IconDotsVertical, IconDatabase } from '@tabler/icons-react';
 import Eyebrow from '../ui/Eyebrow';
 import { logoFor } from '../../theme/logo';
 import LevelSwitch from './LevelSwitch';
 
 const REPO_URL = 'https://github.com/Polestar-OSS/polestar-journey-log-explorer';
 
-function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp, level, onChangeLevel }) {
+function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp, onData, level, onChangeLevel }) {
     const { toggleColorScheme } = useMantineColorScheme();
     const scheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
 
@@ -49,8 +49,15 @@ function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp
                             </Tooltip>
                         </>
                     )}
+                    {onData && (
+                        <Tooltip label="Your data and settings: what is kept in this browser, exports, deletion">
+                            <ActionIcon size="lg" variant="subtle" color="gray" onClick={onData} aria-label="Your data and settings" visibleFrom="sm">
+                                <IconDatabase size={18} />
+                            </ActionIcon>
+                        </Tooltip>
+                    )}
                     {onHelp && (
-                        <Tooltip label="How to get your journey data">
+                        <Tooltip label="Help: levels, features, getting your data">
                             <ActionIcon size="lg" variant="subtle" color="gray" onClick={onHelp} aria-label="Help" visibleFrom={hasData ? 'sm' : 'xs'}>
                                 <IconHelp size={18} />
                             </ActionIcon>
@@ -70,7 +77,8 @@ function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp
                         <Menu.Dropdown>
                             {hasData && <Menu.Item leftSection={<IconPlus size={14} />} onClick={onAddFiles}>Add exports</Menu.Item>}
                             {hasData && <Menu.Item leftSection={<IconFileUpload size={14} />} onClick={onReset}>Start over</Menu.Item>}
-                            {onHelp && <Menu.Item leftSection={<IconHelp size={14} />} onClick={onHelp}>How to get your data</Menu.Item>}
+                            {onData && <Menu.Item leftSection={<IconDatabase size={14} />} onClick={onData}>Your data and settings</Menu.Item>}
+                            {onHelp && <Menu.Item leftSection={<IconHelp size={14} />} onClick={onHelp}>Help: levels, features, getting data</Menu.Item>}
                             <Menu.Item leftSection={<IconBrandGithub size={14} />} component="a" href={REPO_URL} target="_blank" rel="noreferrer">Source on GitHub</Menu.Item>
                         </Menu.Dropdown>
                     </Menu>

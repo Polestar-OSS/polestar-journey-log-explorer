@@ -1,5 +1,6 @@
 // Trip annotations storage using localStorage
-const STORAGE_KEY = 'polestar-trip-annotations';
+export const ANNOTATIONS_STORAGE_KEY = 'polestar-trip-annotations';
+const STORAGE_KEY = ANNOTATIONS_STORAGE_KEY;
 
 export const getTripAnnotations = () => {
     try {

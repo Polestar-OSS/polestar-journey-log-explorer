@@ -16,6 +16,8 @@ decisions get a new number; superseded ones are marked, never deleted.
 | [0009](./0009-tariff-model.md) | One normalised tariff model in `localStorage`; pricing in pure cost services, never in components | Accepted |
 | [0010](./0010-tariff-presets-as-data.md) | Tariff presets are JSON files per provider; seasons in the model; currency is a display label | Accepted |
 | [0011](./0011-real-comparison-vehicles.md) | Petrol comparisons use real vehicles from the EPA database, never an average or an assumed price | Accepted |
+| [0012](./0012-units-at-the-boundary.md) | Metric/imperial is a preference applied once at the app boundary by one units module | Accepted |
+| [0013](./0013-journey-persistence.md) | The de-duplicated journey persists in the browser in the export format; settings export and import; confirmed deletion | Accepted |
 
 Template:
 

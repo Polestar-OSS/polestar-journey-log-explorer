@@ -16,26 +16,110 @@
         "currency": "CAD",
         "mode": "tou",
         "seasons": [
-          { "id": "summer", "label": "Summer", "from": "05-01", "to": "10-31" },
-          { "id": "winter", "label": "Winter", "from": "11-01", "to": "04-30" }
+          {
+            "id": "summer",
+            "label": "Summer",
+            "from": "05-01",
+            "to": "10-31"
+          },
+          {
+            "id": "winter",
+            "label": "Winter",
+            "from": "11-01",
+            "to": "04-30"
+          }
         ],
         "tou": {
           "defaultRate": 0.098,
           "periods": [
-            { "id": "weekend", "label": "Off-peak (weekend)", "rate": 0.098, "days": "weekend", "season": "all", "from": "00:00", "to": "00:00" },
-            { "id": "night", "label": "Off-peak", "rate": 0.098, "days": "weekday", "season": "all", "from": "19:00", "to": "07:00" },
-            { "id": "summer-mid-am", "label": "Mid-peak", "rate": 0.157, "days": "weekday", "season": "summer", "from": "07:00", "to": "11:00" },
-            { "id": "summer-on", "label": "On-peak", "rate": 0.203, "days": "weekday", "season": "summer", "from": "11:00", "to": "17:00" },
-            { "id": "summer-mid-pm", "label": "Mid-peak", "rate": 0.157, "days": "weekday", "season": "summer", "from": "17:00", "to": "19:00" },
-            { "id": "winter-on-am", "label": "On-peak", "rate": 0.203, "days": "weekday", "season": "winter", "from": "07:00", "to": "11:00" },
-            { "id": "winter-mid", "label": "Mid-peak", "rate": 0.157, "days": "weekday", "season": "winter", "from": "11:00", "to": "17:00" },
-            { "id": "winter-on-pm", "label": "On-peak", "rate": 0.203, "days": "weekday", "season": "winter", "from": "17:00", "to": "19:00" }
+            {
+              "id": "weekend",
+              "label": "Off-peak (weekend)",
+              "rate": 0.098,
+              "days": "weekend",
+              "season": "all",
+              "from": "00:00",
+              "to": "00:00"
+            },
+            {
+              "id": "night",
+              "label": "Off-peak",
+              "rate": 0.098,
+              "days": "weekday",
+              "season": "all",
+              "from": "19:00",
+              "to": "07:00"
+            },
+            {
+              "id": "summer-mid-am",
+              "label": "Mid-peak",
+              "rate": 0.157,
+              "days": "weekday",
+              "season": "summer",
+              "from": "07:00",
+              "to": "11:00"
+            },
+            {
+              "id": "summer-on",
+              "label": "On-peak",
+              "rate": 0.203,
+              "days": "weekday",
+              "season": "summer",
+              "from": "11:00",
+              "to": "17:00"
+            },
+            {
+              "id": "summer-mid-pm",
+              "label": "Mid-peak",
+              "rate": 0.157,
+              "days": "weekday",
+              "season": "summer",
+              "from": "17:00",
+              "to": "19:00"
+            },
+            {
+              "id": "winter-on-am",
+              "label": "On-peak",
+              "rate": 0.203,
+              "days": "weekday",
+              "season": "winter",
+              "from": "07:00",
+              "to": "11:00"
+            },
+            {
+              "id": "winter-mid",
+              "label": "Mid-peak",
+              "rate": 0.157,
+              "days": "weekday",
+              "season": "winter",
+              "from": "11:00",
+              "to": "17:00"
+            },
+            {
+              "id": "winter-on-pm",
+              "label": "On-peak",
+              "rate": 0.203,
+              "days": "weekday",
+              "season": "winter",
+              "from": "17:00",
+              "to": "19:00"
+            }
           ]
         },
         "fixedMonthlyFee": 39.2,
-        "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 },
-        "homeCharger": { "powerKw": 7.4, "strategy": "cheapest" },
-        "homeChargingWindow": { "from": "19:00", "to": "07:00" }
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        },
+        "homeCharger": {
+          "powerKw": 7.4,
+          "strategy": "cheapest"
+        },
+        "homeChargingWindow": {
+          "from": "19:00",
+          "to": "07:00"
+        }
       }
     },
     {
@@ -49,17 +133,67 @@
         "tou": {
           "defaultRate": 0.098,
           "periods": [
-            { "id": "ulo", "label": "Ultra-low overnight", "rate": 0.039, "days": "all", "season": "all", "from": "23:00", "to": "07:00" },
-            { "id": "weekend", "label": "Weekend off-peak", "rate": 0.098, "days": "weekend", "season": "all", "from": "07:00", "to": "23:00" },
-            { "id": "mid-day", "label": "Mid-peak", "rate": 0.157, "days": "weekday", "season": "all", "from": "07:00", "to": "16:00" },
-            { "id": "on", "label": "On-peak", "rate": 0.391, "days": "weekday", "season": "all", "from": "16:00", "to": "21:00" },
-            { "id": "mid-evening", "label": "Mid-peak", "rate": 0.157, "days": "weekday", "season": "all", "from": "21:00", "to": "23:00" }
+            {
+              "id": "ulo",
+              "label": "Ultra-low overnight",
+              "rate": 0.039,
+              "days": "all",
+              "season": "all",
+              "from": "23:00",
+              "to": "07:00"
+            },
+            {
+              "id": "weekend",
+              "label": "Weekend off-peak",
+              "rate": 0.098,
+              "days": "weekend",
+              "season": "all",
+              "from": "07:00",
+              "to": "23:00"
+            },
+            {
+              "id": "mid-day",
+              "label": "Mid-peak",
+              "rate": 0.157,
+              "days": "weekday",
+              "season": "all",
+              "from": "07:00",
+              "to": "16:00"
+            },
+            {
+              "id": "on",
+              "label": "On-peak",
+              "rate": 0.391,
+              "days": "weekday",
+              "season": "all",
+              "from": "16:00",
+              "to": "21:00"
+            },
+            {
+              "id": "mid-evening",
+              "label": "Mid-peak",
+              "rate": 0.157,
+              "days": "weekday",
+              "season": "all",
+              "from": "21:00",
+              "to": "23:00"
+            }
           ]
         },
         "fixedMonthlyFee": 39.2,
-        "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 },
-        "homeCharger": { "powerKw": 7.4, "strategy": "cheapest" },
-        "homeChargingWindow": { "from": "23:00", "to": "07:00" }
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        },
+        "homeCharger": {
+          "powerKw": 7.4,
+          "strategy": "cheapest"
+        },
+        "homeChargingWindow": {
+          "from": "23:00",
+          "to": "07:00"
+        }
       }
     },
     {
@@ -70,25 +204,57 @@
         "currency": "CAD",
         "mode": "tiered",
         "seasons": [
-          { "id": "summer", "label": "Summer", "from": "05-01", "to": "10-31" },
-          { "id": "winter", "label": "Winter", "from": "11-01", "to": "04-30" }
+          {
+            "id": "summer",
+            "label": "Summer",
+            "from": "05-01",
+            "to": "10-31"
+          },
+          {
+            "id": "winter",
+            "label": "Winter",
+            "from": "11-01",
+            "to": "04-30"
+          }
         ],
         "tiered": {
           "householdBaselineKwh": 0,
           "tiers": [
-            { "upToKwh": 600, "rate": 0.12 },
-            { "upToKwh": null, "rate": 0.142 }
+            {
+              "upToKwh": 600,
+              "rate": 0.12
+            },
+            {
+              "upToKwh": null,
+              "rate": 0.142
+            }
           ],
           "tiersBySeason": {
             "winter": [
-              { "upToKwh": 1000, "rate": 0.12 },
-              { "upToKwh": null, "rate": 0.142 }
+              {
+                "upToKwh": 1000,
+                "rate": 0.12
+              },
+              {
+                "upToKwh": null,
+                "rate": 0.142
+              }
             ]
           }
         },
         "fixedMonthlyFee": 39.2,
-        "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 }
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
       }
     }
-  ]
+  ],
+  "fuel": {
+    "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+    "effective": "2026-07",
+    "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Ottawa-Gatineau, Ontario part",
+    "pricePerLitre": 1.708
+  }
 }

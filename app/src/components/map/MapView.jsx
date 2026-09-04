@@ -32,6 +32,8 @@ const MODES = [
 
 const snapper = new RouteSnapper();
 const replayService = new ReplayService();
+/** Replay speed multipliers; 0.2× is the default so a day is watchable rather than a flash. */
+const REPLAY_SPEEDS = [0.2, 0.5, 1, 2, 5, 10].map((v) => ({ value: String(v), label: `${v}×` }));
 const mapDataProcessor = new MapDataProcessor();
 
 function Glass({ children, style, ...props }) {
@@ -82,7 +84,7 @@ function MapView({ data, distanceUnit = 'km', places }) {
     // Replay
     const [cursor, setCursor] = useState(0);
     const [playing, setPlaying] = useState(false);
-    const [speed, setSpeed] = useState('2');
+    const [speed, setSpeed] = useState('0.2');
 
     // Services (Dependency Injection)
     const colorCalculator = useMemo(() => new ColorCalculator(distanceUnit), [distanceUnit]);
@@ -216,7 +218,7 @@ function MapView({ data, distanceUnit = 'km', places }) {
         if (!playing || mode !== 'replay' || !service) return undefined;
         const frame = replay.frames[cursor];
         if (!frame) return undefined;
-        const rate = parseInt(speed) || 1;
+        const rate = parseFloat(speed) || 1;
         const advance = () => { if (cursor >= replay.totalDays - 1) setPlaying(false); else setCursor(cursor + 1); };
         const timeline = ReplayService.timeline(frame.trips, (trip) => (snapRoads ? snapper.cached(trip) : null));
         const km = frame.trips.reduce((s, x) => s + x.distanceKm, 0);
@@ -375,7 +377,7 @@ function MapView({ data, distanceUnit = 'km', places }) {
                             {MODES.find((m) => m.value === mode)?.label}
                         </Button>
                         {!hintSeen && (
-                            <Text size="10px" c="dimmed" mt={4} lh={1.2} style={{ maxWidth: 190, textShadow: '0 0 6px var(--ps-page)' }}>
+                            <Text size="10px" mt={4} lh={1.2} px={6} py={3} className="ps-glass" style={{ maxWidth: 190, borderRadius: 2 }}>
                                 Tap for modes, basemap and road snapping
                             </Text>
                         )}
@@ -429,24 +431,33 @@ function MapView({ data, distanceUnit = 'km', places }) {
                         <ActionIcon variant="filled" color="polestar" size="lg" radius="xl" onClick={() => { if (cursor >= replay.totalDays - 1) setCursor(0); setPlaying((p) => !p); }} aria-label={playing ? 'Pause' : 'Play'}>
                             {playing ? <IconPlayerPause size={18} /> : <IconPlayerPlay size={18} />}
                         </ActionIcon>
-                        <SegmentedControl size="xs" radius="xs" value={speed} onChange={setSpeed} data={[{ value: '1', label: '1×' }, { value: '2', label: '2×' }, { value: '4', label: '4×' }, { value: '8', label: '8×' }]} />
+                        {isMobile ? (
+                            <Select size="xs" w={78} value={speed} onChange={(v) => v && setSpeed(v)} data={REPLAY_SPEEDS} allowDeselect={false} aria-label="Replay speed" comboboxProps={{ position: 'top' }} />
+                        ) : (
+                            <SegmentedControl size="xs" radius="xs" value={speed} onChange={setSpeed} data={REPLAY_SPEEDS} />
+                        )}
                         <Box style={{ flex: 1, minWidth: 80 }}>
                             <Slider size="sm" color="polestar" min={0} max={Math.max(0, replay.totalDays - 1)} value={cursor} onChange={(v) => { setPlaying(false); setCursor(v); }} label={(v) => replay.frames[v]?.label ?? ''} />
                         </Box>
-                        <Box style={{ minWidth: isMobile ? 90 : 220, textAlign: 'right' }}>
-                            <Text size="sm" fw={500} className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>{frame?.label ?? ''}</Text>
-                            {!isMobile && (
+                        {!isMobile && (
+                            <Box style={{ minWidth: 220, textAlign: 'right' }}>
+                                <Text size="sm" fw={500} className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>{frame?.label ?? ''}</Text>
                                 <Text size="xs" c="dimmed" className="ps-tabular" style={{ whiteSpace: 'nowrap' }}>
                                     day {cursor + 1} of {replay.totalDays} · {frame?.cumulative.trips ?? 0} trips · {formatNumber(frame?.cumulative.distance ?? 0, 0)} {unit} · {formatNumber(frame?.cumulative.energy ?? 0, 0)} kWh
                                 </Text>
-                            )}
-                        </Box>
+                            </Box>
+                        )}
                     </Group>
+                    {isMobile && (
+                        <Text size="xs" c="dimmed" className="ps-tabular" mt={4} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {frame?.label ?? ''} · day {cursor + 1}/{replay.totalDays} · {frame?.cumulative.trips ?? 0} trips · {formatNumber(frame?.cumulative.distance ?? 0, 0)} {unit}
+                        </Text>
+                    )}
                 </Glass>
             )}
 
             {/* Snap consent */}
-            <Modal opened={snapConsent} onClose={() => setSnapConsent(false)} title="Snap routes to roads" size="md" zIndex={1000} fullScreen={isMobile} radius={0}>
+            <Modal opened={snapConsent} onClose={() => setSnapConsent(false)} title="Snap routes to roads" size="md" fullScreen={isMobile} radius={0}>
                 <Stack gap="sm">
                     <Text size="sm">
                         Routes are drawn as straight lines because the export only has a start and an end. Snapping asks the public <b>OSRM</b> router (router.project-osrm.org) for the road path between each unique start/end pair.

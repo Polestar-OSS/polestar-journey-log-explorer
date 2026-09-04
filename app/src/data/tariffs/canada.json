@@ -8,19 +8,301 @@
   "effective": "2023-09-03",
   "notes": "All-in residential averages (energy, delivery, riders and provincial rebates) at 1,000 kWh a month, compiled by energyhub.org. Ontario customers on the regulated plan should pick Hydro Ottawa or Toronto Hydro instead; those files carry the actual time-of-use, tiered and ultra-low overnight schedules.",
   "plans": [
-    { "id": "national", "label": "National average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.192 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 } } },
-    { "id": "alberta", "label": "Alberta average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.258 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 } } },
-    { "id": "british-columbia", "label": "British Columbia average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.114 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.5 } } },
-    { "id": "manitoba", "label": "Manitoba average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.102 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.5 } } },
-    { "id": "new-brunswick", "label": "New Brunswick average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.139 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 } } },
-    { "id": "newfoundland-labrador", "label": "Newfoundland and Labrador average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.148 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 } } },
-    { "id": "nova-scotia", "label": "Nova Scotia average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.183 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 } } },
-    { "id": "ontario", "label": "Ontario average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.141 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 } } },
-    { "id": "prince-edward-island", "label": "Prince Edward Island average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.184 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 } } },
-    { "id": "quebec", "label": "Quebec average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.078 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.45 } } },
-    { "id": "saskatchewan", "label": "Saskatchewan average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.199 }, "publicCharging": { "enabled": true, "sharePct": 15, "rate": 0.55 } } },
-    { "id": "northwest-territories", "label": "Northwest Territories average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.41 }, "publicCharging": { "enabled": false, "sharePct": 0, "rate": 0.6 } } },
-    { "id": "nunavut", "label": "Nunavut average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.354 }, "publicCharging": { "enabled": false, "sharePct": 0, "rate": 0.6 } } },
-    { "id": "yukon", "label": "Yukon average", "tariff": { "currency": "CAD", "mode": "flat", "flat": { "rate": 0.187 }, "publicCharging": { "enabled": true, "sharePct": 10, "rate": 0.55 } } }
-  ]
+    {
+      "id": "national",
+      "label": "National average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.192
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
+      }
+    },
+    {
+      "id": "alberta",
+      "label": "Alberta average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.258
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Calgary",
+        "pricePerLitre": 1.682
+      }
+    },
+    {
+      "id": "british-columbia",
+      "label": "British Columbia average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.114
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.5
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Vancouver",
+        "pricePerLitre": 2.007
+      }
+    },
+    {
+      "id": "manitoba",
+      "label": "Manitoba average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.102
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.5
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Winnipeg",
+        "pricePerLitre": 1.662
+      }
+    },
+    {
+      "id": "new-brunswick",
+      "label": "New Brunswick average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.139
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
+      }
+    },
+    {
+      "id": "newfoundland-labrador",
+      "label": "Newfoundland and Labrador average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.148
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; St. John's",
+        "pricePerLitre": 1.964
+      }
+    },
+    {
+      "id": "nova-scotia",
+      "label": "Nova Scotia average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.183
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Halifax",
+        "pricePerLitre": 1.842
+      }
+    },
+    {
+      "id": "ontario",
+      "label": "Ontario average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.141
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Toronto",
+        "pricePerLitre": 1.727
+      }
+    },
+    {
+      "id": "prince-edward-island",
+      "label": "Prince Edward Island average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.184
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Charlottetown and Summerside",
+        "pricePerLitre": 1.923
+      }
+    },
+    {
+      "id": "quebec",
+      "label": "Quebec average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.078
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.45
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Montréal",
+        "pricePerLitre": 1.874
+      }
+    },
+    {
+      "id": "saskatchewan",
+      "label": "Saskatchewan average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.199
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 15,
+          "rate": 0.55
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Regina",
+        "pricePerLitre": 1.681
+      }
+    },
+    {
+      "id": "northwest-territories",
+      "label": "Northwest Territories average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.41
+        },
+        "publicCharging": {
+          "enabled": false,
+          "sharePct": 0,
+          "rate": 0.6
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Yellowknife",
+        "pricePerLitre": 1.809
+      }
+    },
+    {
+      "id": "nunavut",
+      "label": "Nunavut average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.354
+        },
+        "publicCharging": {
+          "enabled": false,
+          "sharePct": 0,
+          "rate": 0.6
+        }
+      }
+    },
+    {
+      "id": "yukon",
+      "label": "Yukon average",
+      "tariff": {
+        "currency": "CAD",
+        "mode": "flat",
+        "flat": {
+          "rate": 0.187
+        },
+        "publicCharging": {
+          "enabled": true,
+          "sharePct": 10,
+          "rate": 0.55
+        }
+      },
+      "fuel": {
+        "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+        "effective": "2026-07",
+        "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Whitehorse",
+        "pricePerLitre": 1.895
+      }
+    }
+  ],
+  "fuel": {
+    "source": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101",
+    "effective": "2026-07",
+    "note": "Statistics Canada table 18-10-0001-01, regular unleaded at self-service, monthly average for July 2026; Canada average",
+    "pricePerLitre": 1.755
+  }
 }

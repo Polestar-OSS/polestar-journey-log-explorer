@@ -10,7 +10,8 @@
  */
 import { hasCoordinates } from '../../utils/geo';
 
-const CACHE_KEY = 'polestar-route-cache:v1';
+export const ROUTE_CACHE_KEY = 'polestar-route-cache:v1';
+const CACHE_KEY = ROUTE_CACHE_KEY;
 const DEFAULT_ENDPOINT = 'https://router.project-osrm.org/route/v1/driving';
 const MAX_CACHE_ENTRIES = 2000;
 

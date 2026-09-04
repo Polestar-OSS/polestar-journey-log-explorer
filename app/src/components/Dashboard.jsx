@@ -61,12 +61,12 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
 
     const insights = useMemo(() => new InsightsCalculator(distanceUnit).compute(filteredData), [filteredData, distanceUnit]);
     const [tariff] = useTariff();
-    const { vehicle, fuelPrice } = useComparison();
+    const { vehicle, fuelPrice, explicit: vehicleChosen } = useComparison();
     const usableKwh = insights?.battery?.usableKwh ?? null;
     const cost = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(filteredData, { usableKwh }), [tariff, filteredData, distanceUnit, usableKwh]);
     const comparison = useMemo(
-        () => new VehicleComparison({ distanceUnit }).compare(filteredData, vehicle, { fuelPrice, evCostPerKwh: cost.effectiveRatePerKwh, evCostTotal: cost.cost.total }),
-        [filteredData, vehicle, fuelPrice, cost, distanceUnit]
+        () => { const r = new VehicleComparison({ distanceUnit }).compare(filteredData, vehicle, { fuelPrice, evCostPerKwh: cost.effectiveRatePerKwh, evCostTotal: cost.cost.total }); return r ? { ...r, chosen: vehicleChosen } : r; },
+        [filteredData, vehicle, fuelPrice, cost, distanceUnit, vehicleChosen]
     );
 
     const deltas = useMemo(() => {
