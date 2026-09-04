@@ -1,11 +1,50 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
+# Dependabot configuration
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# The previous file declared an empty package-ecosystem, which Dependabot
+# rejects, so no version updates were ever produced. Two ecosystems matter
+# here: the npm manifest under /app and the GitHub Actions used by CI.
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "app/" # Location of package manifests
+  - package-ecosystem: "npm"
+    directory: "/app"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      mantine:
+        patterns:
+          - "@mantine/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+          - "@vitejs/plugin-react"
+      lint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "globals"
+      build:
+        patterns:
+          - "vite"
+          - "vitest"
+          - "postcss*"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"

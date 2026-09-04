@@ -140,6 +140,19 @@ export const parseXLSX = async (file) => {
     }
 };
 
+/**
+ * Parse a Journey Log export by file extension. Returns the trips, the
+ * detected distance unit and the file name so callers can track sources.
+ */
+export const parseJourneyFile = async (file) => {
+    const name = (file.name || '').toLowerCase();
+    let result;
+    if (name.endsWith('.csv')) result = await parseCSV(file);
+    else if (name.endsWith('.xlsx') || name.endsWith('.xls')) result = await parseXLSX(file);
+    else throw new Error(`Unsupported file "${file.name}". Drop a CSV or XLSX export from the Journey Log app.`);
+    return { ...result, fileName: file.name };
+};
+
 const calculateEfficiency = (consumption, distance) => {
     const d = parseFloat(distance);
     const c = parseFloat(consumption);

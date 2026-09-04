@@ -73,7 +73,7 @@ export const formatDateTimeLabel = (date) =>
     `${MONTHS_SHORT[date.getMonth()]} ${date.getDate()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 
 export const formatDuration = (minutes) => {
-    if (!(minutes >= 0)) return '–';
+    if (typeof minutes !== 'number' || !isFinite(minutes) || minutes < 0) return '–';
     const h = Math.floor(minutes / 60);
     const m = Math.round(minutes % 60);
     if (h === 0) return `${m} min`;
