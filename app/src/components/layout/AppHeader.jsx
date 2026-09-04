@@ -1,11 +1,11 @@
 import { ActionIcon, Box, Button, Container, Group, Image, Text, Tooltip, useMantineColorScheme, useComputedColorScheme } from '@mantine/core';
-import { IconSun, IconMoon, IconBrandGithub, IconDownload, IconHelp, IconFileUpload } from '@tabler/icons-react';
+import { IconSun, IconMoon, IconBrandGithub, IconDownload, IconHelp, IconFileUpload, IconPlus } from '@tabler/icons-react';
 import Eyebrow from '../ui/Eyebrow';
 import { logoFor } from '../../theme/logo';
 
 const REPO_URL = 'https://github.com/Polestar-OSS/polestar-journey-log-explorer';
 
-function AppHeader({ hasData, onReset, onExport, exportCount, onHelp }) {
+function AppHeader({ hasData, onReset, onExport, onAddFiles, exportCount, onHelp }) {
     const { toggleColorScheme } = useMantineColorScheme();
     const scheme = useComputedColorScheme('dark', { getInitialValueInEffect: false });
 
@@ -35,13 +35,23 @@ function AppHeader({ hasData, onReset, onExport, exportCount, onHelp }) {
                                     <IconDownload size={16} />
                                 </ActionIcon>
                             </Tooltip>
-                            <Tooltip label="Load a different file">
-                                <Button size="xs" variant="subtle" color="gray" leftSection={<IconFileUpload size={14} />} onClick={onReset} visibleFrom="sm">
-                                    New file
+                            <Tooltip label="Add more exports to this journey">
+                                <Button size="xs" variant="subtle" color="gray" leftSection={<IconPlus size={14} />} onClick={onAddFiles} visibleFrom="sm">
+                                    Add files
                                 </Button>
                             </Tooltip>
-                            <Tooltip label="Load a different file">
-                                <ActionIcon size="lg" variant="subtle" color="gray" onClick={onReset} hiddenFrom="sm" aria-label="Load a different file">
+                            <Tooltip label="Add more exports">
+                                <ActionIcon size="lg" variant="subtle" color="gray" onClick={onAddFiles} hiddenFrom="sm" aria-label="Add more exports">
+                                    <IconPlus size={16} />
+                                </ActionIcon>
+                            </Tooltip>
+                            <Tooltip label="Start over with different files">
+                                <Button size="xs" variant="subtle" color="gray" leftSection={<IconFileUpload size={14} />} onClick={onReset} visibleFrom="sm">
+                                    Start over
+                                </Button>
+                            </Tooltip>
+                            <Tooltip label="Start over with different files">
+                                <ActionIcon size="lg" variant="subtle" color="gray" onClick={onReset} hiddenFrom="sm" aria-label="Start over">
                                     <IconFileUpload size={16} />
                                 </ActionIcon>
                             </Tooltip>

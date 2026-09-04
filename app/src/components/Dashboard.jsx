@@ -7,6 +7,7 @@ import InsightsView from './insights/InsightsView';
 import TableView from './table/TableView';
 import DataGuide from './DataGuide';
 import FilterBar from './filters/FilterBar';
+import SourcesBar from './SourcesBar';
 import { calculateStatistics } from '../utils/dataParser';
 import { InsightsCalculator } from '../services/insights/InsightsCalculator';
 
@@ -31,7 +32,7 @@ function TabLoader() {
     );
 }
 
-function Dashboard({ data, distanceUnit = 'km', onFilteredChange }) {
+function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, onFilteredChange, onAddFiles }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [filterState, setFilterState] = useState({ filtered: data, range: null, isFiltered: false });
     const { filtered: filteredData, range, isFiltered } = filterState;
@@ -55,7 +56,10 @@ function Dashboard({ data, distanceUnit = 'km', onFilteredChange }) {
 
     return (
         <Stack gap="lg">
-            <FilterBar data={data} distanceUnit={distanceUnit} onFilterChange={handleFilterChange} />
+            <Stack gap="xs">
+                <SourcesBar sources={sources} totalTrips={data.length} duplicatesRemoved={duplicatesRemoved} distanceUnit={distanceUnit} onAddFiles={onAddFiles} />
+                <FilterBar data={data} distanceUnit={distanceUnit} sources={sources} onFilterChange={handleFilterChange} />
+            </Stack>
 
             {filteredData.length === 0 ? (
                 <Box className="ps-card" p="xl">

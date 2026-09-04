@@ -18,6 +18,7 @@ const EMPTY = {
     socDropMax: null,
     category: null,
     tags: [],
+    sourceFile: null,
 };
 
 const PRESETS = [
@@ -34,7 +35,7 @@ const PRESETS = [
  * Date presets count back from the newest trip in the file, so an old export
  * still has a meaningful "last 30 days".
  */
-function FilterBar({ data, distanceUnit = 'km', onFilterChange }) {
+function FilterBar({ data, distanceUnit = 'km', sources = [], onFilterChange }) {
     const filterService = useMemo(() => new FilterService(), []);
     const metadataService = useMemo(() => new FilterMetadataService(), []);
     const metadata = useMemo(() => metadataService.getAllMetadata(data), [data, metadataService]);
@@ -67,6 +68,7 @@ function FilterBar({ data, distanceUnit = 'km', onFilterChange }) {
     // Apply whenever filters change
     useEffect(() => {
         let filtered = filterService.applyFilters(data, filters);
+        if (filters.sourceFile) filtered = filtered.filter((trip) => trip.sourceFile === filters.sourceFile);
         if (filters.tags.length > 0) {
             filtered = filtered.filter((trip) => {
                 const annotation = getTripAnnotation(generateTripId(trip));
@@ -87,6 +89,7 @@ function FilterBar({ data, distanceUnit = 'km', onFilterChange }) {
         filters.socDropMin !== null || filters.socDropMax !== null,
         filters.category,
         filters.tags.length > 0,
+        filters.sourceFile,
     ].filter(Boolean).length;
 
     const reset = () => {
@@ -133,6 +136,19 @@ function FilterBar({ data, distanceUnit = 'km', onFilterChange }) {
                         onChange={(v) => setFilters((f) => ({ ...f, category: v }))}
                         clearable
                         w={150}
+                    />
+                )}
+
+                {sources.length > 1 && (
+                    <Select
+                        size="xs"
+                        placeholder="All files"
+                        data={sources.map((s) => ({ value: s.fileName, label: `${s.fileName} (${s.added})` }))}
+                        value={filters.sourceFile}
+                        onChange={(v) => setFilters((f) => ({ ...f, sourceFile: v }))}
+                        clearable
+                        w={220}
+                        aria-label="Filter by source file"
                     />
                 )}
 

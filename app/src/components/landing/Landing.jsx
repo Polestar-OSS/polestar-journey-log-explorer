@@ -57,7 +57,7 @@ function RouteArt() {
     );
 }
 
-function Landing({ onDataLoaded, onLoadSample }) {
+function Landing({ onSourcesLoaded, onLoadSample }) {
     const [helpOpened, setHelpOpened] = useState(false);
 
     return (
@@ -76,7 +76,7 @@ function Landing({ onDataLoaded, onLoadSample }) {
                         </Text>
                         <List spacing={6} size="sm" icon={<ThemeIcon size={18} radius="xl" variant="light" color="polestar"><IconShieldLock size={11} /></ThemeIcon>}>
                             <List.Item>100 % client-side. Your file never leaves the browser.</List.Item>
-                            <List.Item>Works with the CSV and XLSX exports, in km or miles.</List.Item>
+                            <List.Item>Works with the CSV and XLSX exports, in km or miles. Drop several; overlaps are de-duplicated.</List.Item>
                             <List.Item>Free and open source, AGPL-3.0.</List.Item>
                         </List>
                         <Group gap="sm" mt="xs">
@@ -96,7 +96,7 @@ function Landing({ onDataLoaded, onLoadSample }) {
                             <RouteArt />
                         </Box>
                         <Box style={{ position: 'relative', zIndex: 1 }}>
-                            <FileDropzone onDataLoaded={onDataLoaded} />
+                            <FileDropzone onSourcesLoaded={onSourcesLoaded} />
                         </Box>
                     </Box>
                 </Grid.Col>
