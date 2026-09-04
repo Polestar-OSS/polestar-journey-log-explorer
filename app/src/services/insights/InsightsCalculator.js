@@ -126,6 +126,7 @@ export class InsightsCalculator {
         return {
             uniquePlaces: ranked.length,
             top: ranked.slice(0, 5).map((p) => ({ ...p, sharePct: pct(p.visits, endpoints) })),
+            ranked: ranked.slice(0, 40).map((p) => ({ ...p, sharePct: pct(p.visits, endpoints) })),
             homeSharePct: ranked[0] ? pct(ranked[0].visits, endpoints) : 0,
             tripsTouchingHome: ranked[0]
                 ? data.filter((t) => this._near(t, ranked[0])).length
