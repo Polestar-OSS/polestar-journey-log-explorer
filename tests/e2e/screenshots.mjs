@@ -30,11 +30,14 @@ async function run(name, { width, height, scheme, mobile = false }) {
     page.on('console', (m) => { if (m.type() === 'error' && !/googletagmanager|iubenda|ERR_|net::|Failed to load resource/.test(m.text())) errors.push(`[${name}] console: ${m.text().slice(0, 300)}`); });
     for (let a = 0; a < 30; a++) { try { await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 15000 }); break; } catch (e) { if (a === 29) throw e; await page.waitForTimeout(1000); } }
     await page.waitForSelector('text=Your journeys', { timeout: 30000 });
-    const current = await page.evaluate(() => document.documentElement.getAttribute('data-mantine-color-scheme'));
-    if (current !== scheme) await page.getByRole('button', { name: /Toggle colour scheme/i }).click();
     await page.evaluate(() => localStorage.clear());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector('text=Your journeys', { timeout: 30000 });
+    // Set the colour scheme after the storage reset, otherwise the reload drops it and every run is dark
+    const current = await page.evaluate(() => document.documentElement.getAttribute('data-mantine-color-scheme'));
+    if (current !== scheme) await page.getByRole('button', { name: /Toggle colour scheme/i }).click();
+    await page.waitForTimeout(300);
+    checks.push(`[${name}] colour scheme: ${await page.evaluate(() => document.documentElement.getAttribute('data-mantine-color-scheme'))}`);
     if (!mobile) await page.screenshot({ path: `${OUT}/${name}-consent.png`, fullPage: false });
     await page.getByRole('button', { name: /^Decline$/ }).click();
     await page.waitForTimeout(300);
