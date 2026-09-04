@@ -33,12 +33,10 @@ Rows with distance ≤ 0 are discarded before anything else.
 | Active days | distinct `dayKey` |
 | Time driving | `Σ durationMin` over trips with duration > 0 |
 | Average moving speed | `Σ distance / Σ hours` over the same trips |
-| Fuel not used | `distance / 100 × 8.9 L` (km) or `× 4.2 gal` (mi), the US EPA fleet average |
-| CO₂ avoided | `fuel × 2.31 kg/L` or `× 8.887 kg/gal` |
-| Trees equivalent | `CO₂ / 21 kg` per tree-year |
 
-The carbon figure ignores the electricity's own footprint; it is "what the
-same distance would have emitted from a petrol tailpipe".
+Fuel, CO₂ and money comparisons live in §10 and use a real car. The CO₂
+figure ignores the electricity's own footprint; it is "what the same
+distance would have emitted from a petrol tailpipe".
 
 ## 3. Chart series (`ChartDataProcessor`)
 
@@ -61,10 +59,16 @@ same distance would have emitted from a petrol tailpipe".
 
 ### Seasonality
 Meteorological seasons: winter = Dec–Feb, spring = Mar–May, summer = Jun–Aug,
-autumn = Sep–Nov. Season efficiency is distance-weighted. The **winter
-penalty** is `(winter − summer) / summer × 100`, reported only when both
-seasons have ≥ 5 trips. Month-of-year folds every year in the file onto one
-January–December calendar.
+autumn = Sep–Nov in the northern hemisphere, shifted by six months when the
+median start latitude of located trips is south of the equator. Season
+efficiency is distance-weighted. Each season also reports its evidence:
+trip count, distinct ISO weeks and the months covered. The **winter
+penalty** `(winter − summer) / summer × 100` is stated only when winter and
+summer each have ≥ 20 trips over ≥ 3 distinct weeks; otherwise `reason`
+names the missing season and the UI says so instead of guessing.
+`confidence` is `high` at ≥ 60 trips over ≥ 8 weeks in both seasons, else
+`low` (the story and insight cards add a caveat). Month-of-year folds every
+year in the file onto one January–December calendar.
 
 ### Places
 Trip endpoints are bucketed on a 0.001° grid (≈ 100 m). Cells are then merged
@@ -234,3 +238,26 @@ distance × 100`, `costPerTrip`, `costPerMonth = total ÷ months present`.
 Fixed monthly fees are reported (`fees × months`) but not added to the total,
 because they are paid regardless of the car. Every non-obvious input is
 echoed in `assumptions[]` and shown in the settings panel.
+
+## 10. Compared with a petrol or hybrid car (`VehicleComparison`)
+
+Comparators are real vehicles from `app/src/data/vehicles/` (US EPA
+fuel-economy database; provenance and derivation in
+[`VEHICLE_DATA.md`](./VEHICLE_DATA.md)).
+
+```
+petrol / mild hybrid:
+  fuel  = distanceKm × lPer100km ÷ 100            (litres; ÷ 3.785 for gallons)
+  co2   = distanceKm × co2GPerKm ÷ 1000           (kg, tailpipe)
+plug-in hybrid (charged every night):
+  per calendar day: electricKm = min(dayKm, rangeKm); petrolKm = dayKm − electricKm
+  fuel, co2 as above on petrolKm; electricKwh = electricKm × kwhPer100km ÷ 100
+money (only when the user has entered a fuel price):
+  fuelCost     = fuel × fuelPrice
+  electricCost = electricKwh × effectiveRatePerKwh   (from §9)
+  saving       = fuelCost + electricCost − §9 total
+treeYears = co2 ÷ 22 kg
+```
+
+`electricSharePct = electricKm ÷ distanceKm`. Trips without a date are
+petrol. The Insights table runs the same calculation for every bundled car.

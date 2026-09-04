@@ -1,28 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
-import { Accordion, ActionIcon, Anchor, Badge, Box, Button, Combobox, Grid, Group, List, Loader, Modal, NumberInput, ScrollArea, SegmentedControl, Select, Slider, Stack, Switch, Table, Tabs, Text, TextInput, Tooltip, useCombobox } from '@mantine/core';
+import { Accordion, ActionIcon, Anchor, Badge, Box, Button, Grid, Group, List, Modal, NumberInput, SegmentedControl, Select, Slider, Stack, Switch, Table, Tabs, Text, TextInput, Tooltip } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTip, XAxis, YAxis } from 'recharts';
-import { IconPlus, IconTrash, IconMapPin, IconBolt, IconClock, IconStack2, IconInfoCircle, IconCalendarEvent, IconExternalLink } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconSearch, IconBolt, IconClock, IconStack2, IconInfoCircle, IconCalendarEvent, IconExternalLink, IconCar } from '@tabler/icons-react';
 import { useTariff } from '../../hooks/useTariff';
+import { useComparison } from '../../hooks/useComparison';
+import { VehicleComparison } from '../../services/comparison/VehicleComparison';
+import { vehicleGroups } from '../../services/comparison/Vehicles';
 import { CostCalculator } from '../../services/cost/CostCalculator';
 import { LIMITS, currencyPrefix } from '../../services/cost/TariffModel';
-import { findPreset, presetGroups } from '../../services/cost/TariffPresets';
+import { findPreset, presetGroups, searchPresets } from '../../services/cost/TariffPresets';
 import { useTokens } from '../../theme/useTokens';
 import { formatNumber } from '../../utils/format';
 import Eyebrow from '../ui/Eyebrow';
 import ChartTooltip from '../charts/ChartTooltip';
-
-/** Rough average residential prices per kWh by country, in local currency (2025–2026). */
-const COUNTRY_RATES = {
-    'United States': { rate: 0.16, currency: 'USD' }, Canada: { rate: 0.11, currency: 'CAD' }, 'United Kingdom': { rate: 0.27, currency: 'GBP' },
-    Germany: { rate: 0.38, currency: 'EUR' }, France: { rate: 0.23, currency: 'EUR' }, Spain: { rate: 0.2, currency: 'EUR' }, Italy: { rate: 0.31, currency: 'EUR' },
-    Netherlands: { rate: 0.3, currency: 'EUR' }, Belgium: { rate: 0.3, currency: 'EUR' }, Sweden: { rate: 2.1, currency: 'SEK' }, Norway: { rate: 1.8, currency: 'NOK' },
-    Denmark: { rate: 2.6, currency: 'DKK' }, Finland: { rate: 0.19, currency: 'EUR' }, Switzerland: { rate: 0.27, currency: 'CHF' }, Austria: { rate: 0.24, currency: 'EUR' },
-    Poland: { rate: 0.85, currency: 'PLN' }, Portugal: { rate: 0.27, currency: 'EUR' }, Ireland: { rate: 0.32, currency: 'EUR' }, Australia: { rate: 0.25, currency: 'AUD' },
-    'New Zealand': { rate: 0.23, currency: 'NZD' }, Japan: { rate: 31, currency: 'JPY' }, 'South Korea': { rate: 150, currency: 'KRW' }, Brazil: { rate: 0.95, currency: 'BRL' },
-    India: { rate: 8, currency: 'INR' }, Mexico: { rate: 2.5, currency: 'MXN' }, 'Czech Republic': { rate: 7.5, currency: 'CZK' }, Czechia: { rate: 7.5, currency: 'CZK' },
-};
 
 const DAY_OPTIONS = [{ value: 'all', label: 'Every day' }, { value: 'weekday', label: 'Weekdays' }, { value: 'weekend', label: 'Weekends' }];
 const MMDD_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
@@ -105,6 +97,11 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
     const seasonOptions = [{ value: 'all', label: 'All year' }, ...tariff.seasons.map((s) => ({ value: s.id, label: s.label }))];
 
     const result = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(data || [], { usableKwh }), [tariff, data, distanceUnit, usableKwh]);
+    const { vehicle, fuelPrice, setVehicleId, setFuelPrice } = useComparison();
+    const comparison = useMemo(
+        () => new VehicleComparison({ distanceUnit }).compare(data || [], vehicle, { fuelPrice, evCostPerKwh: result.effectiveRatePerKwh, evCostTotal: result.cost.total }),
+        [data, vehicle, fuelPrice, result, distanceUnit]
+    );
 
     const patch = (fn) => setTariff((current) => fn(structuredClone(current)));
     const setPeriod = (i, key, value) => patch((c) => { c.tou.periods[i][key] = value; return c; });
@@ -116,35 +113,6 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
         setPresetId(id);
         setTariff({ ...p.tariff, currency: p.tariff.currency || tariff.currency });
     };
-
-    // Country lookup (typed city name → Nominatim → country → average rate)
-    const combobox = useCombobox();
-    const [citySearch, setCitySearch] = useState('');
-    const [cityOptions, setCityOptions] = useState([]);
-    const [loadingCities, setLoadingCities] = useState(false);
-    useEffect(() => {
-        if (citySearch.length < 3) return undefined;
-        const timer = setTimeout(async () => {
-            setLoadingCities(true);
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(citySearch)}&addressdetails=1&limit=5`, { headers: { Accept: 'application/json' } });
-                const json = await res.json();
-                setCityOptions(json.map((p) => ({ label: p.display_name, country: p.address?.country })));
-            } catch {
-                setCityOptions([]);
-            } finally {
-                setLoadingCities(false);
-            }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [citySearch]);
-    const applyCountry = (label) => {
-        const hit = cityOptions.find((o) => o.label === label);
-        const rate = hit?.country ? COUNTRY_RATES[hit.country] : null;
-        setCitySearch(label);
-        if (rate) patch((c) => { c.mode = 'flat'; c.flat.rate = rate.rate; c.currency = rate.currency; return c; });
-    };
-    const visibleCities = citySearch.length >= 3 ? cityOptions : [];
 
     const money = (v, d = 2) => `${symbol}${formatNumber(v, d)}`;
 
@@ -219,12 +187,26 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
     );
 
     return (
-        <Modal opened={opened} onClose={onClose} title="Electricity tariff and charging" size={1180} fullScreen={isMobile} radius={0} zIndex={1000}>
+        <Modal opened={opened} onClose={onClose} title="Electricity, charging and comparison" size={1180} fullScreen={isMobile} radius={0} zIndex={1000}>
             <Grid gap="lg">
                 <Grid.Col span={{ base: 12, md: 7 }}>
                     <Stack gap="md">
                         <Group grow align="flex-end" preventGrowOverflow={false}>
-                            <Select label="Start from a preset" placeholder="Choose a provider or region…" data={presetGroups()} value={presetId} onChange={(id) => id && applyPreset(id)} size="xs" searchable nothingFoundMessage="No preset. Contributions welcome: see docs/TARIFF_PRESETS.md" />
+                            <Select
+                                label="Start from a preset"
+                                description="Search a provider, country, province or state; presets are community JSON files"
+                                placeholder="ottawa, texas, sweden, ulo…"
+                                leftSection={<IconSearch size={14} />}
+                                data={presetGroups()}
+                                value={presetId}
+                                onChange={(id) => id && applyPreset(id)}
+                                size="xs"
+                                searchable
+                                clearable={false}
+                                filter={({ search }) => presetGroups(searchPresets(search))}
+                                nothingFoundMessage="No preset matches. Add one: docs/TARIFF_PRESETS.md"
+                                maxDropdownHeight={280}
+                            />
                             <TextInput size="xs" label="Currency label" description="Only for display; leave empty for plain numbers" placeholder="$, EUR, R$ …" value={tariff.currency} maxLength={8} onChange={(e) => patch((c) => { c.currency = e.currentTarget.value; return c; })} w={{ base: '100%', sm: 180 }} style={{ flexGrow: 0 }} />
                         </Group>
                         {preset && (
@@ -234,19 +216,6 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
                                 {preset.notes ? ` — ${preset.notes}` : ''}
                             </Text>
                         )}
-
-                        <Combobox store={combobox} onOptionSubmit={(v) => { applyCountry(v); combobox.closeDropdown(); }}>
-                            <Combobox.Target>
-                                <TextInput size="xs" label="Or look up your country's average" placeholder="Type a city…" leftSection={<IconMapPin size={14} />} rightSection={loadingCities ? <Loader size={12} /> : null} value={citySearch} onChange={(e) => { setCitySearch(e.currentTarget.value); combobox.openDropdown(); }} onFocus={() => combobox.openDropdown()} onBlur={() => combobox.closeDropdown()} />
-                            </Combobox.Target>
-                            <Combobox.Dropdown>
-                                <Combobox.Options>
-                                    <ScrollArea.Autosize mah={180}>
-                                        {visibleCities.length ? visibleCities.map((o) => <Combobox.Option value={o.label} key={o.label}>{o.label}</Combobox.Option>) : <Combobox.Empty>{citySearch.length >= 3 && !loadingCities ? 'No match' : 'Type at least three letters'}</Combobox.Empty>}
-                                    </ScrollArea.Autosize>
-                                </Combobox.Options>
-                            </Combobox.Dropdown>
-                        </Combobox>
 
                         <div>
                             <Eyebrow>How you are billed</Eyebrow>
@@ -297,7 +266,33 @@ function TariffSettingsModal({ opened, onClose, data, distanceUnit = 'km', usabl
                             </Stack>
                         )}
 
-                        <Accordion variant="contained" radius="xs" chevronPosition="left">
+                        <Accordion variant="contained" radius="xs" chevronPosition="left" multiple>
+                            <Accordion.Item value="comparison">
+                                <Accordion.Control icon={<IconCar size={14} style={{ color: 'var(--ps-muted)' }} />}><Text size="sm" fw={500}>Compared with a petrol or hybrid car</Text></Accordion.Control>
+                                <Accordion.Panel>
+                                    <Stack gap="md">
+                                        <Text size="xs" c="dimmed">The CO₂ tile, the story and the Insights table compare your trips with a real car from the US EPA fuel-economy database, on the combined cycle. Plug-in hybrids are modelled as charged every night: the first {vehicle?.electric ? formatNumber(vehicle.electric.rangeKm * (unit === 'mi' ? 0.621371 : 1), 0) : '—'} {unit} of each day electric, the rest on petrol.</Text>
+                                        <Group grow align="flex-start">
+                                            <Select size="xs" label="Car to compare against" data={vehicleGroups()} value={vehicle?.id ?? null} onChange={(id) => id && setVehicleId(id)} allowDeselect={false} searchable maxDropdownHeight={280} />
+                                            <NumberInput size="xs" label={`Fuel price per ${unit === 'mi' ? 'US gallon' : 'litre'}`} description="Leave empty to skip the money comparison" value={fuelPrice ?? ''} onChange={(v) => setFuelPrice(typeof v === 'number' ? v : null)} min={0} step={0.05} decimalScale={3} placeholder="e.g. 1.55" />
+                                        </Group>
+                                        {vehicle && (
+                                            <Text size="xs" c="dimmed">
+                                                {vehicle.label}: {vehicle.lPer100km} L/100 km ({vehicle.mpg.combined} mpg combined, {vehicle.co2GPerKm} g CO₂/km){vehicle.electric ? `; electric ${vehicle.electric.kwhPer100km} kWh/100 km for ${vehicle.electric.rangeKm} km` : ''}. Source: <Anchor href={`https://www.fueleconomy.gov/feg/Find.do?action=sbs&id=${vehicle.epaVehicleId}`} target="_blank" rel="noreferrer" size="xs">EPA vehicle {vehicle.epaVehicleId}</Anchor>, read {vehicle.retrieved}.
+                                            </Text>
+                                        )}
+                                        {comparison && (
+                                            <Table fz="xs" verticalSpacing={3} withRowBorders={false} className="ps-tabular">
+                                                <Table.Tbody>
+                                                    <Table.Tr><Table.Td c="dimmed">Fuel it would have burned</Table.Td><Table.Td ta="right">{formatNumber(comparison.fuel, 0)} {comparison.fuelUnit}</Table.Td><Table.Td ta="right" c="dimmed">{comparison.electricSharePct > 0 ? `${comparison.electricSharePct}% of ${unit} on electricity` : `${formatNumber(comparison.petrolKm * (unit === 'mi' ? 0.621371 : 1), 0)} ${unit} on petrol`}</Table.Td></Table.Tr>
+                                                    <Table.Tr><Table.Td c="dimmed">Tailpipe CO₂</Table.Td><Table.Td ta="right">{formatNumber(comparison.co2Kg, 0)} kg</Table.Td><Table.Td ta="right" c="dimmed">{comparison.treeYears} tree-years</Table.Td></Table.Tr>
+                                                    <Table.Tr><Table.Td c="dimmed">What it would have cost</Table.Td><Table.Td ta="right">{comparison.totalCost === null ? '–' : money(comparison.totalCost)}</Table.Td><Table.Td ta="right" c="dimmed">{comparison.saving === null ? 'needs a fuel price' : `${comparison.saving >= 0 ? 'you saved' : 'you paid more:'} ${money(Math.abs(comparison.saving))}`}</Table.Td></Table.Tr>
+                                                </Table.Tbody>
+                                            </Table>
+                                        )}
+                                    </Stack>
+                                </Accordion.Panel>
+                            </Accordion.Item>
                             <Accordion.Item value="charging">
                                 <Accordion.Control><Text size="sm" fw={500}>Charging habits</Text></Accordion.Control>
                                 <Accordion.Panel>

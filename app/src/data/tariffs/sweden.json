@@ -1,0 +1,32 @@
+{
+  "$schema": "./tariff-provider.schema.json",
+  "id": "sweden",
+  "provider": "Generic",
+  "region": "Sweden",
+  "currency": "SEK",
+  "source": "https://www.scb.se/en/finding-statistics/statistics-by-subject-area/energy/price-trends-in-the-energy-sector/energy-prices-on-natural-gas-and-electricity/",
+  "effective": "2026-01-01",
+  "notes": "Approximate all-in household prices (spot-indexed energy, grid fee, energy tax and VAT) by bidding zone, rounded from Statistics Sweden's household price statistics. Spot prices move hourly and the south (SE3, SE4) is usually dearer than the north (SE1, SE2). Many grid operators add a time-of-use grid fee; the day/night plan is that shape.",
+  "plans": [
+    { "id": "national", "label": "National average", "tariff": { "currency": "SEK", "mode": "flat", "flat": { "rate": 2.2 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 5.5 } } },
+    { "id": "se1-se2", "label": "SE1 and SE2 (north) average", "tariff": { "currency": "SEK", "mode": "flat", "flat": { "rate": 1.7 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 5.5 } } },
+    { "id": "se3", "label": "SE3 (Stockholm, Gothenburg) average", "tariff": { "currency": "SEK", "mode": "flat", "flat": { "rate": 2.3 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 5.5 } } },
+    { "id": "se4", "label": "SE4 (Malmö, south) average", "tariff": { "currency": "SEK", "mode": "flat", "flat": { "rate": 2.5 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 5.5 } } },
+    {
+      "id": "day-night",
+      "label": "Day/night and weekend (typical grid-fee shape)",
+      "tariff": {
+        "currency": "SEK",
+        "mode": "tou",
+        "tou": {
+          "defaultRate": 2.4,
+          "periods": [
+            { "id": "night", "label": "Night", "rate": 1.4, "days": "all", "season": "all", "from": "22:00", "to": "06:00" },
+            { "id": "weekend", "label": "Weekend", "rate": 1.6, "days": "weekend", "season": "all", "from": "00:00", "to": "00:00" }
+          ]
+        },
+        "publicCharging": { "enabled": true, "sharePct": 20, "rate": 5.5 }
+      }
+    }
+  ]
+}

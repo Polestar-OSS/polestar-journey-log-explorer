@@ -2,8 +2,6 @@ import { useMemo, useState } from 'react';
 import { Box, Button, Grid, Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import { IconRoute, IconBolt, IconGauge, IconLeaf, IconClock, IconCoin, IconArrowsDiagonal, IconCalendarStats } from '@tabler/icons-react';
 import TariffSettingsModal from '../cost/TariffSettingsModal';
-import { useTariff } from '../../hooks/useTariff';
-import { CostCalculator } from '../../services/cost/CostCalculator';
 import { currencyPrefix } from '../../services/cost/TariffModel';
 import StatTile from './StatTile';
 import Eyebrow from '../ui/Eyebrow';
@@ -19,9 +17,8 @@ const processor = new ChartDataProcessor();
  * Hero figure (total distance) plus a KPI row. Deltas compare the filtered
  * period with the period of equal length that precedes it.
  */
-function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel, compact = false, usableKwh = null }) {
+function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel, compact = false, usableKwh = null, cost, comparison }) {
     const [costModalOpened, setCostModalOpened] = useState(false);
-    const [tariff] = useTariff();
     const distLabel = distanceUnit === 'mi' ? 'mi' : 'km';
 
     const totalDistance = parseFloat(statistics?.totalDistance ?? 0);
@@ -38,8 +35,7 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
         };
     }, [data, statistics]);
 
-    const cost = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(data || [], { usableKwh }), [tariff, data, distanceUnit, usableKwh]);
-    const symbol = currencyPrefix(tariff.currency);
+    const symbol = currencyPrefix(cost?.currency);
     const modeLabel = { flat: 'flat rate', tou: 'time-of-use', tiered: 'tiered' }[cost.mode] ?? cost.mode;
 
     if (!statistics) return null;
@@ -116,11 +112,12 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
                         />
                         <StatTile
                             label="CO₂ avoided"
-                            value={parseFloat(statistics.carbonSaved)}
+                            value={comparison?.co2Kg ?? 0}
                             unit="kg"
                             icon={IconLeaf}
-                            hint={`≈ ${statistics.treesEquivalent} trees for a year · ${statistics.gasSaved} ${statistics.fuelUnit} of fuel not burned`}
-                            className="ps-card ps-rise"
+                            hint={comparison ? `vs ${comparison.vehicle.shortLabel} · ${formatNumber(comparison.fuel, 0)} ${comparison.fuelUnit} of fuel not burned` : 'Pick a car to compare against in the settings'}
+                            onClick={() => setCostModalOpened(true)}
+                            className="ps-card ps-rise ps-card-hover"
                             style={{ '--i': 4 }}
                         />
                         {!compact && (
@@ -161,7 +158,7 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
                                 label="Charging cost"
                                 value={cost.method === 'none' ? '–' : `${symbol}${formatNumber(cost.cost.total, 0)}`}
                                 icon={IconCoin}
-                                hint={cost.method === 'none' ? 'Set your tariff' : `${modeLabel} · ${symbol}${cost.costPer100 ?? 0}/100 ${distLabel} · tap to change tariff`}
+                                hint={cost.method === 'none' ? 'Set your tariff' : `${modeLabel} · ${symbol}${cost.costPer100 ?? 0}/100 ${distLabel}${comparison?.saving !== null && comparison?.saving !== undefined ? ` · ${symbol}${formatNumber(comparison.saving, 0)} less than the ${comparison.vehicle.model}` : ''} · tap to change`}
                                 onClick={() => setCostModalOpened(true)}
                                 className="ps-card ps-rise ps-card-hover"
                                 style={{ '--i': 8 }}
@@ -174,7 +171,7 @@ function StatsCards({ statistics, data, distanceUnit = 'km', deltas, periodLabel
             {!compact && (
                 <Group justify="flex-end" mt={-4} className="ps-no-print">
                     <Button size="compact-xs" variant="subtle" color="gray" onClick={() => setCostModalOpened(true)}>
-                        Electricity tariff settings
+                        Electricity, charging and comparison settings
                     </Button>
                 </Group>
             )}

@@ -68,9 +68,9 @@ async function run(name, { width, height, scheme, mobile = false }) {
         // Tariff settings: open from the overview, switch to time-of-use
         await page.getByRole('tab', { name: 'Overview' }).click();
         await page.waitForTimeout(500);
-        await page.getByRole('button', { name: /Electricity tariff settings/i }).click();
+        await page.getByRole('button', { name: /Electricity.*settings/i }).click();
         await page.waitForSelector('text=Effective price', { timeout: 15000 });
-        await page.getByPlaceholder(/Choose a provider/).fill('Time of use');
+        await page.getByPlaceholder(/ottawa, texas/).fill('Time of use');
         await page.waitForTimeout(300);
         await page.keyboard.press('ArrowDown'); // first match: Hydro Ottawa · Time of use (named providers list first)
         await page.keyboard.press('Enter');
@@ -83,7 +83,7 @@ async function run(name, { width, height, scheme, mobile = false }) {
         // Mobile: the tariff modal goes full-screen
         await page.locator('label', { hasText: /^Detailed$/ }).first().click();
         await page.waitForTimeout(600);
-        await page.getByRole('button', { name: /Electricity tariff settings/i }).click();
+        await page.getByRole('button', { name: /Electricity.*settings/i }).click();
         await page.waitForSelector('text=Effective price', { timeout: 15000 });
         await page.waitForTimeout(800);
         await page.screenshot({ path: `${OUT}/${name}-tariff.png`, fullPage: false });

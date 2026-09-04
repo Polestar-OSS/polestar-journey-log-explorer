@@ -27,6 +27,14 @@ An interactive web-based dashboard for analyzing your Polestar journey log data.
 
 **Private.** 100 % client-side. Files never leave the browser. A synthetic sample lets you explore without uploading anything.
 
+## 🚗 Compared with real cars
+
+CO₂ and fuel comparisons use real Volvo S60, S90, V60, V90, XC60 and XC90
+petrol mild hybrids and plug-in hybrids from the US EPA fuel-economy
+database, with the EPA id kept for every car. No average car, no assumed
+fuel price: enter yours to see the money side. See
+[`docs/VEHICLE_DATA.md`](./docs/VEHICLE_DATA.md).
+
 ## 📸 Screenshots
 
 Rendered from the built-in synthetic sample (no real data).
@@ -99,7 +107,7 @@ Makefile    install · dev · lint · test · build · audit · check · screens
 - **React 19** - UI framework
 - **Vite 8** - Build tool and dev server (Rolldown)
 - **Mantine 9** - Component library
-- **OpenLayers** - Interactive maps (CARTO / OpenStreetMap tiles)
+- **OpenLayers** - Interactive maps (Esri imagery / OpenStreetMap tiles)
 - **Recharts 3** - Data visualization
 - **PapaParse / ExcelJS** - CSV and XLSX parsing (ExcelJS is loaded on demand)
 - **Inter Variable** - Bundled typeface

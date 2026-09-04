@@ -128,6 +128,20 @@ body {
   flex-shrink: 0;
 }
 
+/* Phones: no hidden tabs. The strip wraps into rows instead of scrolling sideways. */
+@media (max-width: 48em) {
+  .ps-tabs-list {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 2px;
+  }
+  .ps-tab {
+    flex: 1 1 31%;
+    justify-content: center;
+    padding-inline: 8px;
+  }
+}
+
 .ps-chart-controls > * {
   flex-wrap: wrap;
 }

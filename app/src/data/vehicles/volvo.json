@@ -1,0 +1,434 @@
+{
+  "$schema": "./vehicle-make.schema.json",
+  "make": "Volvo",
+  "source": "https://www.fueleconomy.gov/feg/ws/index.shtml",
+  "sourceDetail": "US EPA fueleconomy.gov web service, /ws/rest/vehicle/{epaVehicleId}; fields comb08 (combined MPG, gasoline mode), city08, highway08, combE (kWh/100 mi in electric mode), rangeA (electric range, miles)",
+  "retrieved": "2026-09-04",
+  "method": {
+    "lPer100km": "100 \u00d7 3.785411784 \u00f7 (mpg \u00d7 1.609344)",
+    "co2GPerKm": "8,887 g CO2 per US gallon of gasoline (EPA) \u00f7 mpg \u00f7 1.609344; tailpipe only, petrol mode",
+    "phev": "Plug-in hybrids are modelled electric-first each day up to rangeKm at kwhPer100km, then petrol at lPer100km"
+  },
+  "vehicles": [
+    {
+      "id": "2025-s60-b5",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "S60",
+      "trim": "B5",
+      "body": "sedan",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48001,
+      "mpg": {
+        "city": 27,
+        "highway": 36,
+        "combined": 30
+      },
+      "lPer100km": 7.84,
+      "co2GPerKm": 184.1
+    },
+    {
+      "id": "2025-s60-b5-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "S60",
+      "trim": "B5 AWD",
+      "body": "sedan",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48002,
+      "mpg": {
+        "city": 25,
+        "highway": 34,
+        "combined": 28
+      },
+      "lPer100km": 8.4,
+      "co2GPerKm": 197.2
+    },
+    {
+      "id": "2025-s60-t8-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "S60",
+      "trim": "T8 AWD",
+      "body": "sedan",
+      "powertrain": "plug-in-hybrid",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48677,
+      "mpg": {
+        "city": 30,
+        "highway": 33,
+        "combined": 31
+      },
+      "lPer100km": 7.59,
+      "co2GPerKm": 178.1,
+      "electric": {
+        "kwhPer100mi": 44.0,
+        "kwhPer100km": 27.3,
+        "rangeMi": 40.0,
+        "rangeKm": 64.4
+      }
+    },
+    {
+      "id": "2025-s90-b6-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "S90",
+      "trim": "B6 AWD",
+      "body": "sedan",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo, Sup Charg",
+      "epaVehicleId": 48035,
+      "mpg": {
+        "city": 23,
+        "highway": 31,
+        "combined": 26
+      },
+      "lPer100km": 9.05,
+      "co2GPerKm": 212.4
+    },
+    {
+      "id": "2025-s90-t8-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "S90",
+      "trim": "T8 AWD",
+      "body": "sedan",
+      "powertrain": "plug-in-hybrid",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 49029,
+      "mpg": {
+        "city": 28,
+        "highway": 31,
+        "combined": 29
+      },
+      "lPer100km": 8.11,
+      "co2GPerKm": 190.4,
+      "electric": {
+        "kwhPer100mi": 48.0,
+        "kwhPer100km": 29.8,
+        "rangeMi": 38.0,
+        "rangeKm": 61.2
+      }
+    },
+    {
+      "id": "2025-v60-t8-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "V60",
+      "trim": "T8 AWD",
+      "body": "estate",
+      "powertrain": "plug-in-hybrid",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48678,
+      "mpg": {
+        "city": 30,
+        "highway": 33,
+        "combined": 31
+      },
+      "lPer100km": 7.59,
+      "co2GPerKm": 178.1,
+      "electric": {
+        "kwhPer100mi": 44.0,
+        "kwhPer100km": 27.3,
+        "rangeMi": 40.0,
+        "rangeKm": 64.4
+      }
+    },
+    {
+      "id": "2025-v60cc-b5-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "V60 Cross Country",
+      "trim": "B5 AWD",
+      "body": "estate",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48050,
+      "mpg": {
+        "city": 24,
+        "highway": 31,
+        "combined": 27
+      },
+      "lPer100km": 8.71,
+      "co2GPerKm": 204.5
+    },
+    {
+      "id": "2025-v90cc-b6-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "V90 Cross Country",
+      "trim": "B6 AWD",
+      "body": "estate",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo, Sup Charg",
+      "epaVehicleId": 48053,
+      "mpg": {
+        "city": 22,
+        "highway": 29,
+        "combined": 25
+      },
+      "lPer100km": 9.41,
+      "co2GPerKm": 220.9
+    },
+    {
+      "id": "2025-xc60-b5-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "XC60",
+      "trim": "B5 AWD",
+      "body": "SUV",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48108,
+      "mpg": {
+        "city": 23,
+        "highway": 30,
+        "combined": 26
+      },
+      "lPer100km": 9.05,
+      "co2GPerKm": 212.4
+    },
+    {
+      "id": "2025-xc60-t8-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "XC60",
+      "trim": "T8 AWD",
+      "body": "SUV",
+      "powertrain": "plug-in-hybrid",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48679,
+      "mpg": {
+        "city": 28,
+        "highway": 28,
+        "combined": 28
+      },
+      "lPer100km": 8.4,
+      "co2GPerKm": 197.2,
+      "electric": {
+        "kwhPer100mi": 50.0,
+        "kwhPer100km": 31.1,
+        "rangeMi": 36.0,
+        "rangeKm": 57.9
+      }
+    },
+    {
+      "id": "2025-xc90-b5-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "XC90",
+      "trim": "B5 AWD",
+      "body": "SUV",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48147,
+      "mpg": {
+        "city": 23,
+        "highway": 30,
+        "combined": 26
+      },
+      "lPer100km": 9.05,
+      "co2GPerKm": 212.4
+    },
+    {
+      "id": "2025-xc90-b6-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "XC90",
+      "trim": "B6 AWD",
+      "body": "SUV",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo, Sup Charg",
+      "epaVehicleId": 48146,
+      "mpg": {
+        "city": 20,
+        "highway": 26,
+        "combined": 23
+      },
+      "lPer100km": 10.23,
+      "co2GPerKm": 240.1
+    },
+    {
+      "id": "2025-xc90-t8-awd",
+      "year": 2025,
+      "make": "Volvo",
+      "model": "XC90",
+      "trim": "T8 AWD",
+      "body": "SUV",
+      "powertrain": "plug-in-hybrid",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 48680,
+      "mpg": {
+        "city": 26,
+        "highway": 27,
+        "combined": 27
+      },
+      "lPer100km": 8.71,
+      "co2GPerKm": 204.5,
+      "electric": {
+        "kwhPer100mi": 55.0,
+        "kwhPer100km": 34.2,
+        "rangeMi": 33.0,
+        "rangeKm": 53.1
+      }
+    },
+    {
+      "id": "2026-s90-b5",
+      "year": 2026,
+      "make": "Volvo",
+      "model": "S90",
+      "trim": "B5",
+      "body": "sedan",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 49304,
+      "mpg": {
+        "city": 24,
+        "highway": 34,
+        "combined": 28
+      },
+      "lPer100km": 8.4,
+      "co2GPerKm": 197.2
+    },
+    {
+      "id": "2026-v60cc-b5-awd",
+      "year": 2026,
+      "make": "Volvo",
+      "model": "V60 Cross Country",
+      "trim": "B5 AWD",
+      "body": "estate",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 49350,
+      "mpg": {
+        "city": 23,
+        "highway": 31,
+        "combined": 26
+      },
+      "lPer100km": 9.05,
+      "co2GPerKm": 212.4
+    },
+    {
+      "id": "2026-v90cc-b6-awd",
+      "year": 2026,
+      "make": "Volvo",
+      "model": "V90 Cross Country",
+      "trim": "B6 AWD",
+      "body": "estate",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo, Sup Charg",
+      "epaVehicleId": 49356,
+      "mpg": {
+        "city": 22,
+        "highway": 29,
+        "combined": 25
+      },
+      "lPer100km": 9.41,
+      "co2GPerKm": 220.9
+    },
+    {
+      "id": "2026-xc60-b5-awd",
+      "year": 2026,
+      "make": "Volvo",
+      "model": "XC60",
+      "trim": "B5 AWD",
+      "body": "SUV",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 49547,
+      "mpg": {
+        "city": 23,
+        "highway": 30,
+        "combined": 26
+      },
+      "lPer100km": 9.05,
+      "co2GPerKm": 212.4
+    },
+    {
+      "id": "2026-xc60-t8-awd",
+      "year": 2026,
+      "make": "Volvo",
+      "model": "XC60",
+      "trim": "T8 AWD",
+      "body": "SUV",
+      "powertrain": "plug-in-hybrid",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 49771,
+      "mpg": {
+        "city": 28,
+        "highway": 28,
+        "combined": 28
+      },
+      "lPer100km": 8.4,
+      "co2GPerKm": 197.2,
+      "electric": {
+        "kwhPer100mi": 50.0,
+        "kwhPer100km": 31.1,
+        "rangeMi": 36.0,
+        "rangeKm": 57.9
+      }
+    },
+    {
+      "id": "2026-xc90-b5-awd",
+      "year": 2026,
+      "make": "Volvo",
+      "model": "XC90",
+      "trim": "B5 AWD",
+      "body": "SUV",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 49611,
+      "mpg": {
+        "city": 22,
+        "highway": 27,
+        "combined": 24
+      },
+      "lPer100km": 9.8,
+      "co2GPerKm": 230.1
+    },
+    {
+      "id": "2026-xc90-b6-awd",
+      "year": 2026,
+      "make": "Volvo",
+      "model": "XC90",
+      "trim": "B6 AWD",
+      "body": "SUV",
+      "powertrain": "mild-hybrid-petrol",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo, Sup Charg",
+      "epaVehicleId": 49610,
+      "mpg": {
+        "city": 20,
+        "highway": 26,
+        "combined": 23
+      },
+      "lPer100km": 10.23,
+      "co2GPerKm": 240.1
+    },
+    {
+      "id": "2026-xc90-t8-awd",
+      "year": 2026,
+      "make": "Volvo",
+      "model": "XC90",
+      "trim": "T8 AWD",
+      "body": "SUV",
+      "powertrain": "plug-in-hybrid",
+      "engine": "Auto (S8), 4 cyl, 2.0 L, Turbo",
+      "epaVehicleId": 49772,
+      "mpg": {
+        "city": 26,
+        "highway": 27,
+        "combined": 27
+      },
+      "lPer100km": 8.71,
+      "co2GPerKm": 204.5,
+      "electric": {
+        "kwhPer100mi": 55.0,
+        "kwhPer100km": 34.2,
+        "rangeMi": 33.0,
+        "rangeKm": 53.1
+      }
+    }
+  ]
+}

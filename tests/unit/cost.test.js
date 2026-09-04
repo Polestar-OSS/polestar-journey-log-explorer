@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeTariff, DEFAULT_TARIFF, currencyPrefix } from '../../app/src/services/cost/TariffModel.js';
-import { TARIFF_PRESETS, TARIFF_PROVIDERS, validateProvider, findPreset } from '../../app/src/services/cost/TariffPresets.js';
+import { TARIFF_PRESETS, TARIFF_PROVIDERS, validateProvider, findPreset, searchPresets, presetGroups } from '../../app/src/services/cost/TariffPresets.js';
 import { TariffEngine } from '../../app/src/services/cost/TariffEngine.js';
 import { ChargingSessionAllocator } from '../../app/src/services/cost/ChargingSessionAllocator.js';
 import { CostCalculator } from '../../app/src/services/cost/CostCalculator.js';
@@ -60,6 +60,24 @@ describe('tariff presets (src/data/tariffs)', () => {
         expect(findPreset('hydro-ottawa/tou').tariff.seasons).toHaveLength(2);
         expect(findPreset('hydro-ottawa/tiered').tariff.tiered.tiersBySeason.winter[0].upToKwh).toBe(1000);
         expect(findPreset('nope')).toBeNull();
+    });
+
+    it('searches provider, region, plan and mode words locally', () => {
+        expect(searchPresets('ottawa').map((p) => p.id)).toEqual(['hydro-ottawa/tou', 'hydro-ottawa/ulo', 'hydro-ottawa/tiered']);
+        expect(searchPresets('toronto ulo').map((p) => p.id)).toEqual(['toronto-hydro/ulo']);
+        expect(searchPresets('texas')).toHaveLength(1);
+        expect(searchPresets('canada').length).toBeGreaterThan(10);
+        expect(searchPresets('Malmö').map((p) => p.id)).toEqual(['sweden/se4']);
+        expect(searchPresets('nothing-here')).toEqual([]);
+        expect(searchPresets('')).toHaveLength(TARIFF_PRESETS.length);
+        const groups = presetGroups(searchPresets('ottawa'));
+        expect(groups).toHaveLength(1);
+        expect(groups[0].items[0].label).toBe('Hydro Ottawa · Time of use');
+    });
+
+    it('lists named providers before generic countries', () => {
+        expect(TARIFF_PROVIDERS.map((p) => p.id)).toEqual(['hydro-ottawa', 'toronto-hydro', 'canada', 'european-union', 'sweden', 'united-kingdom', 'usa']);
+        expect(findPreset('toronto-hydro/tou').tariff.tou.periods).toEqual(findPreset('hydro-ottawa/tou').tariff.tou.periods);
     });
 
     it('rejects the mistakes a contributor is likely to make', () => {

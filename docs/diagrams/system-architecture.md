@@ -20,8 +20,7 @@ flowchart TB
         UI["Components<br/>StatsCards · StoryView · ChartsView · InsightsView · ExploreView · MapView · TableView"]
         Prefs[("localStorage<br/>level · tariff · notes")]
     end
-    Tiles["CARTO / OSM tiles"]
-    Nominatim["Nominatim (city → tariff, optional)"]
+    Tiles["Esri imagery / OSM tiles"]
 
     Files --> Parse --> Merge --> Journey --> Filter --> Filtered
     Filtered --> Stats & Insights & Charts & Expert & Table & Map
@@ -29,7 +28,6 @@ flowchart TB
     Stats & Insights & Charts & Expert & Story & Table & Map --> UI
     UI <--> Prefs
     Map -.-> Tiles
-    UI -.-> Nominatim
 ```
 
 No trip data leaves the browser. Dashed edges are the only network calls, and

@@ -1,4 +1,9 @@
-import { seasonOf } from '../../utils/journeyDate';
+import { seasonOf, formatMonthLabel } from '../../utils/journeyDate';
+import { hasPoint } from '../../utils/geo';
+
+/** Minimum evidence before the app states a winter/summer difference. */
+export const SEASON_MIN_TRIPS = 20;
+export const SEASON_MIN_WEEKS = 3;
 
 const UNIT_MULTIPLIER = { km: 1, mi: 1.60934 };
 const round1 = (n) => Math.round(n * 10) / 10;
@@ -48,23 +53,57 @@ export class InsightsCalculator {
 
     // ------------------------------------------------------------------
 
+    /** 'south' when most located trips start below the equator, else 'north'. */
+    hemisphere(data) {
+        const lats = data.map((t) => t.startLat).filter((lat, i) => hasPoint(lat, data[i].startLng)).sort((a, b) => a - b);
+        if (!lats.length) return 'north';
+        return lats[Math.floor(lats.length / 2)] < 0 ? 'south' : 'north';
+    }
+
+    /**
+     * Efficiency by season, with the evidence behind it. A winter penalty is
+     * only stated when both winter and summer have SEASON_MIN_TRIPS trips
+     * spread over SEASON_MIN_WEEKS distinct weeks; otherwise `reason` says
+     * which season is missing, so the UI can say so instead of guessing.
+     */
     seasonality(data) {
+        const hemisphere = this.hemisphere(data);
         const seasons = { winter: [], spring: [], summer: [], autumn: [] };
         data.forEach((t) => {
             if (t.startTs === null) return;
-            seasons[seasonOf(new Date(t.startTs))].push(t);
+            seasons[seasonOf(new Date(t.startTs), hemisphere)].push(t);
         });
         const summarise = (trips) => {
             const distance = trips.reduce((s, t) => s + t.distanceKm, 0);
             const consumption = trips.reduce((s, t) => s + t.consumptionKwh, 0);
-            return { trips: trips.length, distance: round1(distance), efficiency: distance > 0 ? round1((consumption / distance) * 100) : null };
+            const weeks = new Set(trips.map((t) => t.weekKey).filter(Boolean));
+            const months = [...new Set(trips.map((t) => t.monthKey).filter(Boolean))].sort();
+            return {
+                trips: trips.length,
+                distance: round1(distance),
+                efficiency: distance > 0 ? round1((consumption / distance) * 100) : null,
+                weeks: weeks.size,
+                months,
+                monthsLabel: months.length ? (months.length === 1 ? formatMonthLabel(months[0]) : `${formatMonthLabel(months[0])} – ${formatMonthLabel(months.at(-1))}`) : '',
+                enough: trips.length >= SEASON_MIN_TRIPS && weeks.size >= SEASON_MIN_WEEKS,
+            };
         };
         const result = Object.fromEntries(Object.entries(seasons).map(([k, v]) => [k, summarise(v)]));
         const { winter, summer } = result;
-        const comparable = winter.trips >= 5 && summer.trips >= 5 && winter.efficiency && summer.efficiency;
+        const comparable = winter.enough && summer.enough && winter.efficiency && summer.efficiency;
+        const missing = ['winter', 'summer'].filter((k) => !result[k].enough);
+        const describe = (k) => {
+            const s = result[k];
+            if (!s.trips) return `no ${k} trips`;
+            return `${s.trips} ${k} trip${s.trips === 1 ? '' : 's'} over ${s.weeks} week${s.weeks === 1 ? '' : 's'}${s.monthsLabel ? ` (${s.monthsLabel})` : ''}`;
+        };
         return {
             ...result,
+            hemisphere,
             winterPenaltyPct: comparable ? Math.round(((winter.efficiency - summer.efficiency) / summer.efficiency) * 100) : null,
+            confidence: comparable ? (winter.trips >= 60 && summer.trips >= 60 && winter.weeks >= 8 && summer.weeks >= 8 ? 'high' : 'low') : null,
+            evidence: comparable ? `${describe('winter')} versus ${describe('summer')}` : null,
+            reason: comparable ? null : `Only ${missing.map(describe).join(' and ')} in the file; at least ${SEASON_MIN_TRIPS} trips over ${SEASON_MIN_WEEKS} weeks in each season are needed before a comparison means anything.`,
             months: this._byMonth(data),
         };
     }

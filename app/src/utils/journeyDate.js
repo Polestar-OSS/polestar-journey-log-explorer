@@ -92,10 +92,20 @@ export const formatDuration = (minutes) => {
 /** 0 = Monday ... 6 = Sunday */
 export const mondayIndex = (date) => (date.getDay() + 6) % 7;
 
-export const seasonOf = (date) => {
-    const m = date.getMonth();
+/**
+ * Meteorological season for a date. Southern hemisphere shifts by six
+ * months (Dec–Feb is summer there), so callers pass the hemisphere the
+ * trips were driven in.
+ */
+export const seasonOf = (date, hemisphere = 'north') => {
+    const m = hemisphere === 'south' ? (date.getMonth() + 6) % 12 : date.getMonth();
     if (m === 11 || m <= 1) return 'winter';
     if (m <= 4) return 'spring';
     if (m <= 7) return 'summer';
     return 'autumn';
+};
+
+export const SEASON_MONTHS = {
+    north: { winter: 'Dec–Feb', spring: 'Mar–May', summer: 'Jun–Aug', autumn: 'Sep–Nov' },
+    south: { winter: 'Jun–Aug', spring: 'Sep–Nov', summer: 'Dec–Feb', autumn: 'Mar–May' },
 };

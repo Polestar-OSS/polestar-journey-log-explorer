@@ -8,8 +8,6 @@ import ChartTooltip from '../charts/ChartTooltip';
 import TariffSettingsModal from '../cost/TariffSettingsModal';
 import { StoryBuilder } from '../../services/story/StoryBuilder';
 import { ChartDataProcessor } from '../../services/charts/ChartDataProcessor';
-import { useTariff } from '../../hooks/useTariff';
-import { CostCalculator } from '../../services/cost/CostCalculator';
 import { useTokens } from '../../theme/useTokens';
 import { useCountUp } from '../../hooks/useCountUp';
 import { formatNumber } from '../../utils/format';
@@ -74,21 +72,14 @@ function StoryCard({ card, index, wide, onAction }) {
  * The Simple level: what the log says, in sentences. One idea per card,
  * comparisons people can picture, and three tips derived from the data.
  */
-function StoryView({ statistics, insights, data, distanceUnit = 'km', usableKwh = null, onOpenTab, onChangeLevel }) {
+function StoryView({ statistics, insights, data, distanceUnit = 'km', usableKwh = null, cost, comparison, onOpenTab, onChangeLevel }) {
     const t = useTokens();
-    const [tariff] = useTariff();
     const [costOpened, setCostOpened] = useState(false);
     const unit = distanceUnit === 'mi' ? 'mi' : 'km';
 
-    const cost = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(data || [], { usableKwh }), [tariff, data, distanceUnit, usableKwh]);
     const cards = useMemo(
-        () =>
-            new StoryBuilder({
-                distanceUnit,
-                electricityRate: tariff.flat.rate,
-                currency: tariff.currency,
-            }).build({ statistics, insights, data, cost }),
-        [statistics, insights, data, distanceUnit, tariff, cost]
+        () => new StoryBuilder({ distanceUnit, currency: cost?.currency ?? '' }).build({ statistics, insights, data, cost, comparison }),
+        [statistics, insights, data, distanceUnit, cost, comparison]
     );
 
     const months = useMemo(() => processor.aggregateByPeriod(data, 'month'), [data]);

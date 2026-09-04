@@ -3,7 +3,6 @@ import XYZ from 'ol/source/XYZ';
 import OSM from 'ol/source/OSM';
 
 const OSM_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors';
-const CARTO_ATTRIBUTION = `${OSM_ATTRIBUTION}, © <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>`;
 const ESRI_ATTRIBUTION = 'Imagery © <a href="https://www.esri.com/" target="_blank" rel="noreferrer">Esri</a>, Maxar, Earthstar Geographics, and the GIS User Community';
 
 /**
@@ -40,44 +39,6 @@ export class OSMHumanitarianStrategy extends TileLayerStrategy {
 }
 
 /**
- * CARTO basemaps - quiet, monochrome tiles that let the efficiency-coloured
- * routes carry the picture.
- */
-class CartoStrategy extends TileLayerStrategy {
-    constructor(style, dark) {
-        super();
-        this.style = style;
-        this.dark = dark;
-    }
-
-    createLayer() {
-        return new TileLayer({
-            source: new XYZ({
-                url: `https://{a-d}.basemaps.cartocdn.com/${this.style}/{z}/{x}/{y}.png`,
-                attributions: CARTO_ATTRIBUTION,
-                maxZoom: 19,
-            }),
-        });
-    }
-
-    isDark() {
-        return this.dark;
-    }
-}
-
-export class CartoDarkStrategy extends CartoStrategy {
-    constructor() {
-        super('dark_all', true);
-    }
-}
-
-export class CartoLightStrategy extends CartoStrategy {
-    constructor() {
-        super('light_all', false);
-    }
-}
-
-/**
  * Esri World Imagery - satellite photography, free for non-commercial use
  * with attribution.
  */
@@ -102,9 +63,9 @@ export class SatelliteStrategy extends TileLayerStrategy {
  */
 export class TileLayerFactory {
     constructor() {
+        // CARTO's basemaps now require an API key and render "API key required"
+        // tiles without one, so they are gone; the remaining sources are open.
         this.strategies = {
-            'carto-dark': new CartoDarkStrategy(),
-            'carto-light': new CartoLightStrategy(),
             satellite: new SatelliteStrategy(),
             osm: new OSMStandardStrategy(),
             'osm-humanitarian': new OSMHumanitarianStrategy(),
@@ -125,16 +86,14 @@ export class TileLayerFactory {
 
     getAvailableLayers() {
         return [
-            { value: 'carto-dark', label: 'Dark' },
-            { value: 'carto-light', label: 'Light' },
             { value: 'satellite', label: 'Satellite' },
             { value: 'osm', label: 'OpenStreetMap' },
             { value: 'osm-humanitarian', label: 'Humanitarian' },
         ];
     }
 
-    /** Basemap that matches the UI colour scheme */
+    /** Basemap that sits best with the UI colour scheme: imagery under the dark UI, OpenStreetMap under the light one. */
     defaultFor(scheme) {
-        return scheme === 'dark' ? 'carto-dark' : 'carto-light';
+        return scheme === 'dark' ? 'satellite' : 'osm';
     }
 }

@@ -1,0 +1,26 @@
+{
+  "$schema": "./tariff-provider.schema.json",
+  "id": "usa",
+  "provider": "Generic",
+  "region": "United States",
+  "currency": "USD",
+  "source": "https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a",
+  "effective": "2026-06-01",
+  "notes": "US Energy Information Administration, Electric Power Monthly table 5.6.A, average residential price for June 2026, all-in (energy, delivery, taxes). Utilities vary widely within a state; use these to start, then enter your own plan.",
+  "plans": [
+    { "id": "national", "label": "National average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.183 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } },
+    { "id": "arizona", "label": "Arizona average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.152 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } },
+    { "id": "california", "label": "California average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.347 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.55 } } },
+    { "id": "california-tiered", "label": "California baseline + over-baseline (tiered shape)", "description": "A baseline allowance priced lower than everything above it; enter your utility's baseline", "tariff": { "currency": "USD", "mode": "tiered", "tiered": { "householdBaselineKwh": 350, "tiers": [ { "upToKwh": 400, "rate": 0.31 }, { "upToKwh": null, "rate": 0.39 } ] }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.55 } } },
+    { "id": "colorado", "label": "Colorado average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.171 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } },
+    { "id": "florida", "label": "Florida average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.151 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } },
+    { "id": "georgia", "label": "Georgia average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.164 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } },
+    { "id": "hawaii", "label": "Hawaii average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.527 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.6 } } },
+    { "id": "illinois", "label": "Illinois average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.199 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } },
+    { "id": "massachusetts", "label": "Massachusetts average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.296 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.5 } } },
+    { "id": "new-york", "label": "New York average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.295 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.5 } } },
+    { "id": "pennsylvania", "label": "Pennsylvania average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.217 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } },
+    { "id": "texas", "label": "Texas average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.159 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } },
+    { "id": "washington", "label": "Washington average", "tariff": { "currency": "USD", "mode": "flat", "flat": { "rate": 0.149 }, "publicCharging": { "enabled": true, "sharePct": 20, "rate": 0.45 } } }
+  ]
+}

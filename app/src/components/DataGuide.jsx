@@ -38,25 +38,6 @@ function DataGuide({ distanceUnit = 'km' }) {
     ? 'Based on average US ICE vehicle emissions of ~190g CO\u2082/mi (typical for mid-size sedans)'
     : 'Based on average ICE vehicle emissions of 120g CO\u2082/km (typical for mid-size sedans)';
 
-  const costDefaults = isMi
-    ? `Defaults:\n- Electricity: $0.13/kWh\n- Gasoline: $3.50/gal\n- ICE Efficiency: 4.2 gal/100mi (~23.8 mpg)`
-    : `Defaults:\n- Electricity: $0.13/kWh\n- Gasoline: $1.50/L\n- ICE Efficiency: 8.5 L/100km`;
-
-  const costExampleTitle = isMi
-    ? 'Example: 150 kWh used over 470 mi'
-    : 'Example: 150 kWh used over 750 km';
-
-  const costExampleItems = isMi
-    ? [
-        'EV cost: 150 \u00d7 $0.13 = $19.50',
-        'ICE cost: (470 / 100) \u00d7 4.2 \u00d7 $3.50 = $69.09',
-        'Savings: $69.09 - $19.50 = $49.59',
-      ]
-    : [
-        'EV cost: 150 \u00d7 $0.13 = $19.50',
-        'ICE cost: (750 / 100) \u00d7 8.5 \u00d7 $1.50 = $95.63',
-        'Savings: $95.63 - $19.50 = $76.13',
-      ];
 
   // Efficiency thresholds scaled to distance unit
   // km thresholds: 15, 20, 25
@@ -185,29 +166,22 @@ function DataGuide({ distanceUnit = 'km' }) {
               <Divider />
 
               <div>
-                <Text fw={600} size="sm" mb="xs">💰 Cost Savings</Text>
+                <Text fw={600} size="sm" mb="xs">💰 Compared with a petrol or hybrid car</Text>
                 <Text size="sm" c="dimmed" mb="xs">
-                  An estimate of money saved by using electricity instead of gasoline, comparing 
-                  your EV's energy costs to a comparable ICE vehicle's fuel costs.
-                </Text>
-                <Text size="sm" c="dimmed" mb="xs">
-                  The "Charging cost" tile and the story's cost card use your saved electricity tariff
-                  (flat, time-of-use or tiered, with public charging, losses and charging habits) from
-                  <b> Electricity tariff settings</b>. The simplified comparison below uses a flat rate.
+                  The CO₂ tile, the story card and the Insights table compare your trips with a real car
+                  you choose in <b>Electricity, charging and comparison settings</b>. The cars are Volvo
+                  S60, S90, V60, V90, XC60 and XC90 petrol mild hybrids and plug-in hybrids, with figures
+                  read from the US EPA fuel-economy database (combined cycle) and the source id kept with
+                  each car. Nothing is assumed: fuel costs appear only once you enter your own fuel price.
                 </Text>
                 <BorderedPaper p="sm" withBorder borderColor="teal-6">
                   <Text size="xs" fw={600} mb={4}>How it's calculated:</Text>
                   <Code block size="xs">
-                    {`EV Cost = Total Energy (kWh) × Electricity Rate\nICE Cost = (Total Distance / 100) × Fuel Efficiency × Gas Price\nSavings = ICE Cost - EV Cost\n\n${costDefaults}`}
+                    {`Fuel = distance × L/100 km ÷ 100            (petrol mode, combined cycle)
+CO₂  = distance × g/km ÷ 1000               (tailpipe; 8,887 g per US gallon ÷ mpg)
+Plug-in hybrid: first <electric range> of each day on electricity at your rate, the rest on petrol
+Saving = fuel cost (+ hybrid electricity) − your electricity cost at your tariff`}
                   </Code>
-                  <div>
-                    <Text size="xs" c="dimmed" mt="xs" fw={600}>{costExampleTitle}</Text>
-                    <List size="xs" mt={4}>
-                      {costExampleItems.map((item, i) => (
-                        <List.Item key={i}>{item}</List.Item>
-                      ))}
-                    </List>
-                  </div>
                 </BorderedPaper>
               </div>
             </Stack>

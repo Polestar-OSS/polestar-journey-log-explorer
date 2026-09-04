@@ -15,6 +15,7 @@ decisions get a new number; superseded ones are marked, never deleted.
 | [0008](./0008-opt-in-road-snapping.md) | Road-snapped routes are opt-in, consented, rounded and cached; straight lines by default | Accepted |
 | [0009](./0009-tariff-model.md) | One normalised tariff model in `localStorage`; pricing in pure cost services, never in components | Accepted |
 | [0010](./0010-tariff-presets-as-data.md) | Tariff presets are JSON files per provider; seasons in the model; currency is a display label | Accepted |
+| [0011](./0011-real-comparison-vehicles.md) | Petrol comparisons use real vehicles from the EPA database, never an average or an assumed price | Accepted |
 
 Template:
 

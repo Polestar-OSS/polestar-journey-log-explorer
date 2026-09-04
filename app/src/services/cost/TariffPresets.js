@@ -93,12 +93,26 @@ export const TARIFF_PRESETS = TARIFF_PROVIDERS.flatMap((prov) =>
 
 export const findPreset = (id) => TARIFF_PRESETS.find((p) => p.id === id) ?? null;
 
-/** Picker data grouped by provider, in the shape Mantine's Select expects. */
-export const presetGroups = () => {
+const fold = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const KEYWORDS = new Map(TARIFF_PRESETS.map((p) => [p.id, fold(`${p.provider} ${p.region} ${p.label} ${p.description} ${p.tariff.currency} ${p.tariff.mode} ${p.id.replace('/', ' ')}`)]));
+
+/**
+ * Presets whose provider, region, plan label, description, currency or mode
+ * contain every word of the query ("ottawa", "texas", "ulo", "cad tou").
+ * Empty query → everything. Pure, so the picker's filter is testable.
+ */
+export const searchPresets = (query) => {
+    const words = fold(query).split(/\s+/).filter(Boolean);
+    if (!words.length) return TARIFF_PRESETS;
+    return TARIFF_PRESETS.filter((p) => { const hay = KEYWORDS.get(p.id); return words.every((w) => hay.includes(w)); });
+};
+
+/** Picker data grouped by provider (named providers) or country (generic), in the shape Mantine's Select expects. */
+export const presetGroups = (presets = TARIFF_PRESETS) => {
     const groups = new Map();
-    TARIFF_PRESETS.forEach((p) => {
+    presets.forEach((p) => {
         if (!groups.has(p.group)) groups.set(p.group, []);
-        groups.get(p.group).push({ value: p.id, label: p.label });
+        groups.get(p.group).push({ value: p.id, label: p.provider === 'Generic' ? p.label : `${p.provider} · ${p.label}` });
     });
     return [...groups.entries()].map(([group, items]) => ({ group, items }));
 };

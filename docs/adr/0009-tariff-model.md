@@ -47,6 +47,7 @@ change once and have every cost figure follow.
 - **Keep the flat rate and add a TOU multiplier**: cannot express weekday
   rules or tiers; rejected.
 - **Fetch real tariffs from utility APIs**: no common API exists and it would
-  leak location; a country-average lookup by typed city is the compromise.
+  leak location; bundled per-provider presets ([ADR-0010](./0010-tariff-presets-as-data.md))
+  are the compromise.
 - **Compute in the component**: violates
   [ADR-0003](./0003-services-are-pure.md).

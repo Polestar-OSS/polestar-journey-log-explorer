@@ -211,7 +211,7 @@ function ChartsView({ data, distanceUnit = 'km', insights }) {
                 <ChartCard
                     eyebrow="Seasonality"
                     title="Efficiency by month of year"
-                    description="All years folded onto one calendar. Heating, cold batteries and winter tyres show up here."
+                    description={`All years folded onto one calendar; months with no trips stay empty. ${insights?.seasonality?.hemisphere === 'south' ? 'Southern-hemisphere seasons, from your coordinates. ' : ''}Heating, cold batteries and winter tyres show up here.`}
                     controls={<TableToggle opened={seasonTable} onToggle={toggleSeasonTable} />}
                     footer={
                         worstMonth && bestMonth && worstMonth !== bestMonth

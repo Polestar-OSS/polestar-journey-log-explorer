@@ -88,7 +88,7 @@ via `useCountUp`. All disabled under `prefers-reduced-motion`.
 
 ## Map
 
-CARTO Dark Matter / Positron follow the colour scheme; OSM and HOT remain
+Esri imagery sits under the dark scheme and OpenStreetMap under the light one; Humanitarian remains
 selectable. Routes are coloured by efficiency band (green / yellow / orange /
 red at 15 / 20 / 25 kWh/100 km, scaled for miles) and the legend states the
 thresholds. Popups use `.ol-popup-*` classes and escaped strings.

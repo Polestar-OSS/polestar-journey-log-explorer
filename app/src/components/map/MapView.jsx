@@ -153,18 +153,20 @@ function MapView({ data, distanceUnit = 'km', places }) {
 
         if (mode === 'replay') {
             const { current, recent, older, frame } = replayService.visibleAt(replay.frames, cursor, 10);
+            // While playing, the current day is drawn progressively by the replay layer (see the playback effect)
             const routes = [
                 ...older.map((trip, i) => featureBuilder.createRouteLine(trip, i, { path: pathFor(trip), emphasis: 'dim' })),
                 ...recent.map((trip, i) => featureBuilder.createRouteLine(trip, 1000 + i, { path: pathFor(trip) })),
-                ...current.map((trip, i) => featureBuilder.createRouteLine(trip, 2000 + i, { path: pathFor(trip), emphasis: 'current' })),
+                ...(playing ? [] : current.map((trip, i) => featureBuilder.createRouteLine(trip, 2000 + i, { path: pathFor(trip), emphasis: 'current' }))),
             ];
             service.updateRoutes(routes);
             service.updateFlow([]);
             service.updateChains([]);
-            service.updateMarkers(current.flatMap((trip, i) => [markerFactory.createMarker(trip, 'start', i), markerFactory.createMarker(trip, 'end', i)]));
+            service.updateMarkers(playing ? [] : current.flatMap((trip, i) => [markerFactory.createMarker(trip, 'start', i), markerFactory.createMarker(trip, 'end', i)]));
             const last = current[current.length - 1];
-            service.setPulse(last ? featureBuilder.createPulse(last.endLng, last.endLat) : null);
-            if (frame && cursor === 0) service.fitToFeatures(routes.length ? routes : []);
+            service.setPulse(!playing && last ? featureBuilder.createPulse(last.endLng, last.endLat) : null);
+            if (!playing) service.setReplayFrame([]);
+            if (frame && cursor === 0 && routes.length) service.fitToFeatures(routes);
             return;
         }
 
@@ -197,23 +199,46 @@ function MapView({ data, distanceUnit = 'km', places }) {
 
         // fitToFeatures ends in a moveend, which refreshes the in-view count
         service.fitToFeatures(routes, isMobile ? [40, 24, 140, 24] : [56, 56, 56, 320]);
-    }, [displayTrips, mode, flow, showMarkers, linkTripsByDay, selectedTrip, tripsByDay, featureBuilder, markerFactory, places, t.accent, basemap, tileLayerFactory, snapRoads, snapVersion, replay, cursor, isMobile]);
+    }, [displayTrips, mode, flow, showMarkers, linkTripsByDay, selectedTrip, tripsByDay, featureBuilder, markerFactory, places, t.accent, basemap, tileLayerFactory, snapRoads, snapVersion, replay, cursor, playing, isMobile]);
 
-    // Replay playback
+    // Replay playback: the car drives each of the day's trips in order, the
+    // route drawing behind it, then the next day starts. Time per day grows
+    // with distance, bounded, and divides by the speed setting. Reduced
+    // motion steps day by day instead.
     useEffect(() => {
-        if (!playing) return undefined;
-        const step = Math.max(120, 700 / parseInt(speed));
-        const id = setInterval(() => {
-            setCursor((c) => {
-                if (c >= replay.totalDays - 1) {
-                    setPlaying(false);
-                    return c;
-                }
-                return c + 1;
-            });
-        }, step);
-        return () => clearInterval(id);
-    }, [playing, speed, replay.totalDays]);
+        const service = mapServiceRef.current;
+        if (!playing || mode !== 'replay' || !service) return undefined;
+        const frame = replay.frames[cursor];
+        if (!frame) return undefined;
+        const rate = parseInt(speed) || 1;
+        const advance = () => { if (cursor >= replay.totalDays - 1) setPlaying(false); else setCursor(cursor + 1); };
+        const timeline = ReplayService.timeline(frame.trips, (trip) => (snapRoads ? snapper.cached(trip) : null));
+        const km = frame.trips.reduce((s, x) => s + x.distanceKm, 0);
+        const duration = reducedMotion ? 0 : Math.min(9000, Math.max(1600, 400 + km * 35)) / rate;
+        if (duration <= 0 || timeline.total <= 0) {
+            const id = setTimeout(advance, Math.max(120, 400 / rate));
+            return () => clearTimeout(id);
+        }
+        let raf = 0;
+        let last = performance.now();
+        let progress = 0;
+        const tick = (now) => {
+            progress = Math.min(1, progress + (now - last) / duration);
+            last = now;
+            const pos = ReplayService.positionAt(timeline, progress);
+            const features = [
+                ...pos.completed.map((coords, i) => featureBuilder.createProgressLine(timeline.legs[i].trip, coords, 3000 + i)),
+                pos.legIndex >= 0 ? featureBuilder.createProgressLine(timeline.legs[pos.legIndex].trip, pos.drawing, 3100) : null,
+                pos.position ? featureBuilder.createCar(pos.position[0], pos.position[1], pos.heading, t.accent) : null,
+            ].filter(Boolean);
+            service.setReplayFrame(features);
+            if (pos.position) service.keepInView(pos.position);
+            if (pos.done) { advance(); return; }
+            raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [playing, cursor, speed, mode, replay, snapRoads, snapVersion, featureBuilder, t.accent, reducedMotion]);
 
     // Road snapping
     const startSnapping = useCallback(async () => {

@@ -46,6 +46,11 @@ Presets are JSON files, no code needed: copy an existing file under
 `app/src/data/tariffs/`, fill in the rates with a source link, run
 `make test`. The guide is [TARIFF_PRESETS.md](./TARIFF_PRESETS.md).
 
+## Adding a comparison car
+
+Cars come from an official test database with the id recorded; see
+[VEHICLE_DATA.md](./VEHICLE_DATA.md). `make test` validates the file.
+
 ## Reporting bugs
 
 Use the issue templates. For parsing problems, describe the header row of your

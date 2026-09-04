@@ -10,8 +10,13 @@ import TableView from './table/TableView';
 import DataGuide from './DataGuide';
 import FilterBar from './filters/FilterBar';
 import SourcesBar from './SourcesBar';
+import { EXPERIENCE_LEVELS } from '../utils/preferences';
 import { calculateStatistics } from '../utils/dataParser';
 import { InsightsCalculator } from '../services/insights/InsightsCalculator';
+import { CostCalculator } from '../services/cost/CostCalculator';
+import { VehicleComparison } from '../services/comparison/VehicleComparison';
+import { useTariff } from '../hooks/useTariff';
+import { useComparison } from '../hooks/useComparison';
 
 // OpenLayers is ~600 kB; only fetch it when the map tab is opened
 const MapView = lazy(() => import('./map/MapView'));
@@ -55,6 +60,14 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
     const statistics = useMemo(() => calculateStatistics(filteredData, distanceUnit), [filteredData, distanceUnit]);
 
     const insights = useMemo(() => new InsightsCalculator(distanceUnit).compute(filteredData), [filteredData, distanceUnit]);
+    const [tariff] = useTariff();
+    const { vehicle, fuelPrice } = useComparison();
+    const usableKwh = insights?.battery?.usableKwh ?? null;
+    const cost = useMemo(() => new CostCalculator(tariff, { distanceUnit }).compute(filteredData, { usableKwh }), [tariff, filteredData, distanceUnit, usableKwh]);
+    const comparison = useMemo(
+        () => new VehicleComparison({ distanceUnit }).compare(filteredData, vehicle, { fuelPrice, evCostPerKwh: cost.effectiveRatePerKwh, evCostTotal: cost.cost.total }),
+        [filteredData, vehicle, fuelPrice, cost, distanceUnit]
+    );
 
     const deltas = useMemo(() => {
         if (!range?.fromTs || !range?.toTs || !isFiltered) return null;
@@ -78,9 +91,14 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
                 </Box>
             ) : (
                 <>
-                    <StatsCards statistics={statistics} data={filteredData} distanceUnit={distanceUnit} deltas={deltas} periodLabel={periodLabel} compact={level === 'simple'} usableKwh={insights?.battery?.usableKwh ?? null} />
+                    <StatsCards statistics={statistics} data={filteredData} distanceUnit={distanceUnit} deltas={deltas} periodLabel={periodLabel} compact={level === 'simple'} usableKwh={usableKwh} cost={cost} comparison={comparison} />
 
                     <Tabs value={activeTab} onChange={setActiveTab} keepMounted={false}>
+                        <Text size="xs" c="dimmed" className="ps-no-print" mb={4}>
+                            <b>{EXPERIENCE_LEVELS.find((l) => l.value === level)?.label}</b>: {EXPERIENCE_LEVELS.find((l) => l.value === level)?.description}
+                            {level === 'simple' && ' Detailed adds the Overview charts and an Insights page.'}
+                            {level === 'detailed' && ' Expert adds the Explore tab (pivots, distributions, a consumption model, data quality) and more columns in Trips.'}
+                        </Text>
                         <Tabs.List className="ps-no-print">
                             {tabs.includes('story') && <Tabs.Tab value="story" leftSection={<IconSparkles size={16} />}>Your driving</Tabs.Tab>}
                             {tabs.includes('overview') && <Tabs.Tab value="overview" leftSection={<IconChartBar size={16} />}>Overview</Tabs.Tab>}
@@ -93,7 +111,7 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
 
                         {tabs.includes('story') && (
                             <Tabs.Panel value="story" pt="lg">
-                                <StoryView statistics={statistics} insights={insights} data={filteredData} distanceUnit={distanceUnit} usableKwh={insights?.battery?.usableKwh ?? null} onOpenTab={setActiveTab} onChangeLevel={onChangeLevel} />
+                                <StoryView statistics={statistics} insights={insights} data={filteredData} distanceUnit={distanceUnit} usableKwh={usableKwh} cost={cost} comparison={comparison} onOpenTab={setActiveTab} onChangeLevel={onChangeLevel} />
                             </Tabs.Panel>
                         )}
 
@@ -105,7 +123,7 @@ function Dashboard({ data, distanceUnit = 'km', sources, duplicatesRemoved = 0, 
 
                         {tabs.includes('insights') && (
                             <Tabs.Panel value="insights" pt="lg">
-                                <InsightsView insights={insights} statistics={statistics} distanceUnit={distanceUnit} data={filteredData} />
+                                <InsightsView insights={insights} statistics={statistics} distanceUnit={distanceUnit} data={filteredData} cost={cost} comparison={comparison} fuelPrice={fuelPrice} />
                             </Tabs.Panel>
                         )}
 

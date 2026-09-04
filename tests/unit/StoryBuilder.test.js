@@ -3,6 +3,8 @@ import { StoryBuilder, describeDistance, describeEnergy } from '../../app/src/se
 import { InsightsCalculator } from '../../app/src/services/insights/InsightsCalculator.js';
 import { processRawRows, calculateStatistics } from '../../app/src/utils/dataParser.js';
 import { CostCalculator } from '../../app/src/services/cost/CostCalculator.js';
+import { VehicleComparison } from '../../app/src/services/comparison/VehicleComparison.js';
+import { findVehicle } from '../../app/src/services/comparison/Vehicles.js';
 import { HEADERS_KM, SMALL_EXPORT } from '../fixtures/rows.js';
 
 describe('describeDistance', () => {
@@ -28,7 +30,8 @@ describe('StoryBuilder', () => {
     const { data } = processRawRows(SMALL_EXPORT, HEADERS_KM);
     const statistics = calculateStatistics(data, 'km');
     const insights = new InsightsCalculator('km').compute(data);
-    const cards = new StoryBuilder({ distanceUnit: 'km', electricityRate: 0.2, currencySymbol: '€' }).build({ statistics, insights, data });
+    const comparison = new VehicleComparison({ distanceUnit: 'km' }).compare(data, findVehicle('2025-xc60-b5-awd'), { fuelPrice: 1.5, evCostTotal: 2 });
+    const cards = new StoryBuilder({ distanceUnit: 'km', electricityRate: 0.2, currencySymbol: '€' }).build({ statistics, insights, data, comparison });
 
     it('always leads with distance, energy and cost', () => {
         expect(cards.slice(0, 3).map((c) => c.id)).toEqual(['distance', 'energy', 'cost']);
@@ -54,6 +57,11 @@ describe('StoryBuilder', () => {
         expect(ids).not.toContain('range'); // battery estimate needs bigger SOC drops
         expect(ids).not.toContain('winter'); // fewer than five trips per season
         expect(ids).toContain('carbon');
+        const carbon = cards.find((c) => c.id === 'carbon');
+        expect(carbon.eyebrow).toBe('Compared with a 2025 Volvo XC60 B5 AWD');
+        expect(carbon.body).toMatch(/9.05 L\/100 km/);
+        expect(carbon.body).toMatch(/less than the XC60/);
+        expect(new StoryBuilder().build({ statistics, insights, data }).map((c) => c.id)).not.toContain('carbon');
         expect(ids).toContain('rhythm');
         expect(ids).toContain('tips');
     });

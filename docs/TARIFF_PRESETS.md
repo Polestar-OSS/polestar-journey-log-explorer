@@ -41,9 +41,15 @@ day the file is written, with the source and effective date recorded.
 }
 ```
 
-Generic entries are listed after named providers and grouped by region.
-Plans appear as `Provider · Region → label` in the picker; the provider's
-source and notes are shown once a preset is chosen.
+Generic entries are listed after named providers and grouped by country.
+The picker searches provider, region, plan label, description, currency and
+mode locally, so "ottawa", "texas", "sek" and "ulo" all work. The provider's
+source, effective date and notes are shown once a preset is chosen.
+
+Bundled today: Hydro Ottawa and Toronto Hydro (Ontario regulated plans),
+Canada (national and every province and territory), United States (national
+and a dozen states), United Kingdom (price cap and an EV night shape),
+Sweden (national, bidding zones, day/night shape), European Union average.
 
 ## The tariff object
 

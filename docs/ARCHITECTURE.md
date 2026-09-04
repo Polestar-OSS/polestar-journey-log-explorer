@@ -101,6 +101,8 @@ Each service has one job, takes plain data, and returns plain data.
 | `insights/InsightsCalculator` | Narrative findings: seasonality, places (clustered), charging sessions, battery estimate, odometer coverage, short trips, rhythm, records, period deltas |
 | `analytics/StatsService` | Expert layer: percentiles, consumption model (OLS), efficiency drivers, battery fit, charge histogram, data quality |
 | `analytics/PivotService` | Group-by/aggregate over registered dimensions and metrics; CSV |
+| `comparison/Vehicles` | Loads and validates the per-make vehicle files under `src/data/vehicles` (EPA provenance required) |
+| `comparison/VehicleComparison` | Fuel, tailpipe CO₂ and money for the same trips in a chosen petrol or plug-in hybrid car; nightly-charge model for hybrids |
 | `story/StoryBuilder` | Plain-language cards for the Simple level |
 | `table/TableDataProcessor` | Search, sort, paginate, format, export |
 | `cost/TariffModel` | Tariff shape (modes, seasons, per-season tiers), defaults, `normalizeTariff` (the only way a tariff enters the domain) and the currency display helper |
@@ -111,8 +113,8 @@ Each service has one job, takes plain data, and returns plain data.
 | `map/MapService`, `map/FeatureBuilder`, `map/ColorCalculator` | OpenLayers layers and styles: glow routes, flow animation, heat, places, clusters, pulse; hover/popup |
 | `map/MapDataProcessor` | Trips with coordinates, newest first, grouped by day, plus the centre to open on |
 | `map/RouteSnapper` | Opt-in OSRM road routing per unique start/end pair with a browser cache |
-| `map/ReplayService` | Day-by-day frames with cumulative totals for the replay mode |
-| `strategies/map/LayerStrategy` | Basemap catalogue (CARTO dark/light, satellite, OSM) |
+| `map/ReplayService` | Day-by-day frames with cumulative totals, plus per-day timelines (legs, lengths, position at a fraction, heading) for the animated replay |
+| `strategies/map/LayerStrategy` | Basemap catalogue (Esri imagery, OpenStreetMap, Humanitarian); no keyed providers |
 
 Every formula these services implement is written down in
 [`ANALYTICS.md`](./ANALYTICS.md).
@@ -160,8 +162,10 @@ See [ADR-0005](./adr/0005-experience-levels.md).
   [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md).
 - **Charts**: Recharts, styled by the dataviz rules in the design system
   (single axis, thin marks, hairline grid, table twin for every chart).
-- **Map**: OpenLayers, loaded lazily on first open. CARTO light/dark basemaps
-  follow the theme; satellite and OSM variants remain available. Four modes
+- **Map**: OpenLayers, loaded lazily on first open. Basemaps are Esri
+  imagery (default under the dark UI), OpenStreetMap (default under the
+  light UI) and Humanitarian; CARTO was dropped when it started requiring
+  an API key. Four modes
   (routes, heat, places, replay) over one `MapService`; animation runs in an
   OpenLayers `postrender` hook and stops under reduced motion.
 - **Motion**: CSS keyframes and a count-up hook, all gated on
@@ -181,8 +185,8 @@ See [ADR-0005](./adr/0005-experience-levels.md).
 ## 9. Privacy and security posture
 
 - No network calls with user data by default. The outbound requests are tile
-  images, the optional Nominatim city lookup in the tariff settings (a typed
-  city name, never trip data), Google Analytics and the cookie-consent script.
+  images, Google Analytics and the cookie-consent script. Tariff presets are
+  bundled JSON and searched locally.
 - Road snapping on the map is opt-in behind an explicit consent dialog. It
   sends start/end coordinates rounded to four decimals to the public OSRM
   demo server, one request per unique pair, and caches responses in

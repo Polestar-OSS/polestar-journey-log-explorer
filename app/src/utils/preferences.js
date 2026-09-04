@@ -17,6 +17,8 @@ export const DEFAULT_PREFERENCES = {
     currency: '',
     homeChargingPercent: 80,
     tariff: null, // see services/cost/TariffModel.js; null until the user saves one
+    comparisonVehicleId: null, // services/comparison/Vehicles.js id; null → DEFAULT_VEHICLE_ID
+    fuelPrice: null, // per litre (km) or per US gallon (mi); null → costs not stated
 };
 
 const readAll = () => {

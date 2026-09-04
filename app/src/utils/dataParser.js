@@ -1,17 +1,6 @@
 import Papa from 'papaparse';
 import { parseJourneyDate, formatJourneyDate, dayKey, monthKey, weekKey, mondayIndex } from './journeyDate';
 
-// Constants for carbon calculations
-// Average ICE car fuel consumption (L/100km) -- US EPA average
-export const AVG_ICE_FUEL_CONSUMPTION = 8.9;
-// Average ICE car fuel consumption (gal/100mi) -- US EPA average
-export const AVG_ICE_FUEL_CONSUMPTION_GAL = 4.2;
-// Gasoline produces ~2.31 kg CO2 per liter
-export const CO2_PER_LITER_GASOLINE = 2.31;
-// Gasoline produces ~8.887 kg CO2 per gallon
-export const CO2_PER_GALLON_GASOLINE = 8.887;
-// One tree absorbs ~21kg CO2/year
-export const TREE_CO2_ABSORPTION_PER_YEAR = 21;
 
 /**
  * Detect the distance column name from CSV/XLSX headers
@@ -234,23 +223,6 @@ export const calculateStatistics = (data, distanceUnit = 'km') => {
     const efficiencies = (meaningful.length >= 3 ? meaningful : data.filter((trip) => trip.efficiency > 0))
         .map((trip) => parseFloat(trip.efficiency));
 
-    // Carbon savings calculation
-    let fuelConsumed, co2Saved, fuelUnit;
-    if (distanceUnit === 'mi') {
-        // Average ICE car: 4.2 gal/100mi (US EPA average ~23.8 mpg combined)
-        // Gas produces ~8.887 kg CO2 per gallon
-        fuelConsumed = (totalDistance / 100) * AVG_ICE_FUEL_CONSUMPTION_GAL; // gallons
-        co2Saved = fuelConsumed * CO2_PER_GALLON_GASOLINE; // kg
-        fuelUnit = 'gal';
-    } else {
-        // Average ICE car: 8.9 L/100km (US EPA average)
-        // Gas produces ~2.31 kg CO2 per liter
-        fuelConsumed = (totalDistance / 100) * AVG_ICE_FUEL_CONSUMPTION; // liters
-        co2Saved = fuelConsumed * CO2_PER_LITER_GASOLINE; // kg
-        fuelUnit = 'L';
-    }
-    const treesEquivalent = co2Saved / TREE_CO2_ABSORPTION_PER_YEAR; // One tree absorbs ~21kg CO2/year
-
     // Find min startOdometer and max endOdometer in a single pass
     const { minStart, maxEnd } = data.reduce(
         (acc, t) => ({
@@ -278,11 +250,7 @@ export const calculateStatistics = (data, distanceUnit = 'km') => {
         avgTripDistance: (totalDistance / data.length).toFixed(2),
         odometerStart: minStart,
         odometerEnd: maxEnd,
-        carbonSaved: co2Saved.toFixed(2),
-        treesEquivalent: treesEquivalent.toFixed(1),
-        gasSaved: fuelConsumed.toFixed(2),
         distanceUnit,
-        fuelUnit,
         // Extended
         totalDurationMin,
         avgSpeed: totalDurationMin > 0

@@ -1,6 +1,6 @@
 import { Feature } from 'ol';
 import { Point, LineString } from 'ol/geom';
-import { Style, Stroke, Fill, Circle as CircleStyle, Text } from 'ol/style';
+import { Style, Stroke, Fill, Circle as CircleStyle, Text, RegularShape } from 'ol/style';
 import { fromLonLat } from 'ol/proj';
 
 /**
@@ -141,6 +141,27 @@ export class FeatureBuilder {
             text: new Text({ text: String(size), font: '600 11px Inter Variable, Inter, system-ui, sans-serif', fill: new Fill({ color: ink }) }),
             zIndex: 1100,
         });
+    }
+
+    /** A route being drawn during replay: [lng, lat] coords, styled as the current trip. */
+    createProgressLine(trip, coords, index = 0) {
+        if (!coords || coords.length < 2) return null;
+        const color = this.colorCalculator.getEfficiencyColor(trip.efficiency);
+        const f = new Feature({ geometry: new LineString(coords.map(([lng, lat]) => fromLonLat([lng, lat]))), trip, type: 'progress' });
+        f.setStyle(this.routeStyle(color, index, 'current'));
+        return f;
+    }
+
+    /** The car in replay: a filled disc with a heading arrow, clockwise radians from north. */
+    createCar(lng, lat, heading = 0, accent = '#ff6a13') {
+        const f = new Feature({ geometry: new Point(fromLonLat([lng, lat])), type: 'car' });
+        f.setId('car');
+        f.setStyle([
+            new Style({ image: new CircleStyle({ radius: 11, fill: new Fill({ color: this._alpha(accent, 0.25) }) }), zIndex: 1200 }),
+            new Style({ image: new CircleStyle({ radius: 7, fill: new Fill({ color: accent }), stroke: new Stroke({ color: '#ffffff', width: 2 }) }), zIndex: 1201 }),
+            new Style({ image: new RegularShape({ points: 3, radius: 5, rotation: heading, rotateWithView: true, displacement: [0, 13], fill: new Fill({ color: '#ffffff' }) }), zIndex: 1202 }),
+        ]);
+        return f;
     }
 
     /** Pulsing halo used for the current replay trip's end point. */

@@ -18,23 +18,43 @@ describe('InsightsCalculator.compute', () => {
         expect(seasonality.winter.trips).toBe(4);
         expect(seasonality.summer.trips).toBe(4);
         expect(seasonality.winter.efficiency).toBeGreaterThan(seasonality.summer.efficiency);
-        expect(seasonality.winterPenaltyPct).toBeNull(); // below the 5-trip floor per season
+        expect(seasonality.winterPenaltyPct).toBeNull(); // below the evidence floor per season
+        expect(seasonality.hemisphere).toBe('north');
+        expect(seasonality.winter.weeks).toBe(1);
+        expect(seasonality.reason).toMatch(/4 winter trips over 1 week \(Jan 26\) and 4 summer trips/);
         expect(seasonality.months).toHaveLength(12);
         expect(seasonality.months[0].trips).toBe(4);
         expect(seasonality.months[6].trips).toBe(4);
     });
 
-    it('requires five trips per season before stating a penalty', () => {
-        const more = processRawRows(
-            [
-                ...SMALL_EXPORT,
-                row({ start: '2026-01-14, 08:00', end: '2026-01-14, 08:20', km: 6.4, kwh: 1.8, socStart: 80, socEnd: 78, odo: 1100 }),
-                row({ start: '2026-07-03, 08:00', end: '2026-07-03, 08:15', km: 6.4, kwh: 1.0, socStart: 80, socEnd: 79, odo: 1110 }),
-            ],
-            HEADERS_KM
-        ).data;
-        const { seasonality } = calc.compute(more);
+    it('states a penalty only with enough trips spread over enough weeks in both seasons', () => {
+        const season = (month, kwhPer, from) => Array.from({ length: 24 }, (_, i) => row({ start: `2026-${month}-${String(1 + i).padStart(2, '0')}, 08:00`, end: `2026-${month}-${String(1 + i).padStart(2, '0')}, 08:20`, km: 6.4, kwh: kwhPer, socStart: 80, socEnd: 78, odo: from + i * 10 }));
+        const enough = processRawRows([...season('01', 1.8, 5000), ...season('07', 1.0, 9000)], HEADERS_KM).data;
+        const { seasonality } = calc.compute(enough);
+        expect(seasonality.winter.enough).toBe(true);
+        expect(seasonality.winter.weeks).toBeGreaterThanOrEqual(4);
         expect(seasonality.winterPenaltyPct).toBeGreaterThan(50);
+        expect(seasonality.confidence).toBe('low');
+        expect(seasonality.evidence).toMatch(/24 winter trips over \d weeks \(Jan 26\) versus 24 summer trips/);
+
+        // Same trips crammed into one week per season: many trips, too little spread
+        const crammed = processRawRows([
+            ...Array.from({ length: 24 }, (_, i) => row({ start: `2026-01-05, ${String(i).padStart(2, '0')}:00`, end: `2026-01-05, ${String(i).padStart(2, '0')}:20`, km: 6.4, kwh: 1.8, socStart: 80, socEnd: 78, odo: 5000 + i * 10 })),
+            ...Array.from({ length: 24 }, (_, i) => row({ start: `2026-07-06, ${String(i).padStart(2, '0')}:00`, end: `2026-07-06, ${String(i).padStart(2, '0')}:20`, km: 6.4, kwh: 1.0, socStart: 80, socEnd: 78, odo: 9000 + i * 10 })),
+        ], HEADERS_KM).data;
+        expect(calc.compute(crammed).seasonality.winterPenaltyPct).toBeNull();
+    });
+
+    it('flips seasons south of the equator', () => {
+        const south = { lat: -33.87, lng: 151.21, addr: 'George St, Sydney' };
+        const trips = processRawRows([
+            row({ start: '2026-01-10, 08:00', end: '2026-01-10, 08:20', from: south, to: south, km: 6, kwh: 1, odo: 100 }),
+            row({ start: '2026-07-10, 08:00', end: '2026-07-10, 08:20', from: south, to: south, km: 6, kwh: 1.5, odo: 200 }),
+        ], HEADERS_KM).data;
+        const { seasonality } = calc.compute(trips);
+        expect(seasonality.hemisphere).toBe('south');
+        expect(seasonality.summer.trips).toBe(1); // January
+        expect(seasonality.winter.trips).toBe(1); // July
     });
 
     it('finds home as the busiest cluster', () => {

@@ -24,7 +24,6 @@ const DISTANCE_REFERENCES = [
 
 const HOME_KWH_PER_DAY = 12; // typical European household, rough
 const PHONE_CHARGE_KWH = 0.015;
-const FLIGHT_LONDON_PARIS_KG = 80; // economy, one way, rough
 
 /**
  * A distance in km turned into a comparison sentence fragment.
@@ -67,7 +66,7 @@ export class StoryBuilder {
         this.fuelPrice = fuelPrice; // per litre (km) or per gallon (mi); optional
     }
 
-    build({ statistics, insights, data, cost = null }) {
+    build({ statistics, insights, data, cost = null, comparison = null }) {
         if (!statistics || !insights || !data?.length) return [];
         const cards = [];
         const u = this.unit;
@@ -112,8 +111,9 @@ export class StoryBuilder {
         // 4. Range on a full charge
         const b = insights.battery;
         if (b?.estimatedRange) {
-            const winter = insights.seasonality?.winter?.efficiency;
-            const summer = insights.seasonality?.summer?.efficiency;
+            const sound = insights.seasonality?.winterPenaltyPct !== null && insights.seasonality?.winterPenaltyPct !== undefined;
+            const winter = sound ? insights.seasonality.winter.efficiency : null;
+            const summer = sound ? insights.seasonality.summer.efficiency : null;
             const wRange = winter && b.usableKwh ? Math.round((b.usableKwh / winter) * 100) : null;
             const sRange = summer && b.usableKwh ? Math.round((b.usableKwh / summer) * 100) : null;
             cards.push({
@@ -139,9 +139,9 @@ export class StoryBuilder {
                 figure: s.winterPenaltyPct > 0 ? `+${s.winterPenaltyPct}%` : `${s.winterPenaltyPct}%`,
                 unit: '',
                 headline: s.winterPenaltyPct > 0 ? 'more energy per trip in winter than in summer.' : 'difference between winter and summer.',
-                body: s.winterPenaltyPct > 0
+                body: `${s.winterPenaltyPct > 0
                     ? 'Heating the cabin and a cold battery are the main reasons. Pre-heating the car while it is still plugged in moves that cost onto the wall socket instead of the battery.'
-                    : 'Your winter and summer driving cost about the same, which is unusual and good.',
+                    : 'Your winter and summer driving cost about the same, which is unusual and good.'} Based on ${s.evidence}${s.confidence === 'low' ? '; a fuller year will sharpen this' : ''}.`,
             });
         }
 
@@ -186,16 +186,25 @@ export class StoryBuilder {
             });
         }
 
-        // 9. Compared with a petrol car
-        cards.push({
-            id: 'carbon',
-            tone: 'good',
-            eyebrow: 'Compared with a petrol car',
-            figure: round(parseFloat(statistics.carbonSaved)),
-            unit: 'kg CO₂ avoided',
-            headline: `and ${statistics.gasSaved} ${statistics.fuelUnit} of fuel never bought.`,
-            body: `That is what ${statistics.treesEquivalent} trees absorb in a year, or about ${Math.max(1, Math.round(parseFloat(statistics.carbonSaved) / FLIGHT_LONDON_PARIS_KG))} short-haul flights. Based on an average petrol car over the same distance.`,
-        });
+        // 9. Compared with a real petrol or hybrid car (see services/comparison)
+        if (comparison) {
+            const v = comparison.vehicle;
+            const sym = cost ? currencyPrefix(cost.currency) : this.symbol;
+            const phev = v.powertrain === 'plug-in-hybrid';
+            const costLine = comparison.saving !== null
+                ? ` At your fuel price that is ${sym}${round(Math.abs(comparison.saving)).toLocaleString()} ${comparison.saving >= 0 ? 'less' : 'more'} than the ${v.model} would have cost${phev ? ' in petrol and electricity' : ''}.`
+                : ' Enter your fuel price in the settings to see the money side.';
+            cards.push({
+                id: 'carbon',
+                tone: 'good',
+                eyebrow: `Compared with a ${v.year} ${v.make} ${v.model} ${v.trim}`,
+                figure: round(comparison.co2Kg),
+                unit: 'kg CO₂ not emitted',
+                headline: `and ${round(comparison.fuel).toLocaleString()} ${comparison.fuelUnit} of fuel never bought.`,
+                body: `${phev ? `The ${v.model} ${v.trim} is a plug-in hybrid: charged every night, it would have driven ${comparison.electricSharePct}% of your ${u} on electricity and the rest on petrol at ${v.lPer100km} L/100 km. ` : `The ${v.model} ${v.trim} uses ${v.lPer100km} L/100 km on the combined cycle (${v.mpg.combined} mpg). `}Tailpipe only; ${comparison.treeYears} tree-years of CO₂ absorption.${costLine}`,
+                action: 'cost',
+            });
+        }
 
         // 10. Rhythm
         const r = insights.rhythm;

@@ -66,7 +66,7 @@ export class MapService {
     /**
      * Initialize the map
      */
-    initializeMap(target, center, layerType = 'carto-dark') {
+    initializeMap(target, center, layerType = 'osm') {
         const popupEl = document.createElement('div');
         popupEl.className = 'ol-popup';
         this.popup = new Overlay({ element: popupEl, autoPan: { animation: { duration: 250 } }, positioning: 'bottom-center', offset: [0, -14] });
@@ -106,6 +106,7 @@ export class MapService {
                 return this.featureBuilder.clusterStyle(members.length, this.theme);
             },
         });
+        this.layers.replay = new VectorLayer({ source: new VectorSource(), zIndex: 7, updateWhileAnimating: true, updateWhileInteracting: true, visible: false });
         this.layers.pulse = new VectorLayer({
             source: new VectorSource(),
             zIndex: 8,
@@ -121,7 +122,7 @@ export class MapService {
 
         this.map = new Map({
             target,
-            layers: [this.tileLayer, this.layers.heat, this.layers.chains, this.layers.routes, this.layers.flow, this.layers.places, this.layers.markers, this.layers.pulse],
+            layers: [this.tileLayer, this.layers.heat, this.layers.chains, this.layers.routes, this.layers.flow, this.layers.places, this.layers.markers, this.layers.replay, this.layers.pulse],
             view: new View({ center: fromLonLat(center), zoom: 11, maxZoom: 19, minZoom: 3 }),
             controls: defaultControls({ attributionOptions: { collapsible: true, collapsed: true }, zoomOptions: { className: 'ol-zoom' } }).extend([
                 new ScaleLine({ units: this.distanceUnit === 'mi' ? 'imperial' : 'metric' }),
@@ -225,6 +226,8 @@ export class MapService {
         l.flow.setVisible(this.mode === 'routes');
         l.markers.setVisible(this.mode === 'routes' || this.mode === 'replay');
         l.pulse.setVisible(this.mode === 'replay');
+        l.replay.setVisible(this.mode === 'replay');
+        if (this.mode !== 'replay') this._replace(l.replay, []);
         this.pulseEnabled = this.mode === 'replay' && !this.reducedMotion;
         this.popup.setPosition(undefined);
         l.flow.changed();
@@ -267,6 +270,25 @@ export class MapService {
     updateMarkers(features) {
         this.markerSource.clear();
         if (features?.length) this.markerSource.addFeatures(features);
+    }
+
+    /** Replay animation layer: completed legs, the leg being drawn and the car. */
+    setReplayFrame(features) {
+        this._replace(this.layers.replay, features);
+    }
+
+    /** Pan the view so a [lng, lat] point stays inside the middle of the viewport. */
+    keepInView(lngLat, margin = 0.2) {
+        if (!this.map || !lngLat) return;
+        const view = this.map.getView();
+        const size = this.map.getSize();
+        if (!size) return;
+        const pixel = this.map.getPixelFromCoordinate(fromLonLat(lngLat));
+        if (!pixel) return;
+        const [w, h] = size;
+        if (pixel[0] < w * margin || pixel[0] > w * (1 - margin) || pixel[1] < h * margin || pixel[1] > h * (1 - margin)) {
+            view.animate({ center: fromLonLat(lngLat), duration: 350 });
+        }
     }
 
     setPulse(feature) {

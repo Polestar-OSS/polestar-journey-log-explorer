@@ -68,10 +68,10 @@ describe('calculateStatistics', () => {
         expect(calculateStatistics([], 'km')).toBeNull();
     });
 
-    it('uses gallons and the US ICE baseline for miles', () => {
+    it('converts distances for mile exports', () => {
         const mi = calculateStatistics(data, 'mi');
-        expect(mi.fuelUnit).toBe('gal');
-        expect(parseFloat(mi.gasSaved)).toBeCloseTo((51.3 / 100) * 4.2, 1);
+        expect(mi.distanceUnit).toBe('mi');
+        expect(mi.totalTrips).toBe(8);
     });
 });
 

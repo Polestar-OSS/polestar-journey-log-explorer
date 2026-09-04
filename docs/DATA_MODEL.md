@@ -62,9 +62,10 @@ Output of `calculateStatistics(data, unit)`; totals are numeric strings
 (fixed decimals) for display, timestamps are numbers.
 
 `totalTrips, totalDistance, totalConsumption, avgEfficiency, bestEfficiency,
-worstEfficiency, avgTripDistance, odometerStart, odometerEnd, carbonSaved,
-treesEquivalent, gasSaved, fuelUnit, distanceUnit, totalDurationMin, avgSpeed,
-activeDays, longestTrip, firstTs, lastTs`.
+worstEfficiency, avgTripDistance, odometerStart, odometerEnd, distanceUnit,
+totalDurationMin, avgSpeed, activeDays, longestTrip, firstTs, lastTs`.
+Fuel and CO₂ comparisons are not statistics any more; see the comparison
+result below.
 
 ## Insights
 
@@ -101,6 +102,8 @@ Key `polestar-journey-explorer:prefs`:
 {
   experienceLevel: 'simple' | 'detailed' | 'expert';
   tariff: Tariff | null;            // see below; null until first saved
+  comparisonVehicleId: string | null; // services/comparison/Vehicles id; null → default (newest XC60 mild hybrid)
+  fuelPrice: number | null;         // per litre (km) or US gallon (mi); null → no money comparison
   // legacy (pre-tariff) keys, read once to seed a flat tariff:
   electricityRate?: number; currency?: string; homeChargingPercent?: number;
 }
@@ -137,6 +140,17 @@ interface Tier { upToKwh: number | null; rate: number }
 Flattened from the provider files under `app/src/data/tariffs/` (schema in
 [`TARIFF_PRESETS.md`](./TARIFF_PRESETS.md)):
 `{ id: '<provider>/<plan>', label, description, group, provider, region, source, effective, notes, tariff: Tariff }`.
+
+### Comparison vehicle (`services/comparison/Vehicles.js`)
+
+From `app/src/data/vehicles/<make>.json` (schema alongside; guide in
+[`VEHICLE_DATA.md`](./VEHICLE_DATA.md)):
+`{ id, year, make, model, trim, body, powertrain, engine, epaVehicleId, mpg: { city, highway, combined }, lPer100km, co2GPerKm, electric?: { kwhPer100mi, kwhPer100km, rangeMi, rangeKm }, label, shortLabel, powertrainLabel, makeSource, retrieved }`.
+
+### Comparison result (`VehicleComparison.compare`)
+
+`{ vehicle, distanceKm, petrolKm, electricKm, electricSharePct, fuel, fuelUnit: 'L'|'gal', litres, co2Kg, treeYears, electricKwh, fuelCost, electricCost, totalCost, evCost, saving, perTripSaving, priced }`;
+money fields are `null` until a fuel price is set.
 
 ### Cost result (`CostCalculator.compute`)
 

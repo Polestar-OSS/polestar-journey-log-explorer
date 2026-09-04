@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RouteSnapper } from '../../app/src/services/map/RouteSnapper.js';
-import { ReplayService } from '../../app/src/services/map/ReplayService.js';
+import { ReplayService, haversineM, bearingRad } from '../../app/src/services/map/ReplayService.js';
 import { ColorCalculator } from '../../app/src/services/map/ColorCalculator.js';
 import { MapDataProcessor, FALLBACK_CENTER } from '../../app/src/services/map/MapDataProcessor.js';
 import { hasCoordinates, hasPoint } from '../../app/src/utils/geo.js';
@@ -126,5 +126,45 @@ describe('MapDataProcessor', () => {
     it('falls back to a default centre without coordinates', () => {
         expect(processor.prepare([]).center).toEqual(FALLBACK_CENTER);
         expect(processor.centerOf([{ startLat: 0, startLng: 0, endLat: 0, endLng: 0 }])).toEqual(FALLBACK_CENTER);
+    });
+});
+
+describe('ReplayService timelines', () => {
+    it('measures legs on the sphere and places the car by fraction', () => {
+        const trips = data.slice(0, 2); // home → work, work → home
+        const tl = ReplayService.timeline(trips);
+        expect(tl.legs).toHaveLength(2);
+        expect(tl.legs[0].length).toBeCloseTo(haversineM([trips[0].startLng, trips[0].startLat], [trips[0].endLng, trips[0].endLat]), 3);
+        expect(tl.total).toBeCloseTo(tl.legs[0].length + tl.legs[1].length, 3);
+        const start = ReplayService.positionAt(tl, 0);
+        expect(start.legIndex).toBe(0);
+        expect(start.position[0]).toBeCloseTo(trips[0].startLng, 6);
+        expect(start.completed).toEqual([]);
+        const mid = ReplayService.positionAt(tl, 0.5);
+        expect(mid.legIndex).toBe(1); // both legs are equal length, so the halfway point starts leg 2
+        expect(mid.completed).toHaveLength(1);
+        expect(mid.drawing[0]).toEqual(tl.legs[1].coords[0]);
+        const end = ReplayService.positionAt(tl, 1);
+        expect(end.done).toBe(true);
+        expect(end.completed).toHaveLength(2);
+    });
+
+    it('follows a snapped path and reports a heading', () => {
+        const path = [[11.967, 57.6985], [11.95, 57.70], [11.9385, 57.7065]];
+        const tl = ReplayService.timeline([data[0]], () => path);
+        expect(tl.legs[0].coords).toBe(path);
+        const q = ReplayService.positionAt(tl, 0.25);
+        expect(q.drawing.length).toBeGreaterThanOrEqual(2);
+        expect(Math.abs(q.heading)).toBeLessThan(Math.PI);
+        expect(bearingRad([0, 0], [0, 1])).toBeCloseTo(0, 6); // due north
+        expect(bearingRad([0, 0], [1, 0])).toBeCloseTo(Math.PI / 2, 3); // due east
+    });
+
+    it('handles empty days and zero-length legs', () => {
+        expect(ReplayService.positionAt(ReplayService.timeline([]), 0.5).done).toBe(true);
+        const still = { ...data[0], endLng: data[0].startLng, endLat: data[0].startLat };
+        const tl = ReplayService.timeline([still]);
+        expect(tl.total).toBe(0);
+        expect(ReplayService.positionAt(tl, 0.3).done).toBe(true);
     });
 });

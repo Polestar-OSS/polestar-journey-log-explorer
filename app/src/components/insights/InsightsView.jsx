@@ -1,20 +1,12 @@
-import { Box, Grid, Group, Progress, SimpleGrid, Stack, Text, ThemeIcon } from '@mantine/core';
-import {
-    IconSnowflake,
-    IconHome,
-    IconBatteryCharging,
-    IconBattery3,
-    IconRulerMeasure,
-    IconRoute,
-    IconCalendarTime,
-    IconTrophy,
-    IconMapPin,
-    IconBolt,
-    IconGauge,
-} from '@tabler/icons-react';
+import { useMemo } from 'react';
+import { Badge, Box, Grid, Group, Progress, SimpleGrid, Stack, Table, Text, ThemeIcon } from '@mantine/core';
+import { IconSnowflake, IconHome, IconBatteryCharging, IconBattery3, IconRulerMeasure, IconRoute, IconCalendarTime, IconTrophy, IconMapPin, IconBolt, IconGauge, IconCar } from '@tabler/icons-react';
 import Eyebrow from '../ui/Eyebrow';
 import { formatNumber } from '../../utils/format';
-import { formatDuration } from '../../utils/journeyDate';
+import { VehicleComparison } from '../../services/comparison/VehicleComparison';
+import { VEHICLES } from '../../services/comparison/Vehicles';
+import { currencyPrefix } from '../../services/cost/TariffModel';
+import { formatDuration, SEASON_MONTHS } from '../../utils/journeyDate';
 
 const WEEKDAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -57,7 +49,11 @@ const truncate = (s, n = 42) => (s && s.length > n ? `${s.slice(0, n)}…` : s |
  * Narrative findings derived from InsightsCalculator. Every card states the
  * number and what it was derived from, so nothing reads as magic.
  */
-function InsightsView({ insights, statistics, distanceUnit = 'km', data }) {
+function InsightsView({ insights, statistics, distanceUnit = 'km', data, cost, comparison, fuelPrice = null }) {
+    const fleet = useMemo(
+        () => new VehicleComparison({ distanceUnit }).compareAll(data || [], VEHICLES, { fuelPrice, evCostPerKwh: cost?.effectiveRatePerKwh ?? null, evCostTotal: cost?.cost?.total ?? null }),
+        [data, distanceUnit, fuelPrice, cost]
+    );
     if (!insights || !statistics) return null;
     const unit = distanceUnit === 'mi' ? 'mi' : 'km';
     const effUnit = `kWh/100${unit}`;
@@ -65,11 +61,13 @@ function InsightsView({ insights, statistics, distanceUnit = 'km', data }) {
     let i = 0;
 
     const seasonReady = seasonality.winterPenaltyPct !== null;
-    const winterRange = battery.usableKwh && seasonality.winter.efficiency ? Math.round((battery.usableKwh / seasonality.winter.efficiency) * 100) : null;
-    const summerRange = battery.usableKwh && seasonality.summer.efficiency ? Math.round((battery.usableKwh / seasonality.summer.efficiency) * 100) : null;
+    const winterRange = seasonReady && battery.usableKwh && seasonality.winter.efficiency ? Math.round((battery.usableKwh / seasonality.winter.efficiency) * 100) : null;
+    const summerRange = seasonReady && battery.usableKwh && seasonality.summer.efficiency ? Math.round((battery.usableKwh / seasonality.summer.efficiency) * 100) : null;
+    const seasonMonths = SEASON_MONTHS[seasonality.hemisphere ?? 'north'];
 
     const home = places.top[0];
     const second = places.top[1];
+    const sym = currencyPrefix(cost?.currency);
 
     return (
         <Stack gap="md">
@@ -85,12 +83,12 @@ function InsightsView({ insights, statistics, distanceUnit = 'km', data }) {
                                 ? seasonality.winterPenaltyPct > 0
                                     ? `Winter costs you ${seasonality.winterPenaltyPct}% more energy per ${unit}.`
                                     : `Winter is not hurting your efficiency.`
-                                : 'Not enough winter and summer trips yet to compare seasons.'
+                                : 'Not enough winter and summer driving yet to compare seasons.'
                         }
                         body={
                             seasonReady
-                                ? `${formatNumber(seasonality.winter.efficiency, 1)} ${effUnit} across ${seasonality.winter.trips} winter trips versus ${formatNumber(seasonality.summer.efficiency, 1)} in ${seasonality.summer.trips} summer trips. Cabin heating, a cold pack and denser air all add up.`
-                                : 'Seasons are Dec–Feb and Jun–Aug; at least five trips in each are needed.'
+                                ? `${formatNumber(seasonality.winter.efficiency, 1)} ${effUnit} over ${seasonality.winter.trips} winter trips (${seasonality.winter.monthsLabel}) versus ${formatNumber(seasonality.summer.efficiency, 1)} over ${seasonality.summer.trips} summer trips (${seasonality.summer.monthsLabel}). Cabin heating, a cold pack and denser air all add up.${seasonality.confidence === 'low' ? ' The sample is still small; a full year will sharpen this.' : ''}`
+                                : `${seasonality.reason} Seasons are ${seasonMonths.winter} (winter) and ${seasonMonths.summer} (summer)${seasonality.hemisphere === 'south' ? ', southern hemisphere, from your trip coordinates' : ''}.`
                         }
                     >
                         {winterRange && summerRange && (
@@ -288,6 +286,37 @@ function InsightsView({ insights, statistics, distanceUnit = 'km', data }) {
                     </InsightCard>
                 </Grid.Col>
             </Grid>
+
+            {fleet.length > 0 && (
+                <InsightCard icon={IconCar} eyebrow="Against real petrol and hybrid cars" index={i++}
+                    headline={comparison ? `The same driving in a ${comparison.vehicle.year} ${comparison.vehicle.model} ${comparison.vehicle.trim} would have burned ${formatNumber(comparison.fuel, 0)} ${comparison.fuelUnit} and emitted ${formatNumber(comparison.co2Kg, 0)} kg of CO₂.` : 'Pick a car to compare against in the settings.'}
+                    body={`Every row is a real car from the US EPA fuel-economy database (combined cycle, tailpipe CO₂ only). Plug-in hybrids are assumed charged every night: the first electric-range ${unit} of each day are electric at your electricity price, the rest petrol.${fuelPrice ? '' : ' Enter a fuel price in the settings to fill the cost columns.'}`}>
+                    <Box className="ps-scroll-x">
+                        <Table fz="xs" verticalSpacing={4} withRowBorders={false} className="ps-tabular" style={{ minWidth: 640 }}>
+                            <Table.Thead>
+                                <Table.Tr>{['Car', 'Powertrain', 'L/100 km', `Fuel (${fleet[0].fuelUnit})`, 'Electric share', 'CO₂ (kg)', 'Would have cost', 'vs your EV'].map((h) => <Table.Th key={h} style={{ color: 'var(--ps-muted)', fontWeight: 600, textAlign: h === 'Car' || h === 'Powertrain' ? 'left' : 'right' }}>{h}</Table.Th>)}</Table.Tr>
+                            </Table.Thead>
+                            <Table.Tbody>
+                                {fleet.map((row) => {
+                                    const chosen = comparison?.vehicle?.id === row.vehicle.id;
+                                    return (
+                                        <Table.Tr key={row.vehicle.id} style={chosen ? { background: 'var(--ps-accent-soft)' } : undefined}>
+                                            <Table.Td>{row.vehicle.year} {row.vehicle.model} {row.vehicle.trim}{chosen && <Badge size="xs" variant="light" color="polestar" ml={6}>chosen</Badge>}</Table.Td>
+                                            <Table.Td c="dimmed">{row.vehicle.powertrainLabel}</Table.Td>
+                                            <Table.Td ta="right">{row.vehicle.lPer100km}</Table.Td>
+                                            <Table.Td ta="right">{formatNumber(row.fuel, 0)}</Table.Td>
+                                            <Table.Td ta="right" c="dimmed">{row.electricSharePct > 0 ? `${row.electricSharePct}%` : '–'}</Table.Td>
+                                            <Table.Td ta="right">{formatNumber(row.co2Kg, 0)}</Table.Td>
+                                            <Table.Td ta="right">{row.totalCost === null ? '–' : `${sym}${formatNumber(row.totalCost, 0)}`}</Table.Td>
+                                            <Table.Td ta="right" style={{ color: row.saving === null ? undefined : row.saving >= 0 ? 'var(--ps-good)' : 'var(--ps-critical)' }}>{row.saving === null ? '–' : `${row.saving >= 0 ? '−' : '+'}${sym}${formatNumber(Math.abs(row.saving), 0)}`}</Table.Td>
+                                        </Table.Tr>
+                                    );
+                                })}
+                            </Table.Tbody>
+                        </Table>
+                    </Box>
+                </InsightCard>
+            )}
 
             <Text size="xs" c="dimmed" ta="center" lh={1.6}>
                 Findings are derived only from the columns in your export. Charging, battery size and "home" are inferences, not readings from the car.

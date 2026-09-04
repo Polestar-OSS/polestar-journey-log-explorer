@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Comparison vehicles for one make",
+  "description": "Petrol and hybrid cars the app compares an EV's trips against. Figures come from an official test database and the file records where and when; see docs/VEHICLE_DATA.md.",
+  "type": "object",
+  "required": ["make", "source", "retrieved", "vehicles"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "make": { "type": "string" },
+    "source": { "type": "string", "format": "uri" },
+    "sourceDetail": { "type": "string" },
+    "retrieved": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "method": { "type": "object", "additionalProperties": { "type": "string" } },
+    "vehicles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "year", "make", "model", "trim", "powertrain", "mpg", "lPer100km", "co2GPerKm"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "year": { "type": "integer", "minimum": 1990, "maximum": 2100 },
+          "make": { "type": "string" },
+          "model": { "type": "string" },
+          "trim": { "type": "string" },
+          "body": { "enum": ["sedan", "estate", "SUV", "hatchback", "coupe", "other"] },
+          "powertrain": { "enum": ["petrol", "mild-hybrid-petrol", "hybrid", "plug-in-hybrid", "diesel"] },
+          "engine": { "type": "string" },
+          "epaVehicleId": { "type": "integer" },
+          "mpg": { "type": "object", "required": ["combined"], "properties": { "city": { "type": "number" }, "highway": { "type": "number" }, "combined": { "type": "number", "exclusiveMinimum": 0 } } },
+          "lPer100km": { "type": "number", "exclusiveMinimum": 0, "description": "Petrol mode, combined cycle" },
+          "co2GPerKm": { "type": "number", "minimum": 0, "description": "Tailpipe, petrol mode" },
+          "electric": {
+            "type": "object",
+            "required": ["kwhPer100km", "rangeKm"],
+            "properties": { "kwhPer100mi": { "type": "number" }, "kwhPer100km": { "type": "number", "exclusiveMinimum": 0 }, "rangeMi": { "type": "number" }, "rangeKm": { "type": "number", "exclusiveMinimum": 0 } },
+            "description": "Plug-in hybrids only: electric-mode consumption and range"
+          }
+        }
+      }
+    }
+  }
+}

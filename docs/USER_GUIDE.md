@@ -92,12 +92,14 @@ Four modes, switched in the panel on the left (a drawer on phones):
 - **Heat**: a density heatmap of where you start and stop.
 - **Places**: bubbles sized by how many trips touch each place, drawn from the
   same clustering as the "Most visited" insight. Click one to fly to it.
-- **Replay**: plays the filtered period day by day with a trailing set of
-  routes, a pulse at the current position and running totals. Space plays and
-  pauses; the slider scrubs.
+- **Replay**: drives the filtered period day by day. A car marker moves
+  along each trip in order with the route drawing behind it (along the road
+  when snapping is on), the view pans to keep it in sight, and running
+  totals tick up. Long days take longer; the speed control divides that.
+  The slider scrubs by day; with reduced motion the replay steps day by day.
 
-Basemaps: dark, light, satellite, OpenStreetMap and Humanitarian. The default
-follows your theme. Trips without coordinates never appear on the map.
+Basemaps: satellite imagery, OpenStreetMap and Humanitarian. Imagery is the
+default under the dark theme, OpenStreetMap under the light one. Trips without coordinates never appear on the map.
 
 **Road snapping** (off by default) replaces straight lines with the road route
 between start and end. It sends start and end coordinates (rounded to four
@@ -122,10 +124,12 @@ Open **Electricity tariff settings** under the KPI row, the "Charging cost"
 tile, or the cost card in the Simple story. Everything you set is saved in
 your browser and applied everywhere a cost is shown.
 
-- **Preset or country**: pick a provider's plan from the list (Hydro
-  Ottawa's time-of-use, ultra-low overnight and tiered plans, plus generic
-  regional averages), or type your city to pick up your country's average
-  price. Presets are JSON files anyone can add; see
+- **Preset**: type a provider, country, province or state ("ottawa",
+  "texas", "sweden", "ulo") and pick a plan. Hydro Ottawa and Toronto Hydro
+  carry the Ontario time-of-use, ultra-low overnight and tiered schedules;
+  Canada, the United States, the United Kingdom, Sweden and the EU carry
+  all-in averages per province, state or price zone. The search is local;
+  nothing is sent anywhere. Presets are JSON files anyone can add; see
   [`TARIFF_PRESETS.md`](./TARIFF_PRESETS.md).
 - **Currency label**: optional and only for display. Type `$`, `EUR`, `R$`
   or nothing at all; the maths is the same either way.
@@ -156,6 +160,22 @@ your charging habit. If there are too few sessions it falls back to the
 average price of your charging window. The formulas are in
 [`ANALYTICS.md`](./ANALYTICS.md#9-electricity-cost-costcalculator).
 
+## Compared with a petrol or hybrid car
+
+The CO₂ tile, the "Compared with" story card and the "Against real petrol
+and hybrid cars" table in Insights use a real car, not an average. Open the
+settings (same panel as the tariff), pick the car under **Compared with a
+petrol or hybrid car** and, if you want the money side, enter your fuel
+price per litre (or per US gallon for mile exports). Without a price the
+app shows fuel volume and CO₂ only; it never assumes a price.
+
+Bundled cars are the Volvo S60, S90, V60, V90, XC60 and XC90 as petrol mild
+hybrids and plug-in hybrids, from the US EPA fuel-economy database, with the
+EPA id shown so you can check. Plug-in hybrids are modelled as charged every
+night: the first electric-range kilometres of each day electric, the rest
+petrol. Figures are combined-cycle and tailpipe-only. To add a make, see
+[`VEHICLE_DATA.md`](./VEHICLE_DATA.md).
+
 ## Exporting
 
 **Export** in the header downloads the currently filtered trips as CSV with
@@ -164,11 +184,10 @@ builder has its own CSV button.
 
 ## Privacy
 
-Processing is local. The only outbound requests are map tiles, an optional
-city lookup for tariffs (the text you typed, nothing else), road snapping on
-the map if you turn it on (rounded start/end coordinates, after you agree),
-and the site's analytics and cookie-consent scripts, which never see trip
-data.
+Processing is local. The only outbound requests are map tiles, road
+snapping on the map if you turn it on (rounded start/end coordinates, after
+you agree), and the site's analytics and cookie-consent scripts, which never
+see trip data.
 
 ## Troubleshooting
 
