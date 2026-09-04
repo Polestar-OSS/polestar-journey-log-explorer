@@ -1,82 +1,26 @@
-# Quick Start Guide
+# Quick start
 
-**Get started with the Polestar Journey Log Explorer in 5 minutes!**
+## Using it
 
-## 🎯 For End Users
+1. Open <https://polestar-oss.github.io/polestar-journey-log-explorer/>.
+2. Drop one or more Journey Log exports (CSV or XLSX) on the page, or click
+   **Explore with sample data**.
+3. Read the **Simple** page. Switch to **Detailed** or **Expert** in the
+   header when you want more.
+4. Use the filter row to narrow to a period; use **Export** to download the
+   filtered trips.
 
-### Access the App
-Visit: `https://kinncj.github.io/polestar-journey-log-explorer/`
+Nothing leaves your browser.
 
-### Upload Your Data
-1. Prepare your journey log file (CSV or XLSX format)
-2. Drag and drop it onto the upload area
-3. Your dashboard appears automatically!
-
-### Explore Your Data
-- **Statistics**: View key metrics at the top
-- **Charts Tab**: See trends and patterns
-- **Map Tab**: View trips geographically
-- **Table Tab**: Search and sort your data
-
-That's it! 🎉
-
----
-
-## 💻 For Developers
-
-### Setup (2 minutes)
+## Developing it
 
 ```bash
-# Clone the repository
-git clone https://github.com/polestar-oss/polestar-journey-log-explorer.git
+git clone https://github.com/Polestar-OSS/polestar-journey-log-explorer.git
 cd polestar-journey-log-explorer
-
-# Install dependencies
-cd app
-npm install
-
-# Start development server
-npm run dev
+make install
+make dev            # http://localhost:5173/polestar-journey-log-explorer/
+make check          # lint + test + build, the pull-request gate
 ```
 
-Open `http://localhost:5173` in your browser.
-
-### Project Structure
-
-```
-app/
-├── src/
-│   ├── components/    # React components
-│   ├── utils/         # Utility functions
-│   ├── App.jsx        # Main app
-│   └── main.jsx       # Entry point
-├── package.json
-└── vite.config.js
-```
-
-### Make Your First Change
-
-1. Edit a component in `app/src/components/`
-2. Save the file
-3. See changes instantly in the browser (Hot Module Replacement)
-
-### Deploy Your Changes
-
-```bash
-npm run build       # Build for production
-npm run deploy      # Deploy to GitHub Pages
-```
-
----
-
-## 📚 Need More Help?
-
-- **Users**: See [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
-- **Developers**: See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
-- **Architecture**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-
----
-
-**Happy analyzing!** ⚡🚗
-
-*Kinn Coelho Juliao*
+Node 20.19+ or 22.12+ is required. See the
+[development guide](./DEVELOPMENT.md) for the layout and conventions.

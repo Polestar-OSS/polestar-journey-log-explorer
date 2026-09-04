@@ -61,11 +61,8 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
 
   // Debounced city search
   useEffect(() => {
-    if (citySearch.length < 3) {
-      setCityOptions([]);
-      setCityData([]);
-      return;
-    }
+    // Below three characters nothing is fetched; the render derives an empty list
+    if (citySearch.length < 3) return undefined;
 
     const timer = setTimeout(async () => {
       setLoadingCities(true);
@@ -148,6 +145,7 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
 
   const costs = calculateCosts();
   const symbol = currencySymbols[currency] ?? '';
+  const visibleCityOptions = citySearch.length >= 3 ? cityOptions : [];
 
   return (
     <Modal
@@ -190,8 +188,8 @@ function CostCalculatorModal({ opened, onClose, statistics, distanceUnit = 'km' 
           <Combobox.Dropdown>
             <Combobox.Options>
               <ScrollArea.Autosize mah={200} type="scroll">
-                {cityOptions.length > 0 ? (
-                  cityOptions.map((city) => (
+                {visibleCityOptions.length > 0 ? (
+                  visibleCityOptions.map((city) => (
                     <Combobox.Option value={city} key={city}>
                       {city}
                     </Combobox.Option>

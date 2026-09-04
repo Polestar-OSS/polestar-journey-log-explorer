@@ -1,400 +1,126 @@
-# User Guide - Polestar Journey Log Explorer
+# User guide
+
+## Getting your data
 
-**Author**: Kinn Coelho Juliao  
-**Date**: November 21, 2025
+1. Install the **Polestar Journey Log** app in the car (Google Play in the
+   vehicle's app store) and sign in with your Polestar ID.
+2. Drive. Journeys are recorded from drive mode to park.
+3. In the app, choose a date range and tap **Export**. The CSV or XLSX arrives
+   by email.
+4. Open the explorer and drop the file on the landing page.
 
-## Introduction
+Nothing is uploaded. The file is read in your browser and stays there.
 
-Welcome to the Polestar Journey Log Explorer! This application helps you analyze and visualize your electric vehicle journey data. Whether you want to track your efficiency, understand your driving patterns, or see your trips on a map, this tool provides comprehensive insights into your EV usage.
+## Several files at once
 
-## Getting Started
+Drop as many exports as you like, at once or later via **Add files** in the
+header. Overlapping date ranges are fine: a trip that appears in more than one
+file is counted once. The sources bar under the header shows, per file, how
+many rows were read, how many were new, and how many were duplicates. If two
+files disagree about the same trip's energy or battery values, the first file
+wins and the disagreement is counted as a conflict.
 
-### Accessing the Application
+A km export and a mile export can be mixed; everything is shown in the unit of
+the first file.
 
-Visit the application at: [Your GitHub Pages URL]
+## Choosing a level
 
-The application runs entirely in your browser - no account or login required!
+The header has a **Simple · Detailed · Expert** switch. It is remembered.
 
-### Preparing Your Data
+**Simple** is one page of plain sentences: how far, how much energy, what it
+cost, how far a full charge goes in summer and winter, what winter costs you,
+how you charge, where you go, what a petrol car would have emitted, your
+rhythm, your records, and three tips drawn from your own numbers. Use the
+buttons at the bottom to go deeper.
 
-The application accepts journey log files in two formats:
-- **CSV** (.csv files)
-- **XLSX** (.xlsx or .xls files)
+**Detailed** adds:
+- an **Overview** of charts (distance per period, efficiency with a rolling
+  median, month-of-year seasonality, distributions, a weekday × hour heatmap,
+  the battery timeline, trip length vs efficiency),
+- an **Insights** page with the findings as cards and the reasoning behind
+  each one,
+- the full set of KPI tiles.
 
-Your file should contain the following information:
-- Trip dates and times
-- Start and end addresses
-- Distance traveled
-- Energy consumption
-- Battery state of charge (SOC)
-- GPS coordinates
+**Expert** adds an **Explore** tab:
+- a pivot builder (any dimension × any metric, with CSV export),
+- percentiles for distance, efficiency, energy, duration, speed and battery
+  use,
+- a fitted consumption model (fixed cost per trip + rolling consumption),
+- efficiency by speed band, by hour, and by starting battery level,
+- a battery fit (kWh per percent → usable capacity),
+- where charging starts and stops,
+- a data-quality report (unlogged km per month, odd rows, merge conflicts).
 
-### Uploading Your Data
+The trip table also gains odometer, coordinates, type and source columns.
 
-1. **Open the application** in your web browser
-2. **Drag and drop** your CSV or XLSX file onto the upload area, or **click** to browse and select your file
-3. Wait for the file to be processed (usually takes just a few seconds)
-4. Your dashboard will appear with all your journey data visualized!
+## The filter row
 
-## Dashboard Overview
+Sits above everything and scopes every tile, chart, insight, map and table.
 
-Once your data is loaded, you'll see a comprehensive dashboard with several sections:
+- Date presets count back from your **most recent trip**, so an old export
+  still has a meaningful "last 30 days". **Custom** opens a range picker.
+- Category (when the file has more than one), source file (when more than one
+  file is loaded), and tags (once you have added some).
+- **More** holds sliders for distance, efficiency and battery used.
 
-### Statistics Cards (Top Section)
+When a date filter is active, the tiles show a change versus the equally long
+period before it.
 
-Eight key metrics are displayed:
+## Reading the numbers
 
-1. **Total Trips**: The number of journeys in your log
-2. **Total Distance**: Cumulative distance traveled (in kilometers)
-3. **Total Consumption**: Total energy used (in kWh)
-4. **Average Efficiency**: Your overall efficiency (kWh per 100 km)
-5. **Best Efficiency**: Your most efficient trip
-6. **Worst Efficiency**: Your least efficient trip
-7. **Average Trip Distance**: Mean distance per trip
-8. **Odometer Range**: Your vehicle's odometer readings from start to end
+- **Efficiency** is kWh per 100 km (or per 100 mi). Lower is better. The
+  Simple level also shows the inverse, km per kWh, which many people find
+  easier.
+- **Best / worst efficiency** only consider trips of 5 km (3 mi) or more,
+  because a one-minute hop can read absurdly high or low.
+- **Charging, battery size and "home" are inferred**, not read from the car.
+  The Insights cards and the Guide tab say how.
+- **CO₂ avoided** is what an average petrol car would have emitted over the
+  same distance; it does not subtract the electricity's footprint.
 
-### Navigation Tabs
+Every chart has a **table view** (the ⊞ button) so no value is hidden behind a
+hover.
 
-The dashboard has three main views accessible via tabs:
+## Map
 
-## Charts View
+Routes are straight lines between start and end, coloured by efficiency
+(legend on the left). Toggle start/end pins, a density heatmap and day chains.
+The basemap follows your light/dark theme. Click a pin for the trip's details.
+"Most visited" lists the places that account for most of your trips; click one
+to centre the map on it.
 
-The Charts tab provides visual analysis of your journey data through multiple chart types:
+## Trips
 
-### 1. Daily Distance & Consumption
-- **Type**: Line chart
-- **Shows**: Distance and energy consumption over time
-- **Use Case**: Identify daily usage patterns and trends
-- **Time Range**: Last 30 days of data
+Search by address, date or category; sort by any column; page through. The
+note icon opens notes and tags for a trip. Notes and tags are stored in your
+browser only and appear as a filter once you have some.
 
-### 2. Trip Distance Distribution
-- **Type**: Pie chart
-- **Shows**: Breakdown of trips by distance ranges
-  - 0-5 km: Short trips
-  - 5-10 km: Medium-short trips
-  - 10-20 km: Medium trips
-  - 20-50 km: Long trips
-  - 50+ km: Very long trips
-- **Use Case**: Understand your typical trip distances
+## Cost calculator
 
-### 3. Efficiency per Trip
-- **Type**: Bar chart
-- **Shows**: Energy efficiency for individual trips
-- **Use Case**: Identify which trips are most/least efficient
-- **Color Coding**: 
-  - Green: High efficiency (< 15 kWh/100km)
-  - Yellow: Good efficiency (15-20 kWh/100km)
-  - Orange: Moderate efficiency (20-25 kWh/100km)
-  - Red: Low efficiency (> 25 kWh/100km)
+Available from the KPI row (and the Simple story). Set your home tariff and
+currency, optionally by searching your city, and the share of charging done at
+home. The tariff is remembered and used by the Simple story's cost card.
 
-### 4. Battery SOC Changes
-- **Type**: Line chart
-- **Shows**: Battery percentage at start and end of each trip
-- **Use Case**: Monitor charging patterns and battery usage
-- **Time Range**: Last 20 trips
+## Exporting
 
-### 5. Daily Trip Count
-- **Type**: Bar chart
-- **Shows**: Number of trips taken each day
-- **Use Case**: Understand your driving frequency
+**Export** in the header downloads the currently filtered trips as CSV with
+the derived columns (duration, speed, efficiency, source file). The pivot
+builder has its own CSV button.
 
-## Map View
+## Privacy
 
-The Map tab provides geographic visualization of your journeys:
-
-### Features
-
-- **Interactive Map**: Pan and zoom to explore your routes
-- **Trip Routes**: Lines connecting start and end points
-- **Color-Coded Routes**: Routes colored by efficiency
-  - Green: Efficient trips
-  - Yellow: Moderately efficient
-  - Orange: Less efficient
-  - Red: Inefficient trips
-- **Markers**: Start and end point markers for each trip
-- **Trip Information**: Click markers to see:
-  - Date and time
-  - Full address
-  - Battery state of charge
-  - Distance and consumption
-  - Efficiency rating
-
-### Using the Map
-
-1. **View All Trips**: By default, the map shows up to 50 recent trips
-2. **Select Specific Trip**: Use the dropdown menu to focus on a single trip
-3. **Zoom and Pan**: Use mouse or touch gestures to navigate
-4. **Click Markers**: View detailed information about trip endpoints
-
-### Performance Note
-
-To ensure smooth performance, the map displays a maximum of 50 trips when viewing "all trips." Use the trip selector to view any specific trip in detail.
-
-## Table View
-
-The Table tab provides a detailed, sortable, and searchable view of your data:
-
-### Features
-
-- **Search**: Find trips by address or date
-- **Sort**: Click column headers to sort by any field
-- **Filter**: Use the sort dropdown to organize data
-- **Color-Coded Efficiency**: Visual badges show efficiency levels
-
-### Columns
-
-1. **Date**: Trip start date and time
-2. **Start Address**: Where the trip began
-3. **End Address**: Trip destination
-4. **Distance**: Trip distance in kilometers
-5. **Consumption**: Energy used in kWh
-6. **Efficiency**: Energy per 100 km (color-coded)
-7. **SOC Change**: Battery percentage start → end
-8. **SOC Drop**: Percentage of battery used
-
-### Using the Table
-
-1. **Search**: Type in the search box to filter by address or date
-2. **Sort**: Select sorting criteria from the dropdown
-3. **Change Order**: Toggle between ascending and descending
-4. **View Count**: See how many trips match your current filters
-
-## Understanding Your Data
-
-### Efficiency Ratings
-
-Efficiency is measured in kWh per 100 km. Lower numbers are better!
-
-- **Excellent** (< 15 kWh/100km): Ideal conditions, efficient driving
-- **Good** (15-20 kWh/100km): Normal efficient driving
-- **Moderate** (20-25 kWh/100km): Acceptable, may include highway or cold weather
-- **Poor** (> 25 kWh/100km): Consider factors like speed, weather, terrain
-
-### Factors Affecting Efficiency
-
-Several factors can impact your EV's efficiency:
-
-1. **Weather**: Cold temperatures reduce efficiency
-2. **Speed**: Highway driving uses more energy
-3. **Terrain**: Hills and mountains increase consumption
-4. **Driving Style**: Aggressive acceleration reduces efficiency
-5. **Climate Control**: Heating/AC impacts range
-6. **Tire Pressure**: Proper inflation improves efficiency
-
-### Battery State of Charge (SOC)
-
-- **SOC Source**: Battery percentage at trip start
-- **SOC Destination**: Battery percentage at trip end
-- **SOC Drop**: Difference between start and end
-
-Monitoring SOC helps you understand:
-- How much range you're using per trip
-- When you need to charge
-- Charging patterns and frequency
-
-## Tips and Best Practices
-
-### Analyzing Your Data
-
-1. **Look for Patterns**: Use the daily charts to identify usage trends
-2. **Compare Trips**: Find your most efficient routes in the table view
-3. **Geographic Insights**: Use the map to see which areas you drive most
-4. **Monitor Changes**: Upload new logs periodically to track improvements
-
-### Improving Efficiency
-
-Based on your data analysis:
-
-1. **Identify Inefficient Trips**: Look for red-coded trips in charts and table
-2. **Consider Route Alternatives**: Short trips may benefit from route planning
-3. **Optimize Driving Style**: Smooth acceleration and braking help
-4. **Preconditioning**: Warm the car while plugged in during winter
-
-### Data Management
-
-1. **Regular Updates**: Upload new data monthly or quarterly
-2. **Keep Original Files**: The app doesn't store data permanently
-3. **Compare Periods**: Download data from different time periods to compare
-4. **Note Changes**: Use the comments field in your logs for context
-
-## Uploading New Data
-
-To analyze a different data file:
-
-1. Click **"Upload New File"** button at the top of the dashboard
-2. Select or drag your new CSV/XLSX file
-3. The dashboard will update with the new data
-
-## Privacy and Security
-
-### Your Data is Private
-
-- **No Server Upload**: All processing happens in your browser
-- **No Storage**: Data is not saved or transmitted anywhere
-- **Complete Privacy**: Your journey data never leaves your device
-
-### Data Safety
-
-- Close your browser tab to remove data from memory
-- Use private/incognito mode for additional privacy
-- The application has no analytics or tracking
+Processing is local. The only outbound requests are map tiles, an optional
+city lookup for tariffs (the text you typed, nothing else), and the site's
+analytics and cookie-consent scripts, which never see trip data.
 
 ## Troubleshooting
 
-### File Won't Upload
-
-**Problem**: File upload fails or shows error
-
-**Solutions**:
-- Ensure file is CSV or XLSX format
-- Check that file contains required columns
-- Verify file isn't corrupted
-- Try converting XLSX to CSV or vice versa
-- Check file size (very large files may need time to process)
-
-### No Data Showing
-
-**Problem**: Dashboard is empty after upload
-
-**Solutions**:
-- Verify file contains valid journey data
-- Check that Distance column has values > 0
-- Ensure dates are in correct format
-- Look for error messages in the notification
-
-### Map Not Loading
-
-**Problem**: Map view is blank or not displaying
-
-**Solutions**:
-- Check internet connection (map tiles require internet)
-- Verify trips have valid GPS coordinates
-- Try selecting a specific trip from dropdown
-- Refresh the browser page
-
-### Charts Look Strange
-
-**Problem**: Charts show unexpected patterns
-
-**Solutions**:
-- Check data for outliers or errors in original file
-- Verify date formats are consistent
-- Look for trips with zero or negative values
-- Filter data in table view to investigate
-
-### Performance Issues
-
-**Problem**: Application is slow or laggy
-
-**Solutions**:
-- Try uploading smaller data files (split by time period)
-- Use a modern browser (Chrome, Firefox, Safari, Edge)
-- Close other browser tabs to free memory
-- Use table view for large datasets (lighter than map)
-
-## Keyboard Shortcuts
-
-- **Ctrl/Cmd + Click**: Open links in new tab
-- **Arrow Keys**: Navigate through table rows
-- **Escape**: Close popups and dropdowns
-- **+/-**: Zoom map in/out
-
-## Browser Compatibility
-
-### Recommended Browsers
-
-- **Chrome** 90 or later ✅
-- **Firefox** 88 or later ✅
-- **Safari** 14 or later ✅
-- **Edge** 90 or later ✅
-
-### Minimum Requirements
-
-- JavaScript enabled
-- Modern browser (released within last 2 years)
-- Internet connection for map tiles
-
-## Frequently Asked Questions
-
-### Q: Where does my data go?
-
-**A**: Nowhere! All processing happens locally in your browser. Your data never leaves your device.
-
-### Q: Can I use this on mobile?
-
-**A**: Yes! The interface is responsive and works on tablets and phones, though larger screens provide a better experience.
-
-### Q: How do I export my analysis?
-
-**A**: Currently, you can take screenshots. Future versions will include export features.
-
-### Q: Can I compare multiple files?
-
-**A**: Not yet, but this feature is planned for future releases.
-
-### Q: What if my file format is different?
-
-**A**: Ensure your file has similar columns to the expected format. You may need to rename or reformat columns in Excel before uploading.
-
-### Q: Is there a file size limit?
-
-**A**: No hard limit, but files with 1000+ trips may take longer to process. Performance depends on your device.
-
-### Q: Can I customize the charts?
-
-**A**: Current version has fixed chart types, but customization features are planned.
-
-## Getting Help
-
-### Support Resources
-
-1. **GitHub Issues**: Report bugs or request features
-2. **Documentation**: Check ARCHITECTURE.md for technical details
-3. **Repository**: View source code and contribute
-
-### Reporting Issues
-
-When reporting problems, include:
-- Browser and version
-- Operating system
-- Description of the issue
-- Steps to reproduce
-- Screenshots (if applicable)
-- Sample data (if possible)
-
-## What's Next?
-
-### Upcoming Features
-
-We're planning to add:
-- Data export functionality
-- Multiple file comparison
-- Advanced filtering options
-- Heatmaps for frequently visited locations
-- Carbon footprint calculations
-- Custom trip categories
-- Report generation
-
-Stay tuned for updates!
-
-## Contributing
-
-This is an open-source project. Contributions are welcome!
-
-- Submit bug reports
-- Suggest features
-- Contribute code
-- Improve documentation
-
-Visit the GitHub repository to get involved.
-
-## About
-
-**Polestar Journey Log Explorer**  
-Built by Kinn Coelho Juliao
-
-A tool for Polestar owners and EV enthusiasts to better understand their electric vehicle usage and efficiency.
-
----
-
-*Happy analyzing! Drive electric, drive efficient!* ⚡🚗
+- **"No trips with a distance above zero"**: the file has only zero-length
+  rows or the distance column is missing. The header must contain
+  `Distance in KM` or `Distance in Mile`.
+- **Dates look wrong**: the export writes `YYYY-MM-DD, HH:MM` in the car's
+  local time; the explorer keeps that. Nothing is converted.
+- **The map is empty**: trips without coordinates are hidden on the map; the
+  Expert data-quality panel counts them.
+- **Numbers differ from the app**: the app shows totals over all rows,
+  including zero-distance ones; the explorer drops those.

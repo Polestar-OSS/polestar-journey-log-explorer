@@ -9,42 +9,39 @@
 
 An interactive web-based dashboard for analyzing your Polestar journey log data. Upload your CSV/Excel files and explore comprehensive statistics, visualizations, and insights about your electric vehicle trips—all processed locally in your browser with complete privacy.
 
-## ✨ Features
+## ✨ What it does
 
-### 📊 Overview
-- **Hero figure + KPI tiles** - distance, trips, energy, efficiency, CO₂ avoided, time driving, longest trip, odometer span; sparklines on the trend tiles and deltas against the previous period whenever a date filter is active
-- **Distance / energy / trips over time** - calendar days, weeks or months with gaps kept
-- **Efficiency per trip with a rolling median** - robust to 1-km cold-start spikes
-- **Efficiency by month of year** - every year folded onto one calendar, worst month highlighted
-- **Distributions** - efficiency histogram, trip-length bands
-- **When you drive** - weekday × hour heatmap
-- **State of charge timeline** - battery level after each trip with inferred charging events
-- **Trip length vs efficiency** - log-scale scatter
-- Every chart has a table twin and reflects the single filter row above it
+**Three depths of the same data.** A persisted *Simple · Detailed · Expert* switch in the header.
 
-### 💡 Insights
-- **Winter penalty** - Dec–Feb vs Jun–Aug efficiency, with estimated summer/winter range
-- **Usable battery estimate** - from energy used ÷ SOC consumed, matched to known Polestar packs
-- **Charging habits** - inferred sessions, typical plug-in and target SOC, cycles
-- **Places** - the handful of locations that account for most trips
-- **Short-hop share, log coverage vs odometer, driving rhythm, personal records**
+| Level | For | You get |
+|---|---|---|
+| **Simple** | anyone | One page in plain words: how far, how much energy (and km per kWh), what it cost at your tariff, range on a full charge in summer and winter, what winter costs you, how you charge, where you go, CO₂ vs a petrol car, your rhythm, your records, three tips from your own numbers |
+| **Detailed** | owners who like charts | Overview (distance per day/week/month, efficiency with a rolling median, month-of-year seasonality, distributions, weekday × hour heatmap, battery timeline, trip length vs efficiency), an Insights page, the full KPI row with deltas vs the previous period |
+| **Expert** | enthusiasts and analysts | Explore tab: pivot builder (14 dimensions × 13 metrics, CSV), percentile tables, a fitted consumption model (fixed cost per trip + rolling consumption, per season), efficiency by speed / hour / starting battery level, a battery fit (kWh per % → usable pack), charging start/stop profile, data-quality report; extra columns in the trip table |
 
-### 🗺️ Map & 📋 Trips
-- Routes coloured by efficiency on quiet CARTO dark/light basemaps (follows the theme), density heatmap, day chains, most-visited places, auto-fit to the shown trips
-- Sortable, paginated trip table with duration and average speed, efficiency badges, SOC bars, notes and tags (stored in your browser)
-- Charging cost calculator with per-country electricity rates
-- CSV export of the filtered trips
+**Several files, one journey.** Drop many exports at once or add more later. Overlapping trips are counted once (identity: start time, end time, distance), km and mile exports are normalised, and a sources bar shows rows / added / duplicates per file.
 
-### 🎨 Design
-- Polestar-inspired visual language: monochrome surfaces, one warm accent, sharp corners, light display type (Inter, bundled - no font CDN)
-- Dark and light themes; charts and map re-theme with the UI
-- Motion that respects `prefers-reduced-motion`; responsive down to phone widths
-- Categorical chart palette validated for colour-vision deficiency
+**Inference, stated as such.** Charging sessions, usable battery size, "home", winter penalty and unlogged distance are derived from the columns in the export; every card says how. All formulas are in [`docs/ANALYTICS.md`](./docs/ANALYTICS.md).
 
-### 🔒 Privacy First
-- **100% Client-Side** - All data processing happens in your browser
-- **No Backend** - Your data never leaves your device
-- **Sample dataset** - a synthetic year of driving is built in, so you can explore without uploading anything
+**Design.** Polestar-adjacent: monochrome surfaces, one warm accent, sharp corners, hairline borders, light display type (Inter, bundled). Dark and light. Charts follow one-axis / thin-mark / table-twin rules with a colour-vision-validated palette. Motion respects `prefers-reduced-motion`. Works at phone width.
+
+**Private.** 100 % client-side. Files never leave the browser. A synthetic sample lets you explore without uploading anything.
+
+## 📸 Screenshots
+
+Rendered from the built-in synthetic sample (no real data).
+
+| Simple | Detailed |
+|---|---|
+| ![Simple level](./docs/screenshots/simple.png) | ![Detailed level](./docs/screenshots/detailed.png) |
+
+| Expert · Explore | Insights |
+|---|---|
+| ![Expert explore tab](./docs/screenshots/explore.png) | ![Insights](./docs/screenshots/insights.png) |
+
+| Landing | Light theme | Mobile |
+|---|---|---|
+| ![Landing](./docs/screenshots/landing.png) | ![Light](./docs/screenshots/light.png) | ![Mobile](./docs/screenshots/mobile.png) |
 
 ## 🚀 Quick Start
 
@@ -59,28 +56,22 @@ Visit the live demo: **[https://polestar-oss.github.io/polestar-journey-log-expl
 ### Local Development
 
 ```bash
-# Clone the repository
-git clone https://github.com/polestar-oss/polestar-journey-log-explorer.git
-cd polestar-journey-log-explorer/app
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+git clone https://github.com/Polestar-OSS/polestar-journey-log-explorer.git
+cd polestar-journey-log-explorer
+make install   # npm ci in ./app (Node 20.19+ / 22.12+)
+make dev       # http://localhost:5173/polestar-journey-log-explorer/
+make check     # lint + test + build, the pull-request gate
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Click **Explore with sample data** to load a synthetic year of driving.
 
 ## 📖 Documentation
 
-Detailed documentation is available in the [`docs/`](./docs/) directory:
-
-- **[User Guide](./docs/USER_GUIDE.md)** - Complete feature walkthrough
-- **[Quick Start](./docs/QUICKSTART.md)** - Get up and running quickly
-- **[Development Guide](./docs/DEVELOPMENT.md)** - Technical setup and architecture
-- **[Contributing](./docs/CONTRIBUTING.md)** - How to contribute to the project
-- **[Architecture](./docs/ARCHITECTURE.md)** - System design and technical details
+- [User guide](./docs/USER_GUIDE.md) · [Quick start](./docs/QUICKSTART.md)
+- [Analytics reference](./docs/ANALYTICS.md): every formula behind every number
+- [Architecture](./docs/ARCHITECTURE.md) · [Data model](./docs/DATA_MODEL.md) · [Design system](./docs/DESIGN_SYSTEM.md)
+- [Development](./docs/DEVELOPMENT.md) · [Testing](./docs/TESTING.md) · [Contributing](./docs/CONTRIBUTING.md)
+- [Architecture decision records](./docs/adr/README.md)
 
 ## 🎯 Use Cases
 
@@ -90,6 +81,14 @@ Detailed documentation is available in the [`docs/`](./docs/) directory:
 - **Plan Road Trips** - Review past routes and consumption
 - **Monitor Battery Health** - Track SOC patterns over time
 - **Export Reports** - Download filtered data for external analysis
+
+## 🗂️ Repository layout
+
+```
+app/        React application (Vite)        docs/       documentation and ADRs
+tests/      unit suites and fixtures        .github/    CI, deploy, Dependabot
+Makefile    install · dev · lint · test · build · audit · check · screenshots
+```
 
 ## 🛠️ Tech Stack
 
@@ -106,9 +105,9 @@ Detailed documentation is available in the [`docs/`](./docs/) directory:
 The application supports CSV and XLSX files with these columns:
 - Start/End Date & Time
 - Start/End Address
-- Distance (km)
+- Distance (km or mi; the header decides the unit)
 - Consumption (kWh)
-- Efficiency (kWh/100km)
+- Efficiency is derived (kWh per 100 km or mi)
 - SOC (State of Charge)
 - Odometer readings
 
