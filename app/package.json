@@ -21,7 +21,7 @@
     "@mantine/dropzone": "^9.6.0",
     "@mantine/hooks": "^9.6.0",
     "@mantine/notifications": "^9.6.0",
-    "@tabler/icons-react": "^3.19.0",
+    "@tabler/icons-react": "^3.49.0",
     "dayjs": "^1.11.19",
     "exceljs": "^4.4.0",
     "ol": "^10.7.0",
